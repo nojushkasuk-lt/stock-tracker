@@ -142,7 +142,7 @@ def get_coverage(ticker: str, domains: set[str] | None = None) -> Coverage:
         return Coverage([], "Unknown stock.")
     try:
         with session_scope() as s:
-            results = news.cached_search(s, news.BraveNews(), news.coverage_query(stock.name, stock.ticker))
+            results = news.cached_search(s, news.BraveNews(), news.coverage_query(stock.name, stock.ticker, domains))
     except news.SearchCapReached:
         return Coverage([], "The monthly search limit has been reached. Coverage will be back next month.")
     except Exception:

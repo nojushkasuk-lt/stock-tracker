@@ -6,6 +6,7 @@ Every real API call is counted in usage_log and stops at MONTHLY_SEARCH_CAP.
 """
 
 import threading
+from collections import Counter
 import time
 import tomllib
 from dataclasses import dataclass
@@ -150,12 +151,19 @@ def cached_search(session: Session, brave: BraveNews, q: str, freshness: str = "
     return results
 
 
-def coverage_query(company: str, ticker: str) -> str:
-    return f'"{company}" {ticker} stock'
+def coverage_query(company: str, ticker: str, domains: list[str] | set[str] | None = None) -> str:
+    """Brave query restricted to the given outlet domains with site: (all configured outlets when none given).
+
+    Restricting in the query matters: an open query spends most of its 50 results on outlets we do not offer.
+    Domains are sorted so the same outlet choice always gives the same query (and so shares the cache).
+    """
+    base = f'"{company}" {ticker} stock'
+    ds = sorted(domains or [o.domain for o in load_outlets()])
+    return f"{base} ({' OR '.join('site:' + d for d in ds)})"
 
 
 def coverage_links(results: list[dict], outlets: list[Outlet], domains: set[str] | None = None,
-                   limit: int | None = None) -> list[NewsLink]:
+                   limit: int | None = None, max_per_outlet: int | None = None) -> list[NewsLink]:
     """Filter to the chosen outlets (all configured outlets when none chosen), newest first, one link per URL."""
     allowed = [o for o in outlets if not domains or o.domain in domains]
     seen, out = set(), []
@@ -166,4 +174,8 @@ def coverage_links(results: list[dict], outlets: list[Outlet], domains: set[str]
         seen.add(r["url"])
         out.append(NewsLink(r["title"], r["url"], o.name, o.domain, r["published"], o.paywall))
     out.sort(key=lambda n: n.published or datetime.min, reverse=True)
+    cap = max_per_outlet or (4 if not domains or len(domains) > 1 else None)  # keep one busy outlet from filling the list
+    if cap:
+        counts: Counter = Counter()
+        out = [n for n in out if (counts.update([n.domain]) or counts[n.domain] <= cap)]
     return out[: limit or config.COVERAGE_RESULTS]

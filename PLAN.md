@@ -43,13 +43,13 @@
 
 ## Day 3 — News links and filings
 
-- [ ] `news.py`: Brave live news search with a transient cache (under 1 hour) and no storage of results
-- [ ] **Check whether Brave can restrict results to named outlets** (e.g. a `site:` operator). If not, fall back to each outlet's RSS feed matched by company name. Record the answer in `docs/data-licensing.md`.
+- [x] `news.py`: Brave live news search with a transient cache (under 1 hour) and no storage of results
+- [x] **Check whether Brave can restrict results to named outlets** (e.g. a `site:` operator). If not, fall back to each outlet's RSS feed matched by company name. Record the answer in `docs/data-licensing.md`.
 - [x] `config/outlets.toml` (Bloomberg, WSJ, NYT, FT, Reuters, CNBC, ...)
 - [x] EDGAR submissions check → new 10-Q / 10-K / 8-K rows in `filings`
-- [ ] Stock page: "More coverage" button with live, outlet-filtered links
+- [x] Stock page: "More coverage" button with live, outlet-filtered links
 - [x] Market page: TradingView heatmap and economic calendar widgets; static Fed and Treasury links
-- [ ] Done when: a stock returns links from the chosen outlets only, nothing is stored, and a new filing is detected
+- [x] Done when: a stock returns links from the chosen outlets only, nothing is stored, and a new filing is detected
 
 ## Day 4 — AI layer
 
@@ -125,3 +125,5 @@
 - Next: owner decides if the definitions are acceptable (closes Day 2 "done when"); then Day 3 (news links and filings).
 - 2026-11-22, Claude Code: Day 3 built: filings detection (baseline + 400-day window; earnings 8-K = item 2.02; new 10-Q/10-K refetches figures), Brave news module (in-memory cache < 1h, monthly cap in usage_log, outlet filter, nothing stored), outlets.toml, page split into tabs (Stocks: Financials / Coverage / Filings; Market: heatmap, economic calendar, official sources). Found and fixed a bug where old filings were re-queued on the second check. 89 tests.
 - Next: owner adds BRAVE_SEARCH_API_KEY to .env; then verify live search and the site: operator, and tick the remaining Day 3 boxes. Then Day 4 (AI layer, needs Anthropic credit).
+- 2026-11-22, Claude Code: Brave key verified live. `site:` works and OR-combines (Reuters, CNBC, Yahoo Finance, Bloomberg return results; Brave returns no WSJ news at all). Queries now restrict to the chosen outlets, with at most 4 links per outlet. 91 tests.
+- Next: Day 4 (AI layer). Owner: Anthropic prepaid credit (auto top-up off) before the first real model call.

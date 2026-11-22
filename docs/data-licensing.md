@@ -26,7 +26,7 @@ daily percent changes (stocks and SPY), stored in `daily_returns`.
 
 | Source | Terms summary | Notes |
 |---|---|---|
-| Brave News Search API | Free monthly credit requires a credit line in the footer. Results must not be stored beyond transient use (< 1 hour in memory). We store only our own note plus the cited URL and outlet. | Brave's News Search docs list `site:` as a supported operator (2026-11-22). Not yet confirmed with a live key. We filter by outlet domain on our side anyway, so one query serves every user's outlet choice. |
+| Brave News Search API | Free monthly credit requires a credit line in the footer. Results must not be stored beyond transient use (< 1 hour in memory). We store only our own note plus the cited URL and outlet. | `site:` confirmed with a live key (2026-11-22), including `(site:a OR site:b)`. We restrict each query to the chosen outlets and also filter by domain on our side. Coverage gaps: Brave returned no news for wsj.com. Search plan includes news; limits seen in headers: 50 requests/second. |
 | Finnhub | Free plan is personal use. **Not used.** | |
 | Outlet RSS feeds | Fallback only. | Check each outlet's terms before use. |
 

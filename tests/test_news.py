@@ -124,3 +124,21 @@ def test_nothing_about_news_is_stored_in_the_database(db):
     from tracker.models import Base
     assert "articles" not in Base.metadata.tables  # results only live in memory
     assert db.scalar(select(UsageLog.search_calls)) == 1
+
+
+def test_query_restricts_to_outlets_in_a_stable_order():
+    q = news.coverage_query("Apple Inc.", "AAPL", {"wsj.com", "cnbc.com"})
+    assert q == '"Apple Inc." AAPL stock (site:cnbc.com OR site:wsj.com)'
+    assert news.coverage_query("Apple Inc.", "AAPL", ["wsj.com", "cnbc.com"]) == q
+    everything = news.coverage_query("Apple Inc.", "AAPL")
+    assert all(f"site:{o.domain}" in everything for o in news.load_outlets())
+
+
+def test_one_busy_outlet_cannot_fill_the_list_unless_it_is_the_only_choice():
+    res = [{"title": f"Y{i}", "url": f"https://finance.yahoo.com/n/{i}", "published": datetime(2026, 11, 20, 12, i)} for i in range(8)]
+    res.append({"title": "C", "url": "https://www.cnbc.com/c", "published": datetime(2026, 11, 1)})
+    outlets = news.load_outlets()
+    mixed = news.coverage_links(res, outlets)
+    assert [l.domain for l in mixed].count("finance.yahoo.com") == 4 and "cnbc.com" in [l.domain for l in mixed]
+    only = news.coverage_links(res, outlets, domains={"finance.yahoo.com"})
+    assert len(only) == 8
