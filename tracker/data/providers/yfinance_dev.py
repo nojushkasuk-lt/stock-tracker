@@ -47,3 +47,11 @@ class YFinanceDev:
 
         with ThreadPoolExecutor(max_workers=8) as ex:
             return {t: v for t, v in ex.map(one, tickers) if v}
+
+    def daily_closes(self, ticker: str) -> list[tuple[date, float]]:
+        """Full daily close history (split/dividend adjusted). Dev only; never stored."""
+        import yfinance as yf
+
+        hist = yf.Ticker(ticker).history(period="max", auto_adjust=True)
+        closes = hist["Close"].dropna()
+        return [(i.date(), float(v)) for i, v in closes.items()]

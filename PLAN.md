@@ -10,6 +10,7 @@
 - Models: Haiku 5.5 for notes and the Monday/Thursday summary. Sonnet 5.5 for profile updates when a company files a 10-Q, 10-K or earnings 8-K.
 - Streamlit first; UI kept thin so it can move to NiceGUI later.
 - Budget: AI hard stop at $8/month (prepaid credit, auto top-up off); live searches capped at 900/month (Brave's free monthly credit).
+- Charts (owner decision 2026-11-22): build our own minimalist chart (Trading 212 / Trade Republic style) on dev-only yfinance data now; in prod it falls back to TradingView widgets until a licensed price source is confirmed. Alpha Vantage email to be rewritten to ask for permission to display daily closing prices (later).
 - Price source: undecided. Free tiers are personal-use. Plan: ask Alpha Vantage (open-source/educational key) for written permission. Development uses yfinance locally only. Do not deploy publicly before the Day 6 gate.
 
 ## Day 0 — Setup (evening)
@@ -28,6 +29,9 @@
 - [x] Automatic universe refresh: a scheduled job keeps `config/universe.csv` / the `universe` table in line with the market-cap ranking (entries, exits, demo top 20). Design agreed with the owner first; users who follow an exiting stock keep it (see session log 2026-11-22).
 - [x] `ui/tradingview.py`: chart and symbol-info widgets; stock page shows them
 - [ ] Done when: picking a demo ticker shows its chart and quote
+
+- [x] Custom minimalist chart on dev-only data (`ui/chart.py`, `tracker/data/charts.py`); TradingView widgets as the prod fallback
+- [ ] Owner picks the chart look / confirms the new page (Trading 212 / Trade Republic style)
 
 ## Day 2 — Fundamentals
 
@@ -64,6 +68,11 @@
 - [ ] Market alert page and note (at most one refresh per 3 hours)
 - [ ] Refresh button and "more coverage" searches with caps (AGENTS.md rule 6)
 - [ ] Done when: a 6% single-stock move gets its own note, a market-wide drop gets one shared note, and a 4th refresh in a day is refused
+
+## UI design pass (after Day 5, before Day 6)
+
+- [ ] Full visual design with all content in place: layout, cards, typography, metric tiles, AI notes, market page, sign-in flow. Streamlit theme and CSS first; NiceGUI only if Streamlit cannot do it.
+- [ ] Rewrite the Alpha Vantage email to ask for permission to display daily closing prices (and check display-licensed plans such as Intrinio, Massive Business, Tiingo redistribution) so the custom chart can go live in prod.
 
 ## Day 6 — Deploy
 
@@ -107,3 +116,5 @@
 - Next: ui/tradingview.py and the stock page (last Day 1 task).
 - 2026-11-22, Claude Code: Day 1 stock page built (tracker/services.py, ui/tradingview.py, demo picker for the top 20). Widgets verified rendering with real data in headless Chrome; the in-app live data load is for the owner to eyeball (`streamlit run app.py`).
 - Next: owner verifies universe.csv and the demo page (closes Day 1), then Day 2: EDGAR fundamentals.
+- 2026-11-22, Claude Code: custom Trading 212-style chart built (Lightweight Charts, closing prices, 1M/1Y/5Y/Max chips, hover shows price and date), dev data only; prod falls back to TradingView widgets. Rendered standalone with real Apple data. In-app screenshots were flaky in headless Chrome, owner to eyeball.
+- Next: owner reviews the page; then Day 2 (EDGAR fundamentals). Design pass and the licensing email come later.

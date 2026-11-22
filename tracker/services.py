@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 
+from tracker.data.charts import get_chart_series
 from tracker.db import session_scope
 from tracker.models import ListingSeen, Universe
 from ui.tradingview import tv_symbol
@@ -51,3 +52,9 @@ def get_stock(ticker: str) -> Stock | None:
             return _to_stock(*row) if row else None
     except OperationalError:
         return None
+
+
+def get_chart_points(ticker: str) -> list[tuple[str, float]] | None:
+    """[(YYYY-MM-DD, close)] for the custom chart, or None when it is switched off (use the TradingView widgets)."""
+    series = get_chart_series(ticker.upper())
+    return None if series is None else [(d.isoformat(), v) for d, v in series.points]

@@ -41,6 +41,7 @@ tracker/
   services.py           # the ONLY tracker module app.py imports
   data/
     prices.py           # PriceProvider interface: daily returns only (see rule 13)
+    charts.py           # chart data for the custom chart: in-memory cache, off in prod (see rule 13)
     providers/          # one file per provider (yfinance_dev.py, alphavantage.py, ...)
     edgar.py            # EDGAR client (User-Agent, rate limit), submissions, domestic-filer check
     listings.py         # spot new exchange listings (IPOs) from the SEC ticker file
@@ -95,7 +96,8 @@ The universe is the 100 largest US-listed companies by market cap **as reported 
 12. **Footer:** "For information only. Not investment advice." plus "News search by Brave Search API" (Brave's free credit requires the credit line). Keep the TradingView link on every widget.
 13. **Data licensing. Read this twice.**
     - Most free price and news APIs are licensed for the account holder's own use only, not for showing data to other people. Do not add one to the public site without recording its terms in `docs/data-licensing.md`.
-    - Prices, charts, quotes and market-wide visuals are shown only through TradingView widgets. We never display or store price history or OHLC.
+    - On the public site, prices, charts, quotes and market-wide visuals are shown only through TradingView widgets. We never store price history or OHLC.
+    - **Dev-only exception (owner decision, 2026-11-22):** the custom chart (`ui/chart.py`, `tracker/data/charts.py`) may show provider closing prices when `APP_ENV=local`, fetched live and cached in memory only (never written to the database), so the real design can be built now. In prod `CHART_PROVIDER` defaults to `none` and the app falls back to the TradingView widgets. A licensed provider is switched on only after `docs/data-licensing.md` records written permission or a display-capable plan.
     - The price provider is used only to compute daily percent changes (stocks and the S&P 500 via SPY). Store only those in `daily_returns`. Put every provider behind the `PriceProvider` interface so it can be swapped by config (`PRICE_PROVIDER`).
     - `yfinance_dev.py` is for local development only. It must raise an error when `APP_ENV=prod`.
     - Do not use Finnhub. Its free plan is personal-use.

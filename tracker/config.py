@@ -44,3 +44,8 @@ UNIVERSE_EXIT_RANK = _int("UNIVERSE_EXIT_RANK", 110)
 # SEC EDGAR (rule 9: User-Agent with a name and contact email; stay under 10 requests per second)
 EDGAR_USER_AGENT_NAME = os.environ.get("EDGAR_USER_AGENT_NAME", "")
 EDGAR_USER_AGENT_EMAIL = os.environ.get("EDGAR_USER_AGENT_EMAIL", "")
+
+# Custom chart data. Local dev defaults to yfinance; prod defaults to "none" (TradingView widgets) until a
+# licensed provider is recorded in docs/data-licensing.md (AGENTS.md rule 13).
+CHART_PROVIDER = os.environ.get("CHART_PROVIDER") or ("none" if APP_ENV == "prod" else "yfinance_dev")
+CHART_CACHE_SECONDS = _int("CHART_CACHE_SECONDS", 1800)  # in-memory only, under 1 hour
