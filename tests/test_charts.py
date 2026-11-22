@@ -76,13 +76,37 @@ def test_chart_html_escapes_the_name():
     assert "&lt;script&gt;" in html
 
 
-def test_services_returns_iso_dates(monkeypatch):
+def test_services_returns_iso_dates_and_intraday(monkeypatch):
     from tracker import services
 
-    monkeypatch.setattr(services, "get_chart_series", lambda t: charts.ChartSeries(t, PTS))
-    assert services.get_chart_points("aapl") == [("2026-01-01", 10.0), ("2026-01-02", 11.0)]
+    intra = {"1D": [(1, 1.0), (2, 2.0)]}
+    monkeypatch.setattr(services, "get_chart_series", lambda t: charts.ChartSeries(t, PTS, intra))
+    d = services.get_chart_data("aapl")
+    assert d.daily == [("2026-01-01", 10.0), ("2026-01-02", 11.0)] and d.intraday == intra
     monkeypatch.setattr(services, "get_chart_series", lambda t: None)
-    assert services.get_chart_points("aapl") is None
+    assert services.get_chart_data("aapl") is None
+
+
+def test_intraday_is_optional_and_failures_do_not_break_the_chart():
+    class P(FakeProvider):
+        def intraday(self, ticker):
+            raise RuntimeError("no intraday")
+
+    assert charts.get_chart_series("A", P(PTS)).intraday == {}
+
+    class Q(FakeProvider):
+        def intraday(self, ticker):
+            return {"1D": [(1, 1.0), (2, 1.1)], "1W": [(1, 1.0)]}  # 1W has too few points
+
+    assert list(charts.get_chart_series("B", Q(PTS)).intraday) == ["1D"]
+
+
+def test_chart_html_embeds_intraday_and_drops_unknown_keys():
+    html = chart_html("X", [("2026-01-01", 1.0), ("2026-01-02", 2.0)], {"1D": [(100, 1.0), (200, 2.0)], "evil": [(1, 1.0)]})
+    intra = json.loads(re.search(r"const INTRA = (\{.*?\});", html, re.S).group(1))
+    assert list(intra) == ["1D"] and intra["1D"][0] == {"time": 100, "value": 1.0}
+    for label in ("1D", "1W", "1M", "3M", "1Y", "Max"):
+        assert f'"{label}"' in html
 
 
 def test_thin_keeps_recent_days_and_the_last_point_and_shrinks_old_history():

@@ -55,3 +55,18 @@ class YFinanceDev:
         hist = yf.Ticker(ticker).history(period="max", auto_adjust=True)
         closes = hist["Close"].dropna()
         return [(i.date(), float(v)) for i, v in closes.items()]
+
+    def intraday(self, ticker: str) -> dict[str, list[tuple[int, float]]]:
+        """{"1W": 15-minute closes of the last 5 sessions, "1D": 5-minute closes of the last session}.
+        Times are UTC epoch seconds. Dev only; never stored."""
+        import yfinance as yf
+
+        out: dict[str, list[tuple[int, float]]] = {}
+        for key, interval in (("1W", "15m"), ("1D", "5m")):
+            closes = yf.Ticker(ticker).history(period="5d", interval=interval, auto_adjust=True)["Close"].dropna()
+            if closes.empty:
+                continue
+            if key == "1D":
+                closes = closes[[i.date() == closes.index[-1].date() for i in closes.index]]
+            out[key] = [(int(i.timestamp()), float(v)) for i, v in closes.items()]
+        return out

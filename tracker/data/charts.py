@@ -5,7 +5,7 @@ Returns None when no chart provider is allowed (prod by default): the UI then sh
 
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from typing import Protocol
 
@@ -21,7 +21,8 @@ class ChartProvider(Protocol):
 @dataclass(frozen=True)
 class ChartSeries:
     ticker: str
-    points: list[Point]  # oldest first
+    points: list[Point]  # daily closes, oldest first
+    intraday: dict[str, list[tuple[int, float]]] = field(default_factory=dict)  # "1D"/"1W" -> (epoch s, close)
 
 
 def get_chart_provider(name: str | None = None) -> ChartProvider | None:
@@ -55,7 +56,14 @@ def get_chart_series(ticker: str, provider: ChartProvider | None = None, now=tim
         return None
     if len(points) < 2:
         return None
-    series = ChartSeries(ticker, points)
+    intraday: dict[str, list[tuple[int, float]]] = {}
+    fetch = getattr(provider, "intraday", None)
+    if fetch:
+        try:
+            intraday = {k: v for k, v in fetch(ticker).items() if len(v) >= 2}
+        except Exception:
+            intraday = {}  # intraday is optional: the longer ranges still work
+    series = ChartSeries(ticker, points, intraday)
     with _lock:
         _cache[ticker] = (t, series)
     return series

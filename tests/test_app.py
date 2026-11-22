@@ -23,11 +23,11 @@ def test_app_uses_the_custom_chart_when_points_exist_and_falls_back_otherwise(mo
     from tracker import services
 
     pts = [("2026-01-01", 10.0), ("2026-01-02", 11.0)]
-    monkeypatch.setattr(services, "get_chart_points", lambda t: pts)
+    monkeypatch.setattr(services, "get_chart_data", lambda t: services.ChartData(pts, {}))
     at = AppTest.from_file(APP, default_timeout=30).run()
     assert not at.exception
 
-    monkeypatch.setattr(services, "get_chart_points", lambda t: None)  # prod default: TradingView widgets
+    monkeypatch.setattr(services, "get_chart_data", lambda t: None)  # prod default: TradingView widgets
     at = AppTest.from_file(APP, default_timeout=30).run()
     assert not at.exception
     if at.selectbox:

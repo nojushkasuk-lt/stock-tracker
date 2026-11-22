@@ -39,11 +39,17 @@ _TEMPLATE = """<!doctype html>
 <script src="__LIB__"></script>
 <script>
 const DATA = __DATA__;
-const RANGES = [["1M", 30], ["1Y", 365], ["5Y", 1825], ["Max", null]];
+const INTRA = __INTRA__;  // {"1D": [{time: epoch s, value}], "1W": [...]}; may be empty
+const RANGES = [["1D", "intra"], ["1W", "intra"], ["1M", 30], ["3M", 90], ["1Y", 365], ["Max", null]]
+  .filter(([l, d]) => d !== "intra" || (INTRA[l] && INTRA[l].length >= 2));
+const LABELS = {"1D": "last session", "1W": "past 5 sessions", "1M": "past month", "3M": "past 3 months", "1Y": "past year", "Max": "all time"};
+const ET = "America/New_York";
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const fmt = v => v.toLocaleString("en-US", {style: "currency", currency: "USD"});
 const pct = v => (v >= 0 ? "+" : "−") + Math.abs(v).toLocaleString("en-US", {maximumFractionDigits: Math.abs(v) >= 1000 ? 0 : 2, minimumFractionDigits: Math.abs(v) >= 1000 ? 0 : 2}) + "%";
 const day = s => new Date(s + "T00:00:00Z").toLocaleDateString("en-US", {year: "numeric", month: "short", day: "numeric", timeZone: "UTC"});
+const stamp = t => new Date(t * 1000).toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: ET}) + " ET";
+const when = t => typeof t === "number" ? stamp(t) : day(t);
 
 const el = document.getElementById("chart");
 const chart = LightweightCharts.createChart(el, {
@@ -58,31 +64,45 @@ const chart = LightweightCharts.createChart(el, {
 });
 const series = chart.addAreaSeries({lineWidth: 2, priceLineVisible: false, lastValueVisible: false,
                                     crosshairMarkerRadius: 5});
-let view = [];
+let view = [], base = 0;
 
 function setHeader(value, date) {
-  const first = view[0].value, d = value - first, p = d / first * 100;
+  const first = base, d = value - first, p = d / first * 100;
   const c = css(d >= 0 ? "--up" : "--down");
   document.getElementById("price").textContent = fmt(value);
   const chg = document.getElementById("chg");
   chg.textContent = (d >= 0 ? "+" : "−") + fmt(Math.abs(d)).replace("-", "") + "  (" + pct(p) + ")";
   chg.style.color = c;
-  document.getElementById("date").textContent = date ? day(date) : "";
+  document.getElementById("date").textContent = date ? when(date) : "";
 }
 
+let current = "1Y";
 function setRange(label, days) {
-  const last = DATA[DATA.length - 1].time;
-  let cutoff = "0000-00-00";
-  if (days) { const d = new Date(last + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - days); cutoff = d.toISOString().slice(0, 10); }
-  view = DATA.filter(p => p.time >= cutoff);
-  if (view.length < 2) view = DATA.slice(-2);
-  const up = view[view.length - 1].value >= view[0].value;
+  current = label;
+  if (days === "intra") {
+    view = INTRA[label].map(p => ({...p}));
+    // The last bar is not exactly the official close: show the same price as the daily views.
+    const lastDaily = DATA[DATA.length - 1], lastDay = new Date(view[view.length - 1].time * 1000).toISOString().slice(0, 10);
+    if (lastDaily.time === lastDay) view[view.length - 1].value = lastDaily.value;
+    // 1D is measured against the previous close; 1W against the first point of the week.
+    const dayStart = new Date(view[0].time * 1000).toISOString().slice(0, 10);
+    const prev = DATA.filter(p => p.time < dayStart);
+    base = label === "1D" && prev.length ? prev[prev.length - 1].value : view[0].value;
+  } else {
+    const last = DATA[DATA.length - 1].time;
+    let cutoff = "0000-00-00";
+    if (days) { const d = new Date(last + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - days); cutoff = d.toISOString().slice(0, 10); }
+    view = DATA.filter(p => p.time >= cutoff);
+    if (view.length < 2) view = DATA.slice(-2);
+    base = view[0].value;
+  }
+  const up = view[view.length - 1].value >= base;
   const c = css(up ? "--up" : "--down");
   series.applyOptions({lineColor: c, topColor: c + "33", bottomColor: c + "00"});
   series.setData(view);
   chart.timeScale().fitContent();
   setHeader(view[view.length - 1].value, null);
-  document.getElementById("date").textContent = "past " + label.replace("Max", "all time").toLowerCase();
+  document.getElementById("date").textContent = LABELS[label];
   [...document.querySelectorAll("#ranges button")].forEach(b => b.classList.toggle("on", b.dataset.r === label));
 }
 
@@ -93,8 +113,8 @@ RANGES.forEach(([label, days]) => {
 });
 chart.subscribeCrosshairMove(p => {
   const v = p.time && p.seriesData.get(series);
-  if (v) setHeader(v.value, typeof p.time === "string" ? p.time : null);
-  else if (view.length) setHeader(view[view.length - 1].value, null), document.getElementById("date").textContent = "";
+  if (v) setHeader(v.value, p.time);
+  else if (view.length) setHeader(view[view.length - 1].value, null), document.getElementById("date").textContent = LABELS[current];
 });
 new ResizeObserver(() => chart.applyOptions({width: el.clientWidth})).observe(el);
 setRange("1Y", 365);
@@ -117,8 +137,12 @@ def thin(points: list[tuple[str, float]]) -> list[tuple[str, float]]:
     return old[::OLD_STEP] + recent
 
 
-def chart_html(name: str, points: list[tuple[str, float]]) -> str:
+def chart_html(name: str, points: list[tuple[str, float]], intraday: dict[str, list[tuple[int, float]]] | None = None) -> str:
     """Self-contained HTML for st.iframe. `name` is escaped; data is JSON with '<' escaped."""
     points = thin(points)
     data = json.dumps([{"time": d, "value": round(v, 4)} for d, v in points]).replace("<", "\\u003c")
-    return (_TEMPLATE.replace("__LIB__", LIB_URL).replace("__NAME__", escape(name)).replace("__DATA__", data))
+    intra = json.dumps(
+        {k: [{"time": t, "value": round(v, 4)} for t, v in pts] for k, pts in (intraday or {}).items() if k in ("1D", "1W")}
+    )
+    return (_TEMPLATE.replace("__LIB__", LIB_URL).replace("__NAME__", escape(name))
+            .replace("__DATA__", data).replace("__INTRA__", intra))

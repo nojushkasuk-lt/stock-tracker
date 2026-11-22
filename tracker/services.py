@@ -54,7 +54,15 @@ def get_stock(ticker: str) -> Stock | None:
         return None
 
 
-def get_chart_points(ticker: str) -> list[tuple[str, float]] | None:
-    """[(YYYY-MM-DD, close)] for the custom chart, or None when it is switched off (use the TradingView widgets)."""
+@dataclass(frozen=True)
+class ChartData:
+    daily: list[tuple[str, float]]  # (YYYY-MM-DD, close)
+    intraday: dict[str, list[tuple[int, float]]]  # "1D"/"1W" -> (epoch seconds, close); may be empty
+
+
+def get_chart_data(ticker: str) -> ChartData | None:
+    """Data for the custom chart, or None when it is switched off (then use the TradingView widgets)."""
     series = get_chart_series(ticker.upper())
-    return None if series is None else [(d.isoformat(), v) for d, v in series.points]
+    if series is None:
+        return None
+    return ChartData([(d.isoformat(), v) for d, v in series.points], series.intraday)

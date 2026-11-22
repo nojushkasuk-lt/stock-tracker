@@ -23,9 +23,9 @@ else:
         label_visibility="collapsed",
     )
     stock = by_ticker[ticker]
-    points = services.get_chart_points(stock.ticker)
-    if points:
-        st.iframe(chart_html(f"{stock.name} · {stock.ticker}", points), height=CHART_FRAME_HEIGHT)
+    data = services.get_chart_data(stock.ticker)
+    if data:
+        st.iframe(chart_html(f"{stock.name} · {stock.ticker}", data.daily, data.intraday), height=CHART_FRAME_HEIGHT)
     else:  # no licensed chart data (e.g. in prod): TradingView widgets
         st.subheader(f"{stock.name} ({stock.ticker})")
         st.iframe(symbol_info_html(stock.tv_symbol), height=SYMBOL_INFO_HEIGHT + FRAME_PAD)
