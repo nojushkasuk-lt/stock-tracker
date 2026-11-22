@@ -26,7 +26,7 @@
 - [ ] `config/universe.csv`: the 100 largest US companies with CIK, name, industry (own labels or EDGAR SIC codes, not GICS), rank; top 20 flagged `is_demo`. I (the owner) verify the list by hand.
 - [x] `PriceProvider` interface and `yfinance_dev.py` (blocked when `APP_ENV=prod`); `daily_returns` filled for the universe and SPY
 - [x] Automatic universe refresh: a scheduled job keeps `config/universe.csv` / the `universe` table in line with the market-cap ranking (entries, exits, demo top 20). Design agreed with the owner first; users who follow an exiting stock keep it (see session log 2026-11-22).
-- [ ] `ui/tradingview.py`: chart and symbol-info widgets; stock page shows them
+- [x] `ui/tradingview.py`: chart and symbol-info widgets; stock page shows them
 - [ ] Done when: picking a demo ticker shows its chart and quote
 
 ## Day 2 — Fundamentals
@@ -105,3 +105,5 @@
 - 2026-11-22, Claude Code: universe auto-refresh built (jobs/universe.py, buffer of 110, soft exits via `active`, candidates.csv ranks 101-200, tests). Open: Yahoo market caps count only the listed share class, so BX, CVNA, IBKR rank too low and would exit wrongly. Needs an owner decision (pins/overrides vs total-cap source). Not scheduled yet (Day 6); no IPO discovery yet.
 - 2026-11-22, Claude Code: universe refresh finished (option B): rule = top 100 by provider market cap, weekly SEC new-listing check (domestic filers only), pins.csv escape hatch. Not scheduled until Day 6. Alpha Vantage email still to send (owner, later); prod caps then come from that provider.
 - Next: ui/tradingview.py and the stock page (last Day 1 task).
+- 2026-11-22, Claude Code: Day 1 stock page built (tracker/services.py, ui/tradingview.py, demo picker for the top 20). Widgets verified rendering with real data in headless Chrome; the in-app live data load is for the owner to eyeball (`streamlit run app.py`).
+- Next: owner verifies universe.csv and the demo page (closes Day 1), then Day 2: EDGAR fundamentals.

@@ -21,7 +21,7 @@ The app does not republish articles. It shows headlines, outlets, links and its 
 - Python 3.12
 - Streamlit for the UI (may be replaced by NiceGUI later, so keep the UI thin)
 - SQLAlchemy 2.x; SQLite locally, Neon Postgres when deployed (only `DATABASE_URL` changes)
-- TradingView free embed widgets for all price charts, quotes, heatmap and economic calendar (embedded with `st.components.v1.html`; keep the TradingView link on each widget)
+- TradingView free embed widgets for all price charts, quotes, heatmap and economic calendar (embedded with `st.iframe`, since `st.components.v1.html` is deprecated; keep the TradingView link on each widget). `st.iframe` gives an HTML string same-origin access to the app, so only ever pass HTML that `ui/tradingview.py` builds from a validated ticker, never user or model text. `data:` URLs (which would isolate the widget) did not render the widgets
 - Plotly only for charts of our own EDGAR-derived numbers (revenue, margins)
 - httpx for HTTP, pydantic for data models and LLM output validation, pytest for tests
 - Anthropic API: `claude-haiku-5-5` for routine work, `claude-sonnet-5-5` for filing-based profile updates (Batch API where results can wait)
