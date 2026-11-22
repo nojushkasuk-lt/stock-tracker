@@ -16,6 +16,18 @@ CREATE TABLE universe (
     updated_at      TIMESTAMP NOT NULL
 );
 
+-- Every exchange-listed ticker seen in the SEC's company_tickers_exchange file. Used to spot new listings (IPOs).
+-- is_candidate = a new US domestic filer; it joins the weekly market-cap ranking alongside config/candidates.csv.
+CREATE TABLE listings_seen (
+    ticker        TEXT PRIMARY KEY,
+    cik           TEXT NOT NULL,
+    name          TEXT NOT NULL,
+    exchange      TEXT,
+    sic_code      TEXT,
+    is_candidate  BOOLEAN NOT NULL DEFAULT FALSE,
+    first_seen    TIMESTAMP NOT NULL
+);
+
 CREATE TABLE users (
     email       TEXT PRIMARY KEY,               -- from Google sign-in; no passwords stored
     created_at  TIMESTAMP NOT NULL,

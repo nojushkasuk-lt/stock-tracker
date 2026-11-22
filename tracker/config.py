@@ -40,3 +40,7 @@ UNIVERSE_SIZE = _int("UNIVERSE_SIZE", 100)
 DEMO_SIZE = _int("DEMO_SIZE", 20)
 # A current member only drops out when it falls below this rank (stops flip-flopping at the boundary).
 UNIVERSE_EXIT_RANK = _int("UNIVERSE_EXIT_RANK", 110)
+
+# SEC EDGAR (rule 9: User-Agent with a name and contact email; stay under 10 requests per second)
+EDGAR_USER_AGENT_NAME = os.environ.get("EDGAR_USER_AGENT_NAME", "")
+EDGAR_USER_AGENT_EMAIL = os.environ.get("EDGAR_USER_AGENT_EMAIL", "")

@@ -50,6 +50,18 @@ class Universe(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class ListingSeen(Base):
+    __tablename__ = "listings_seen"
+
+    ticker: Mapped[str] = mapped_column(Text, primary_key=True)
+    cik: Mapped[str] = mapped_column(Text)
+    name: Mapped[str] = mapped_column(Text)
+    exchange: Mapped[str | None] = mapped_column(Text)
+    sic_code: Mapped[str | None] = mapped_column(Text)
+    is_candidate: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    first_seen: Mapped[datetime] = mapped_column(DateTime)
+
+
 class User(Base):
     __tablename__ = "users"
 

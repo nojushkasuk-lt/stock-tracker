@@ -14,12 +14,20 @@ from tracker.models import Universe
 CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "config"
 CSV_PATH = CONFIG_DIR / "universe.csv"
 CANDIDATES_PATH = CONFIG_DIR / "candidates.csv"
+PINS_PATH = CONFIG_DIR / "pins.csv"
 UNCLASSIFIED = "Unclassified"
 
 
 def read_csv(path: Path) -> list[dict]:
     with path.open(newline="") as f:
         return list(csv.DictReader(f))
+
+
+def read_pins(path: Path = PINS_PATH) -> set[str]:
+    """Tickers that must always stay in the universe. The file starts empty (header only)."""
+    if not path.exists():
+        return set()
+    return {r["ticker"].strip() for r in read_csv(path) if r.get("ticker", "").strip()}
 
 
 def _now() -> datetime:
@@ -72,16 +80,20 @@ def refresh_universe(
     size: int | None = None,
     demo_size: int | None = None,
     exit_rank: int | None = None,
+    pins: set[str] | None = None,
 ) -> RefreshResult:
     """Re-rank by market cap. Entries join at rank <= size; members only leave below exit_rank.
 
     Exits are soft: active=False. Followers keep the stock, nobody new can add it (and it loses the demo flag).
     Tickers without a market cap this run keep their previous status.
+    Pinned tickers (config/pins.csv) always stay in; they take seats within `size` and may enter from the
+    candidate list even without a market cap.
     """
     size = size or config.UNIVERSE_SIZE
     demo_size = demo_size or config.DEMO_SIZE
     exit_rank = exit_rank or config.UNIVERSE_EXIT_RANK
 
+    pins = set(pins or ())
     rows = {u.ticker: u for u in session.scalars(select(Universe))}
     cand = {c["ticker"]: c for c in candidates}
     res = RefreshResult()
@@ -92,17 +104,19 @@ def refresh_universe(
     res.no_market_cap = sorted(t for t in pool if not market_caps.get(t))
 
     # Incumbents keep their seat while they stay within exit_rank (or have no data this run).
+    pinned = {t for t in pins if t in rows or t in cand}
     kept = [
         t for t, u in rows.items()
-        if u.active and (t not in rank_of or rank_of[t] <= exit_rank)
+        if t not in pinned and u.active and (t not in rank_of or rank_of[t] <= exit_rank)
     ]
     # Overfull (e.g. a bad seed): the best-ranked `size` incumbents stay; unranked ones sort last.
     kept.sort(key=lambda t: rank_of.get(t, float("inf")))
-    kept = kept[:size]
+    kept = kept[: max(size - len(pinned), 0)]
     # Newcomers fill vacancies only, best rank first, and must be inside the top `size`.
-    vacancies = size - len(kept)
-    newcomers = [t for t in ranked if t not in kept and rank_of[t] <= size][:max(vacancies, 0)]
-    member_set = set(kept) | set(newcomers)
+    vacancies = size - len(kept) - len(pinned)
+    taken = set(kept) | pinned
+    newcomers = [t for t in ranked if t not in taken and rank_of[t] <= size][: max(vacancies, 0)]
+    member_set = set(kept) | pinned | set(newcomers)
 
     now = _now()
     for t in pool:
@@ -115,7 +129,7 @@ def refresh_universe(
                 continue
             c = cand[t]
             u = Universe(
-                ticker=t, cik=c["cik"].zfill(10), name=c["name"],
+                ticker=t, cik=c["cik"].zfill(10), name=c["name"], sic_code=c.get("sic_code") or None,
                 industry=c.get("industry") or UNCLASSIFIED, region="US",
                 market_cap_rank=rank, is_demo=demo, active=True, updated_at=now,
             )

@@ -42,7 +42,8 @@ tracker/
   data/
     prices.py           # PriceProvider interface: daily returns only (see rule 13)
     providers/          # one file per provider (yfinance_dev.py, alphavantage.py, ...)
-    edgar.py            # submissions, filings, XBRL companyfacts, SIC codes
+    edgar.py            # EDGAR client (User-Agent, rate limit), submissions, domestic-filer check
+    listings.py         # spot new exchange listings (IPOs) from the SEC ticker file
     news.py             # Brave live search, outlet filter, transient cache; RSS fallback
   analysis/
     metrics.py          # ratios from EDGAR figures
@@ -61,12 +62,17 @@ jobs/
 config/
   universe.csv          # seed for the universe table: ticker, cik, name, industry, rank, is_demo (after the first load jobs/universe.py owns rank, demo and active)
   candidates.csv        # next ~100 companies the weekly job may promote into the top 100
+  pins.csv              # tickers that always stay in the universe (starts empty; escape hatch for mega-IPOs or edge cases)
   outlets.yaml          # outlets users can choose from: name and domain
 docs/
   data-licensing.md     # which data source is used, what its terms allow, written permissions received
 tests/
 .github/workflows/
 ```
+
+## Universe definition
+
+The universe is the 100 largest US-listed companies by market cap **as reported by the price provider** (weekly job). It is not float-adjusted and may differ from other ranking sites, especially for companies with several share classes. New US domestic filers are picked up from the SEC ticker file within a week. Foreign issuers (20-F filers) are excluded in v1.
 
 ## Rules
 
