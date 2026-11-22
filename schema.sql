@@ -63,18 +63,20 @@ CREATE TABLE market_days (
     level             TEXT NOT NULL             -- none, alert, major
 );
 
--- Figures from EDGAR XBRL (companyfacts). Numbers for the AI come from here, never from the model.
+-- Figures from EDGAR XBRL (companyfacts), only the tags we use. Numbers for the AI come from here, never from the model.
+-- One row per (tag, period end, duration): a 6-month and a 12-month figure can share an end date.
 CREATE TABLE fundamentals (
     ticker          TEXT NOT NULL REFERENCES universe(ticker),
     metric          TEXT NOT NULL,              -- XBRL tag, e.g. Revenues, OperatingIncomeLoss
     period_end      DATE NOT NULL,
-    fiscal_period   TEXT NOT NULL,              -- Q1, Q2, Q3, FY
+    duration_days   INTEGER NOT NULL,           -- 0 for balance-sheet (point in time) figures
+    fiscal_period   TEXT NOT NULL,              -- Q1, Q2, Q3, FY (of the filing that reported it)
     form            TEXT NOT NULL,              -- 10-Q, 10-K
     value           NUMERIC NOT NULL,
     unit            TEXT NOT NULL,              -- USD, shares, USD/shares
     accession       TEXT NOT NULL,
-    filed_at        DATE NOT NULL,
-    PRIMARY KEY (ticker, metric, period_end, fiscal_period, form)
+    filed_at        DATE NOT NULL,              -- latest filing wins when a period is restated
+    PRIMARY KEY (ticker, metric, period_end, duration_days)
 );
 
 CREATE TABLE filings (

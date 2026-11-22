@@ -110,8 +110,9 @@ class Fundamental(Base):
     ticker: Mapped[str] = mapped_column(ForeignKey("universe.ticker"), primary_key=True)
     metric: Mapped[str] = mapped_column(Text, primary_key=True)
     period_end: Mapped[date] = mapped_column(Date, primary_key=True)
-    fiscal_period: Mapped[str] = mapped_column(Text, primary_key=True)
-    form: Mapped[str] = mapped_column(Text, primary_key=True)
+    duration_days: Mapped[int] = mapped_column(Integer, primary_key=True)  # 0 = point in time
+    fiscal_period: Mapped[str] = mapped_column(Text)
+    form: Mapped[str] = mapped_column(Text)
     value: Mapped[float] = mapped_column(Num)
     unit: Mapped[str] = mapped_column(Text)
     accession: Mapped[str] = mapped_column(Text)

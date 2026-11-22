@@ -8,9 +8,10 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 
+from tracker.analysis.metrics import AnnualPoint, Metrics, annual_history, compute_metrics
 from tracker.data.charts import get_chart_series
 from tracker.db import session_scope
-from tracker.models import ListingSeen, Universe
+from tracker.models import Fundamental, ListingSeen, Universe
 from ui.tradingview import tv_symbol
 
 
@@ -66,3 +67,22 @@ def get_chart_data(ticker: str) -> ChartData | None:
     if series is None:
         return None
     return ChartData([(d.isoformat(), v) for d, v in series.points], series.intraday)
+
+
+@dataclass(frozen=True)
+class Financials:
+    metrics: Metrics
+    history: list[AnnualPoint]  # full fiscal years, oldest first (revenue and margin chart)
+
+
+def get_financials(ticker: str) -> Financials | None:
+    """Ratios and yearly history computed from stored SEC figures, or None if the ticker is unknown."""
+    try:
+        with session_scope() as s:
+            u = s.get(Universe, ticker.upper())
+            if u is None:
+                return None
+            rows = list(s.scalars(select(Fundamental).where(Fundamental.ticker == u.ticker)))
+            return Financials(compute_metrics(rows, u.industry), annual_history(rows))
+    except OperationalError:
+        return None

@@ -47,7 +47,7 @@ tracker/
     listings.py         # spot new exchange listings (IPOs) from the SEC ticker file
     news.py             # Brave live search, outlet filter, transient cache; RSS fallback
   analysis/
-    metrics.py          # ratios from EDGAR figures
+    metrics.py          # TTM, margins, growth, EPS, net debt/EBITDA from EDGAR figures (definitions in docs/metrics.md)
     moves.py            # move detection and the market -> industry -> stock ladder
   ai/
     llm.py              # single wrapper: all model calls, budget check, cost log
@@ -59,13 +59,16 @@ jobs/
   daily.py              # daily returns, filings check, move detection, notes
   digest.py             # Monday/Thursday market summary
   universe.py           # weekly: re-rank by market cap (entries, exits, demo top 20)
+  fundamentals.py       # fetch EDGAR financial figures (python -m jobs.fundamentals [TICKER ...] [--all])
   profiles.py           # process queued profile updates
 config/
   universe.csv          # seed for the universe table: ticker, cik, name, industry, rank, is_demo (after the first load jobs/universe.py owns rank, demo and active)
   candidates.csv        # next ~100 companies the weekly job may promote into the top 100
+  predecessors.csv      # tickers that moved to a new SEC registrant: old CIK whose history to merge
   pins.csv              # tickers that always stay in the universe (starts empty; escape hatch for mega-IPOs or edge cases)
   outlets.yaml          # outlets users can choose from: name and domain
 docs/
+  metrics.md            # how each number is computed and how it was checked
   data-licensing.md     # which data source is used, what its terms allow, written permissions received
 tests/
 .github/workflows/

@@ -7,6 +7,7 @@ import httpx
 from tracker import config
 
 TICKERS_EXCHANGE_URL = "https://www.sec.gov/files/company_tickers_exchange.json"
+COMPANYFACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
 MIN_INTERVAL = 0.12  # seconds between requests (about 8 per second)
 
@@ -38,6 +39,9 @@ class EdgarClient:
         """All SEC-registered tickers with exchange: [{cik, name, ticker, exchange}]."""
         d = self.get_json(TICKERS_EXCHANGE_URL)
         return [dict(zip(d["fields"], row)) for row in d["data"]]
+
+    def companyfacts(self, cik: int) -> dict:
+        return self.get_json(COMPANYFACTS_URL.format(cik=int(cik)))
 
     def submissions(self, cik: int) -> dict:
         return self.get_json(SUBMISSIONS_URL.format(cik=int(cik)))

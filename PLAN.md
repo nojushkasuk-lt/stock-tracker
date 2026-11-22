@@ -35,10 +35,10 @@
 
 ## Day 2 — Fundamentals
 
-- [ ] EDGAR XBRL companyfacts → `fundamentals`
-- [ ] Ratios: operating margin, net margin, net debt/EBITDA, revenue growth (YoY), diluted EPS
-- [ ] Metric cards and a Plotly chart of revenue and margins on the stock page
-- [ ] Tests for every ratio
+- [x] EDGAR XBRL companyfacts → `fundamentals`
+- [x] Ratios: operating margin, net margin, net debt/EBITDA, revenue growth (YoY), diluted EPS
+- [x] Metric cards and a Plotly chart of revenue and margins on the stock page
+- [x] Tests for every ratio
 - [ ] Done when: ratios match a trusted source for 3 companies
 
 ## Day 3 — News links and filings
@@ -118,3 +118,5 @@
 - Next: owner verifies universe.csv and the demo page (closes Day 1), then Day 2: EDGAR fundamentals.
 - 2026-11-22, Claude Code: custom Trading 212-style chart built (Lightweight Charts, closing prices, 1M/1Y/5Y/Max chips, hover shows price and date), dev data only; prod falls back to TradingView widgets. Rendered standalone with real Apple data. In-app screenshots were flaky in headless Chrome, owner to eyeball.
 - Next: owner reviews the page; then Day 2 (EDGAR fundamentals). Design pass and the licensing email come later.
+- 2026-11-22, Claude Code: Day 2 built: EDGAR companyfacts -> fundamentals (10 tags merged by concept), TTM ratios, metric cards, revenue/margin chart, predecessor mapping (XOM), 70 tests. Net debt/EBITDA available for 51 of the 85 companies where it applies; n/a shown with a reason otherwise. Checked against stockanalysis.com for AAPL, KO, PG: revenue, net margin, EPS match exactly; operating margin/EBITDA match for AAPL only (KO, PG: source adds back one-offs); net debt defined more conservatively. Details in docs/metrics.md.
+- Next: owner decides if the definitions are acceptable (closes Day 2 "done when"); then Day 3 (news links and filings).

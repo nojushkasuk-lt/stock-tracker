@@ -3,6 +3,7 @@
 import streamlit as st
 
 from tracker import services
+from ui import financials as fin
 from ui.chart import HEIGHT as CHART_FRAME_HEIGHT, chart_html
 from ui.tradingview import CHART_HEIGHT, FRAME_PAD, SYMBOL_INFO_HEIGHT, chart_widget_html, symbol_info_html
 
@@ -31,6 +32,18 @@ else:
         st.iframe(symbol_info_html(stock.tv_symbol), height=SYMBOL_INFO_HEIGHT + FRAME_PAD)
         st.iframe(chart_widget_html(stock.tv_symbol), height=CHART_HEIGHT + FRAME_PAD)
     st.caption(stock.industry)
+
+    f = services.get_financials(stock.ticker)
+    if f:
+        st.markdown("#### Financials")
+        st.caption(fin.as_of_text(f.metrics.as_of))
+        for row in (fin.cards(f.metrics)[:3], fin.cards(f.metrics)[3:]):
+            for col, c in zip(st.columns(3), row):
+                col.metric(c["label"], c["value"], c.get("delta"), help=c["help"])
+        fig = fin.revenue_margin_figure(f.history)
+        if fig:
+            st.markdown("#### Revenue and margin by year")
+            st.plotly_chart(fig, config={"displayModeBar": False})
 
 st.divider()
 st.caption("For information only. Not investment advice.")
