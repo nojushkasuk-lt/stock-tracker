@@ -22,6 +22,10 @@ MARKET_TICKER = "SPY"  # S&P 500 proxy for market alerts
 class PriceProvider(Protocol):
     def daily_returns(self, tickers: list[str], start: date, end: date | None = None) -> Returns: ...
 
+    def market_caps(self, tickers: list[str]) -> dict[str, float]:
+        """Current market cap in USD per ticker; tickers with no data are omitted. Only the number is stored."""
+        ...
+
 
 def get_provider(name: str | None = None) -> PriceProvider:
     name = name or config.PRICE_PROVIDER

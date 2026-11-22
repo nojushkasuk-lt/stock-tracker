@@ -15,7 +15,9 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
     text,
+    true,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -43,7 +45,8 @@ class Universe(Base):
     sic_code: Mapped[str | None] = mapped_column(Text)
     region: Mapped[str] = mapped_column(Text, default="US", server_default="US")
     market_cap_rank: Mapped[int | None] = mapped_column(Integer)
-    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 

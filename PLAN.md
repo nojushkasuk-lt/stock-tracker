@@ -102,3 +102,4 @@
 - Next: owner creates Anthropic, Brave and Google Cloud accounts and sends the Alpha Vantage email; then Day 1.
 - 2026-11-22, Claude Code: Day 1 so far: models/db/config, universe.csv (sourced, owner still to verify), universe loader, PriceProvider + yfinance_dev (prod guard), jobs/daily.py fills daily_returns (101 tickers, 5y). Owner wants the universe to update automatically; needs a market-cap source decision (see AGENTS.md rule 13).
 - Next: decide the universe-refresh source, then ui/tradingview.py and the stock page.
+- 2026-11-22, Claude Code: universe auto-refresh built (jobs/universe.py, buffer of 110, soft exits via `active`, candidates.csv ranks 101-200, tests). Open: Yahoo market caps count only the listed share class, so BX, CVNA, IBKR rank too low and would exit wrongly. Needs an owner decision (pins/overrides vs total-cap source). Not scheduled yet (Day 6); no IPO discovery yet.

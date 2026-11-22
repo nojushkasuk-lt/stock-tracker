@@ -33,3 +33,17 @@ class YFinanceDev:
             if len(s):
                 out[t] = [(i.date(), float(v)) for i, v in s.items()]
         return out
+
+    def market_caps(self, tickers: list[str]) -> dict[str, float]:
+        import yfinance as yf
+        from concurrent.futures import ThreadPoolExecutor
+
+        def one(t: str):
+            try:
+                v = yf.Ticker(t).fast_info["market_cap"]
+                return t, float(v) if v else None
+            except Exception:
+                return t, None
+
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            return {t: v for t, v in ex.map(one, tickers) if v}

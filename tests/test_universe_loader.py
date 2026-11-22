@@ -13,7 +13,7 @@ def test_load_is_idempotent_and_flags_top_20(tmp_path):
     create_tables(engine)
     with Session(engine) as s:
         assert load_universe(s) == 100
-        assert load_universe(s) == 100
+        assert load_universe(s) == 0
         s.commit()
         assert s.scalar(select(func.count()).select_from(Universe)) == 100
         assert s.scalar(select(func.count()).select_from(Universe).where(Universe.is_demo)) == 20

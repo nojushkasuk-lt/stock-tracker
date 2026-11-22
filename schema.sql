@@ -12,6 +12,7 @@ CREATE TABLE universe (
     region          TEXT NOT NULL DEFAULT 'US', -- for later: ADRs and non-US stocks
     market_cap_rank INTEGER,
     is_demo         BOOLEAN NOT NULL DEFAULT FALSE,
+    active          BOOLEAN NOT NULL DEFAULT TRUE,  -- FALSE = dropped out of the top 100: current followers keep it, nobody new can add it
     updated_at      TIMESTAMP NOT NULL
 );
 

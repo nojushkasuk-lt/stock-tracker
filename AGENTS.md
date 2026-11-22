@@ -56,9 +56,11 @@ tracker/
 jobs/
   daily.py              # daily returns, filings check, move detection, notes
   digest.py             # Monday/Thursday market summary
+  universe.py           # weekly: re-rank by market cap (entries, exits, demo top 20)
   profiles.py           # process queued profile updates
 config/
-  universe.csv          # the 100 largest US companies: ticker, cik, name, industry, rank, is_demo (hand-maintained)
+  universe.csv          # seed for the universe table: ticker, cik, name, industry, rank, is_demo (after the first load jobs/universe.py owns rank, demo and active)
+  candidates.csv        # next ~100 companies the weekly job may promote into the top 100
   outlets.yaml          # outlets users can choose from: name and domain
 docs/
   data-licensing.md     # which data source is used, what its terms allow, written permissions received
@@ -80,7 +82,7 @@ tests/
    - All live news searches stop at `MONTHLY_SEARCH_CAP` (default 900, inside Brave's monthly free credit).
    - The market note is refreshed at most every `MARKET_NOTE_MIN_INTERVAL_HOURS` (default 3).
 7. **Demo mode is read-only.** No database writes, no AI calls, no live searches, no refresh button. It shows notes the daily job already generated.
-8. **AI coverage only for stocks someone follows** plus the 20 demo stocks.
+8. **AI coverage only for stocks someone follows** plus the 20 demo stocks. A stock that drops out of the top 100 is soft-removed (`universe.active = FALSE`): current followers keep it, nobody new can add it.
 9. **EDGAR:** send a `User-Agent` with a name and contact email from config; stay under 10 requests per second.
 10. **Secrets** live in `.env` (local), `st.secrets` (Streamlit Cloud) and GitHub Actions secrets. Never commit them. Never put `ANTHROPIC_API_KEY` in a shell profile: Claude Code would then bill the API instead of the subscription.
 11. **Public text:** never reproduce article text. Show headline, outlet, link and our own note. Headlines come from live search results and are not stored (rule 13).
