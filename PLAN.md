@@ -22,7 +22,7 @@
 
 ## Day 1 — Data foundation and display
 
-- [ ] `models.py` from schema.sql; `db.py`; tables created in SQLite
+- [x] `models.py` from schema.sql; `db.py`; tables created in SQLite
 - [ ] `config/universe.csv`: the 100 largest US companies with CIK, name, industry (own labels or EDGAR SIC codes, not GICS), rank; top 20 flagged `is_demo`. I (the owner) verify the list by hand.
 - [ ] `PriceProvider` interface and `yfinance_dev.py` (blocked when `APP_ENV=prod`); `daily_returns` filled for the universe and SPY
 - [ ] `ui/tradingview.py`: chart and symbol-info widgets; stock page shows them
