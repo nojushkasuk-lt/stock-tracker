@@ -16,9 +16,9 @@
 
 - [ ] Accounts: GitHub, Anthropic Console (prepaid credit, auto top-up off), Brave Search API (card needed; keep spending cap), Google Cloud (OAuth client). No Finnhub.
 - [ ] Email Alpha Vantage (premium@alphavantage.co) asking for written permission to use their API for a non-commercial public portfolio site (public GitHub repo, 100 US stocks, daily percent changes only, charts via TradingView). Optional: the same to Tiingo sales. Save replies in `docs/data-licensing.md`.
-- [ ] Install Python 3.12, Git, VS Code, Claude Code, Codex
-- [ ] Repo with AGENTS.md, PLAN.md, schema.sql, `.gitignore` (including `.env`, `.venv`, `*.db`), `.env.example`, `requirements.txt`, `docs/data-licensing.md`
-- [ ] `app.py` shows a placeholder page with `streamlit run app.py`
+- [x] Install Python 3.12, Git, VS Code, Claude Code, Codex
+- [x] Repo with AGENTS.md, PLAN.md, schema.sql, `.gitignore` (including `.env`, `.venv`, `*.db`), `.env.example`, `requirements.txt`, `docs/data-licensing.md`
+- [x] `app.py` shows a placeholder page with `streamlit run app.py`
 
 ## Day 1 — Data foundation and display
 
@@ -96,3 +96,6 @@
 ## Session log
 
 <!-- Each session: date, tool (Claude Code / Codex), what was done, what's next. -->
+
+- 2026-11-22, Claude Code: Day 0 setup done (tools, repo pushed to GitHub, placeholder app, data-licensing doc). Accounts and the Alpha Vantage email are still open.
+- Next: owner creates Anthropic, Brave and Google Cloud accounts and sends the Alpha Vantage email; then Day 1.
