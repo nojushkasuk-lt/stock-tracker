@@ -1,0 +1,62 @@
+# Outlets users can pick for coverage links. domain matches the outlet and its subdomains.
+# paywall = true: we only ever show the headline and link, and the note says it is based on the headline.
+
+[[outlet]]
+name = "Reuters"
+domain = "reuters.com"
+paywall = false
+
+[[outlet]]
+name = "Bloomberg"
+domain = "bloomberg.com"
+paywall = true
+
+[[outlet]]
+name = "The Wall Street Journal"
+domain = "wsj.com"
+paywall = true
+
+[[outlet]]
+name = "Financial Times"
+domain = "ft.com"
+paywall = true
+
+[[outlet]]
+name = "The New York Times"
+domain = "nytimes.com"
+paywall = true
+
+[[outlet]]
+name = "CNBC"
+domain = "cnbc.com"
+paywall = false
+
+[[outlet]]
+name = "AP News"
+domain = "apnews.com"
+paywall = false
+
+[[outlet]]
+name = "MarketWatch"
+domain = "marketwatch.com"
+paywall = false
+
+[[outlet]]
+name = "Barron's"
+domain = "barrons.com"
+paywall = true
+
+[[outlet]]
+name = "Yahoo Finance"
+domain = "finance.yahoo.com"
+paywall = false
+
+[[outlet]]
+name = "Fortune"
+domain = "fortune.com"
+paywall = false
+
+[[outlet]]
+name = "Axios"
+domain = "axios.com"
+paywall = false

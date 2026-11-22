@@ -45,7 +45,8 @@ tracker/
     providers/          # one file per provider (yfinance_dev.py, alphavantage.py, ...)
     edgar.py            # EDGAR client (User-Agent, rate limit), submissions, domestic-filer check
     listings.py         # spot new exchange listings (IPOs) from the SEC ticker file
-    news.py             # Brave live search, outlet filter, transient cache; RSS fallback
+    news.py             # Brave live search, outlet filter, transient cache, monthly search cap; RSS fallback
+    filings.py          # EDGAR submissions -> new 10-Q / 10-K / 8-K rows; triggers fundamentals refresh
   analysis/
     metrics.py          # TTM, margins, growth, EPS, net debt/EBITDA from EDGAR figures (definitions in docs/metrics.md)
     moves.py            # move detection and the market -> industry -> stock ladder
@@ -66,7 +67,7 @@ config/
   candidates.csv        # next ~100 companies the weekly job may promote into the top 100
   predecessors.csv      # tickers that moved to a new SEC registrant: old CIK whose history to merge
   pins.csv              # tickers that always stay in the universe (starts empty; escape hatch for mega-IPOs or edge cases)
-  outlets.yaml          # outlets users can choose from: name and domain
+  outlets.toml          # outlets users can choose from: name, domain, paywall (TOML: read by the standard library, no extra dependency)
 docs/
   metrics.md            # how each number is computed and how it was checked
   data-licensing.md     # which data source is used, what its terms allow, written permissions received

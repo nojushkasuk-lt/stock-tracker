@@ -26,3 +26,16 @@ def test_widgets_keep_the_tradingview_link_and_valid_json(build):
     payload = re.search(r"<script[^>]*>(.*)</script>", html, re.S).group(1)
     assert json.loads(payload)["symbol"] == "NYSE:BRK.B"
 
+
+
+@pytest.mark.parametrize("build,link", [
+    ("heatmap_html", "https://www.tradingview.com/heatmap/stock/"),
+    ("calendar_html", "https://www.tradingview.com/economic-calendar/"),
+])
+def test_market_widgets_keep_their_tradingview_link(build, link):
+    import ui.tradingview as tv
+
+    html = getattr(tv, build)("dark")
+    assert link in html and "by TradingView" in html
+    payload = json.loads(re.search(r"<script[^>]*>(.*)</script>", html, re.S).group(1))
+    assert payload["colorTheme"] == "dark"

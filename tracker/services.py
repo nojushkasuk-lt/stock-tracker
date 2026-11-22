@@ -11,7 +11,9 @@ from sqlalchemy.exc import OperationalError
 from tracker.analysis.metrics import AnnualPoint, Metrics, annual_history, compute_metrics
 from tracker.data.charts import get_chart_series
 from tracker.db import session_scope
-from tracker.models import Fundamental, ListingSeen, Universe
+from tracker import config
+from tracker.data import news
+from tracker.models import Filing, Fundamental, ListingSeen, Universe
 from ui.tradingview import tv_symbol
 
 
@@ -86,3 +88,64 @@ def get_financials(ticker: str) -> Financials | None:
             return Financials(compute_metrics(rows, u.industry), annual_history(rows))
     except OperationalError:
         return None
+
+
+@dataclass(frozen=True)
+class FilingLink:
+    form: str
+    filed: str  # YYYY-MM-DD
+    url: str
+    label: str
+
+
+_FORM_LABEL = {"10-K": "Annual report", "10-Q": "Quarterly report", "8-K": "Current report"}
+
+
+def get_recent_filings(ticker: str, limit: int = 6) -> list[FilingLink]:
+    """Latest SEC filings we have detected for the stock (public domain, links to sec.gov)."""
+    try:
+        with session_scope() as s:
+            rows = s.scalars(select(Filing).where(Filing.ticker == ticker.upper())
+                             .order_by(Filing.filed_at.desc()).limit(limit))
+            out = []
+            for f in rows:
+                label = _FORM_LABEL.get(f.form, f.form)
+                if f.form == "8-K" and "2.02" in (f.items or ""):
+                    label = "Earnings release"
+                out.append(FilingLink(f.form, f.filed_at.date().isoformat(), f.url, label))
+            return out
+    except OperationalError:
+        return []
+
+
+def get_outlets() -> list[news.Outlet]:
+    return news.load_outlets()
+
+
+def coverage_enabled() -> bool:
+    """Live searches are off in demo mode (rule 7). Until sign-in exists (Day 5) they run only in local dev."""
+    return config.APP_ENV == "local" and bool(config.BRAVE_SEARCH_API_KEY)
+
+
+@dataclass(frozen=True)
+class Coverage:
+    links: list[news.NewsLink]
+    message: str | None = None  # shown instead of / above the links
+
+
+def get_coverage(ticker: str, domains: set[str] | None = None) -> Coverage:
+    """Live, outlet-filtered links for one stock. Results stay in memory; only the search count is stored."""
+    if not coverage_enabled():
+        return Coverage([], "Live coverage search is available to signed-in users.")
+    stock = get_stock(ticker)
+    if stock is None:
+        return Coverage([], "Unknown stock.")
+    try:
+        with session_scope() as s:
+            results = news.cached_search(s, news.BraveNews(), news.coverage_query(stock.name, stock.ticker))
+    except news.SearchCapReached:
+        return Coverage([], "The monthly search limit has been reached. Coverage will be back next month.")
+    except Exception:
+        return Coverage([], "News search is unavailable right now.")
+    links = news.coverage_links(results, news.load_outlets(), domains)
+    return Coverage(links, None if links else "No recent coverage from the chosen outlets.")

@@ -49,3 +49,8 @@ EDGAR_USER_AGENT_EMAIL = os.environ.get("EDGAR_USER_AGENT_EMAIL", "")
 # licensed provider is recorded in docs/data-licensing.md (AGENTS.md rule 13).
 CHART_PROVIDER = os.environ.get("CHART_PROVIDER") or ("none" if APP_ENV == "prod" else "yfinance_dev")
 CHART_CACHE_SECONDS = _int("CHART_CACHE_SECONDS", 1800)  # in-memory only, under 1 hour
+
+# Brave News Search (live queries only; results kept in memory, never stored: AGENTS.md rule 13)
+BRAVE_SEARCH_API_KEY = os.environ.get("BRAVE_SEARCH_API_KEY", "")
+NEWS_CACHE_SECONDS = _int("NEWS_CACHE_SECONDS", 1800)  # must stay under 1 hour
+COVERAGE_RESULTS = _int("COVERAGE_RESULTS", 10)

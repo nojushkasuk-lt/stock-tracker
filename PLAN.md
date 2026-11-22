@@ -45,10 +45,10 @@
 
 - [ ] `news.py`: Brave live news search with a transient cache (under 1 hour) and no storage of results
 - [ ] **Check whether Brave can restrict results to named outlets** (e.g. a `site:` operator). If not, fall back to each outlet's RSS feed matched by company name. Record the answer in `docs/data-licensing.md`.
-- [ ] `config/outlets.yaml` (Bloomberg, WSJ, NYT, FT, Reuters, CNBC, ...)
-- [ ] EDGAR submissions check → new 10-Q / 10-K / 8-K rows in `filings`
+- [x] `config/outlets.toml` (Bloomberg, WSJ, NYT, FT, Reuters, CNBC, ...)
+- [x] EDGAR submissions check → new 10-Q / 10-K / 8-K rows in `filings`
 - [ ] Stock page: "More coverage" button with live, outlet-filtered links
-- [ ] Market page: TradingView heatmap and economic calendar widgets; static Fed and Treasury links
+- [x] Market page: TradingView heatmap and economic calendar widgets; static Fed and Treasury links
 - [ ] Done when: a stock returns links from the chosen outlets only, nothing is stored, and a new filing is detected
 
 ## Day 4 — AI layer
@@ -97,6 +97,9 @@
 
 ## Later
 
+- **Live mode (owner decision 2026-11-22):** second-by-second / minute price updates, live ticker and intraday moves, fed by a personal-use source (e.g. Finnhub WebSocket or Alpaca IEX, terms checked first). Only when running locally or for the owner's own account; public visitors keep the licensed version. Good for the demo video and interviews.
+- **App structure and features the owner wants:** tabs (stocks, market, news), profile and settings, notifications, portfolio view, stock search, a market-wide news tab, ETFs. Plan these into the UI design pass.
+
 - Risk tab: VaR and beta from a price CSV the user uploads, or their own free Tiingo key (no data is redistributed)
 - Foreign companies listed in the US (ADRs such as ASML and TSMC; verify each files with the SEC), tagged by region; then home-listed European and Asian stocks (each country needs its own filing source)
 - Theme tags per stock (China exposure, oil, rates, AI) for shared notes
@@ -120,3 +123,5 @@
 - Next: owner reviews the page; then Day 2 (EDGAR fundamentals). Design pass and the licensing email come later.
 - 2026-11-22, Claude Code: Day 2 built: EDGAR companyfacts -> fundamentals (10 tags merged by concept), TTM ratios, metric cards, revenue/margin chart, predecessor mapping (XOM), 70 tests. Net debt/EBITDA available for 51 of the 85 companies where it applies; n/a shown with a reason otherwise. Checked against stockanalysis.com for AAPL, KO, PG: revenue, net margin, EPS match exactly; operating margin/EBITDA match for AAPL only (KO, PG: source adds back one-offs); net debt defined more conservatively. Details in docs/metrics.md.
 - Next: owner decides if the definitions are acceptable (closes Day 2 "done when"); then Day 3 (news links and filings).
+- 2026-11-22, Claude Code: Day 3 built: filings detection (baseline + 400-day window; earnings 8-K = item 2.02; new 10-Q/10-K refetches figures), Brave news module (in-memory cache < 1h, monthly cap in usage_log, outlet filter, nothing stored), outlets.toml, page split into tabs (Stocks: Financials / Coverage / Filings; Market: heatmap, economic calendar, official sources). Found and fixed a bug where old filings were re-queued on the second check. 89 tests.
+- Next: owner adds BRAVE_SEARCH_API_KEY to .env; then verify live search and the site: operator, and tick the remaining Day 3 boxes. Then Day 4 (AI layer, needs Anthropic credit).

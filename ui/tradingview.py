@@ -30,14 +30,14 @@ def _symbol_url(symbol: str) -> str:
     return "https://www.tradingview.com/symbols/" + symbol.replace(":", "-") + "/"
 
 
-def _widget(name: str, config: dict, link_text: str, symbol: str, height: int) -> str:
+def _widget(name: str, config: dict, link_text: str, symbol: str | None, height: int, link: str | None = None) -> str:
     # json.dumps of a dict we build ourselves; "<" is escaped so the payload can never close the script tag.
     payload = json.dumps(config).replace("<", "\\u003c")
     return f"""
 <div class="tradingview-widget-container" style="height:{height}px;width:100%">
   <div class="tradingview-widget-container__widget" style="height:{height - 22}px;width:100%"></div>
   <div class="tradingview-widget-copyright" style="font:12px sans-serif;text-align:right">
-    <a href="{escape(_symbol_url(symbol))}" rel="noopener nofollow" target="_blank">{escape(link_text)}</a>
+    <a href="{escape(link or _symbol_url(symbol))}" rel="noopener nofollow" target="_blank">{escape(link_text)}</a>
     <span> by TradingView</span>
   </div>
   <script type="text/javascript" src="{_SCRIPT.format(name=name)}" async>{payload}</script>
@@ -59,3 +59,28 @@ def symbol_info_html(symbol: str, height: int = SYMBOL_INFO_HEIGHT, theme: str =
     config = {"symbol": symbol, "width": "100%", "locale": "en", "colorTheme": theme, "isTransparent": False}
     return _widget("symbol-info", config, f"{symbol.split(':')[-1]} quote", symbol, height)
 
+
+HEATMAP_HEIGHT = 520
+CALENDAR_HEIGHT = 520
+
+
+def heatmap_html(theme: str = "light", height: int = HEATMAP_HEIGHT) -> str:
+    """S&P 500 heatmap: tiles sized by market cap, coloured by today's change, grouped by sector."""
+    config = {
+        "exchanges": [], "dataSource": "SPX500", "grouping": "sector", "blockSize": "market_cap_basic",
+        "blockColor": "change", "locale": "en", "colorTheme": theme, "hasTopBar": False,
+        "isDataSetEnabled": False, "isZoomEnabled": True, "hasSymbolTooltip": True, "isMonoSize": False,
+        "width": "100%", "height": height - 22,
+    }
+    return _widget("stock-heatmap", config, "S&P 500 heatmap", None, height,
+                   link="https://www.tradingview.com/heatmap/stock/")
+
+
+def calendar_html(theme: str = "light", height: int = CALENDAR_HEIGHT) -> str:
+    """US economic calendar (CPI, jobs, Fed decisions), medium and high importance."""
+    config = {
+        "colorTheme": theme, "isTransparent": True, "width": "100%", "height": height - 22, "locale": "en",
+        "importanceFilter": "0,1", "countryFilter": "us",
+    }
+    return _widget("events", config, "Economic calendar", None, height,
+                   link="https://www.tradingview.com/economic-calendar/")

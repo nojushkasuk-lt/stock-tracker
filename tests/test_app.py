@@ -32,3 +32,25 @@ def test_app_uses_the_custom_chart_when_points_exist_and_falls_back_otherwise(mo
     assert not at.exception
     if at.selectbox:
         assert at.subheader  # the fallback shows the company heading above the widgets
+
+
+def test_tabs_render_and_coverage_is_off_without_sign_in(monkeypatch):
+    from tracker import services
+
+    monkeypatch.setattr(services, "coverage_enabled", lambda: False)
+    at = AppTest.from_file(APP, default_timeout=30).run()
+    assert not at.exception
+    labels = [t.label for t in at.tabs]
+    assert {"Stocks", "Market"} <= set(labels)
+    if at.selectbox:  # database loaded: the stock has its own sub-tabs
+        assert {"Financials", "Coverage", "Filings"} <= set(labels)
+    assert not at.button  # no live search button in demo mode
+    assert not any("Brave" in c.value for c in at.caption)
+
+
+def test_coverage_service_refuses_in_demo_mode(monkeypatch):
+    from tracker import services
+
+    monkeypatch.setattr(services, "coverage_enabled", lambda: False)
+    cov = services.get_coverage("AAPL")
+    assert cov.links == [] and "signed-in" in cov.message
