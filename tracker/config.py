@@ -32,3 +32,5 @@ DATABASE_URL = os.environ.get("DATABASE_URL") or "sqlite:///stock_tracker.db"
 
 MONTHLY_BUDGET_USD = _float("MONTHLY_BUDGET_USD", 8.00)
 MONTHLY_SEARCH_CAP = _int("MONTHLY_SEARCH_CAP", 900)
+
+PRICE_PROVIDER = os.environ.get("PRICE_PROVIDER") or "yfinance_dev"
