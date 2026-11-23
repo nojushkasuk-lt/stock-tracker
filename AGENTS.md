@@ -40,6 +40,7 @@ tracker/
   db.py                 # engine, session
   models.py             # SQLAlchemy models (mirror schema.sql)
   services.py           # the ONLY tracker module app.py imports
+  accounts.py           # users, watchlists (max 15), outlet choices, refresh / coverage caps (rule 6)
   data/
     prices.py           # PriceProvider interface: daily returns only (see rule 13)
     charts.py           # chart data for the custom chart: in-memory cache, off in prod (see rule 13)
