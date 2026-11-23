@@ -119,3 +119,60 @@
     });
   });
 })();
+
+// Top-bar search: stocks and funds by ticker or name. "/" focuses it; arrows and Enter pick a result.
+(function () {
+  var box = document.querySelector("[data-qs]");
+  if (!box) return;
+  var input = box.querySelector("[data-qs-input]"), list = box.querySelector("[data-qs-list]");
+  var items = null, shown = [], active = -1;
+  function load() {
+    if (items) return Promise.resolve(items);
+    return fetch("/search.json", { credentials: "same-origin" }).then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (d) { items = d; return d; }, function () { items = []; return items; });
+  }
+  function score(it, q) {
+    var t = it.t.toLowerCase(), n = it.n.toLowerCase();
+    if (t === q) return 0;
+    if (t.indexOf(q) === 0) return 1;
+    if (n.indexOf(q) === 0) return 2;
+    if (n.indexOf(" " + q) !== -1) return 3;
+    if (n.indexOf(q) !== -1 || t.indexOf(q) !== -1) return 4;
+    return -1;
+  }
+  function render() {
+    var q = input.value.trim().toLowerCase();
+    list.textContent = "";
+    if (!q) { list.hidden = true; input.setAttribute("aria-expanded", "false"); return; }
+    shown = items.map(function (it) { return [score(it, q), it]; }).filter(function (p) { return p[0] >= 0; })
+      .sort(function (a, b) { return a[0] - b[0] || a[1].t.localeCompare(b[1].t); }).slice(0, 8).map(function (p) { return p[1]; });
+    active = shown.length ? 0 : -1;
+    if (!shown.length) {
+      var li = document.createElement("li"); li.className = "qs-empty"; li.textContent = "No stock or fund matches \u201c" + input.value.trim() + "\u201d";
+      list.appendChild(li);
+    }
+    shown.forEach(function (it, i) {
+      var li = document.createElement("li"), a = document.createElement("a");
+      a.href = it.u; a.setAttribute("role", "option"); a.setAttribute("aria-selected", i === active ? "true" : "false");
+      var tk = document.createElement("span"); tk.className = "mono tk"; tk.textContent = it.t;
+      var nm = document.createElement("span"); nm.textContent = it.n;
+      var k = document.createElement("span"); k.className = "k"; k.textContent = it.k;
+      a.append(tk, nm, k); li.appendChild(a); list.appendChild(li);
+    });
+    list.hidden = false; input.setAttribute("aria-expanded", "true");
+  }
+  function mark() { list.querySelectorAll("a").forEach(function (a, i) { a.setAttribute("aria-selected", i === active ? "true" : "false"); }); }
+  input.addEventListener("focus", load);
+  input.addEventListener("input", function () { load().then(render); });
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowDown" && shown.length) { active = (active + 1) % shown.length; mark(); e.preventDefault(); }
+    else if (e.key === "ArrowUp" && shown.length) { active = (active - 1 + shown.length) % shown.length; mark(); e.preventDefault(); }
+    else if (e.key === "Enter" && active >= 0) { window.location.href = shown[active].u; e.preventDefault(); }
+    else if (e.key === "Escape") { input.value = ""; render(); input.blur(); }
+  });
+  document.addEventListener("click", function (e) { if (!box.contains(e.target)) { list.hidden = true; input.setAttribute("aria-expanded", "false"); } });
+  document.addEventListener("keydown", function (e) {
+    var tag = (document.activeElement && document.activeElement.tagName) || "";
+    if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(tag)) { input.focus(); e.preventDefault(); }
+  });
+})();

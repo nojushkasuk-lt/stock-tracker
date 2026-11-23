@@ -97,6 +97,18 @@ def portfolio(request: Request):
                 max_stocks=services.watchlist_max(), nav="portfolio")
 
 
+@app.get("/search.json")
+def search_index(request: Request):
+    """Everything the viewer can open, for the top-bar search (demo: the demo stocks only)."""
+    from fastapi.responses import JSONResponse
+
+    me = require_viewer(request)
+    stocks = services.get_demo_stocks() if me.demo else services.get_followable_stocks(me.email)
+    items = [{"t": s.ticker, "n": s.name, "k": s.industry, "u": f"/stock/{s.ticker}"} for s in stocks]
+    items += [{"t": f.ticker, "n": f.name, "k": f.group, "u": f"/etf/{f.ticker}"} for f in services.get_market_list()]
+    return JSONResponse(items, headers={"Cache-Control": "private, max-age=300"})
+
+
 # ---- stock page -----------------------------------------------------------------------------------
 
 def _stock_or_404(me: views.Viewer, ticker: str):

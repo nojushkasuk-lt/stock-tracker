@@ -258,3 +258,18 @@ def test_shared_links_admin_is_owner_only(client, monkeypatch):
     sign_in(client, "owner@example.com")
     r = client.post("/admin/links", data={"label": "Acme"})
     assert r.status_code == 200 and "/s/" in r.text and "Acme" in r.text
+
+
+def test_search_index_lists_what_the_viewer_can_open(client):
+    client.get("/demo")
+    demo = {i["t"] for i in client.get("/search.json").json()}
+    assert {"AAPL", "MSFT", "VOO", "GLD"} <= demo and "ZZZ" not in demo   # demo: demo stocks only
+    client.get("/logout")
+    sign_in(client)
+    assert "ZZZ" in {i["t"] for i in client.get("/search.json").json()}
+
+
+def test_hidden_attribute_always_hides():
+    from pathlib import Path
+    css = (Path(__file__).resolve().parents[1] / "web/static/style.css").read_text()
+    assert "[hidden] { display: none !important; }" in css

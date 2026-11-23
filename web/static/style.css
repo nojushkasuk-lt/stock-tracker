@@ -24,6 +24,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }  /* component display rules must never beat the hidden attribute */
 html { background: var(--bg); }
 body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
 a { color: var(--accent); text-decoration: none; }
@@ -313,3 +314,17 @@ input[type="date"], select, .input { background: var(--card); border: 1px solid 
 .copy-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .copy-row input[readonly] { flex: 1 1 320px; min-height: 44px; background: var(--bar); border: 1px solid var(--line-2); border-radius: 9px; padding: 0 12px; color: var(--text); }
 .closed { min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
+
+/* ---- quick search (top bar) ---- */
+.qs { position: relative; flex: 0 1 300px; }
+.qs .search { min-height: 38px; background: var(--card); }
+.qs .search input { min-height: 36px; font-size: 14px; }
+.qs kbd { font-family: var(--mono); font-size: 11px; color: var(--faint); border: 1px solid var(--line-2); border-radius: 5px; padding: 0 5px; }
+.qs-list { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; right: 0; min-width: 280px; max-height: 360px; overflow-y: auto; margin: 0; padding: 6px; list-style: none;
+  background: var(--raised); border: 1px solid var(--line-3); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.4); }
+.qs-list a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: var(--text); font-size: 14px; }
+.qs-list a:hover, .qs-list a[aria-selected="true"] { background: var(--accent-bg); }
+.qs-list .tk { min-width: 52px; }
+.qs-list .k { margin-left: auto; font-size: 11.5px; color: var(--faint); }
+.qs-empty { padding: 10px; color: var(--muted); font-size: 13px; }
+@media (max-width: 760px) { .qs { flex: 1 1 100%; order: 5; } }

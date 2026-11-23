@@ -26,6 +26,15 @@
     </nav>
     {% endif %}
     <div class="spacer"></div>
+    {% if not bare %}
+    <div class="qs" data-qs>
+      <label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <span class="sr-only">Search stocks and funds</span>
+        <input type="search" placeholder="Search stocks and funds" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="qs-list" data-qs-input>
+        <kbd aria-hidden="true">/</kbd></label>
+      <ul class="qs-list" id="qs-list" role="listbox" hidden data-qs-list></ul>
+    </div>
+    {% endif %}
     <div class="who">
       {% if me.demo %}
         <span class="pill-demo">Demo · read-only</span>
