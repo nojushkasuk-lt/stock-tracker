@@ -41,7 +41,7 @@ def generate[T: BaseModel](
     session: Session, *, kind: str, scope_key: str, job: str, task: llm.Task, system: str, user: str,
     output_model: type[T], sources: list[Source], validate: Callable[[T], tuple[T | None, Checked]],
     confidence: Callable[[T], str | None] = lambda _: None, valid_until: datetime | None = None,
-    max_tokens: int = 4000,
+    max_tokens: int = 4000, extra: dict | None = None,
     client=None, now: datetime | None = None,
 ) -> AiOutput | None:
     """Cached result for these exact inputs, or a new validated one. None when validation rejects the output
@@ -57,6 +57,7 @@ def generate[T: BaseModel](
     if out is None:
         return None
     content = out.model_dump()
+    content.update(extra or {})  # our own facts for display (date, move sizes); never model output
     content["dropped"] = [{"where": d.where, "text": d.text, "reason": d.reason} for d in checked.dropped]
     row = AiOutput(kind=kind, scope_key=scope_key, model=result.model, input_hash=h, content=content,
                    sources=checked.stored_sources(sources), confidence=confidence(out),

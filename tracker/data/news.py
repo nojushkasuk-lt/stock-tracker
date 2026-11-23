@@ -162,6 +162,30 @@ def coverage_query(company: str, ticker: str, domains: list[str] | set[str] | No
     return f"{base} ({' OR '.join('site:' + d for d in ds)})"
 
 
+def _sites(domains: list[str] | set[str] | None) -> str:
+    ds = sorted(domains or [o.domain for o in load_outlets()])
+    return f"({' OR '.join('site:' + d for d in ds)})"
+
+
+def industry_query(company_names: list[str], domains: list[str] | set[str] | None = None) -> str:
+    """Shared industry note: the names of the industry's biggest movers that day ("Nvidia" OR "Micron" ...).
+    Our industry labels are our own and search badly on their own ("Medical Devices & Tools" found nothing)."""
+    names = " OR ".join(f'"{n}"' for n in company_names[:3])
+    return f"({names}) shares {_sites(domains)}"
+
+
+def market_query(domains: list[str] | set[str] | None = None) -> str:
+    return f'("stock market" OR "S&P 500") stocks today {_sites(domains)}'
+
+
+def day_window(day) -> str:
+    """Brave freshness range for a move: the day before through the move date. It ends on the move date so
+    news about later events (results after that day's close, the next day's trading) is not used."""
+    from datetime import timedelta
+
+    return f"{(day - timedelta(days=1)).isoformat()}to{day.isoformat()}"
+
+
 def coverage_links(results: list[dict], outlets: list[Outlet], domains: set[str] | None = None,
                    limit: int | None = None, max_per_outlet: int | None = None) -> list[NewsLink]:
     """Filter to the chosen outlets (all configured outlets when none chosen), newest first, one link per URL."""
