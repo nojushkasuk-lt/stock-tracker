@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from tracker import config
-from tracker.models import Universe
+from tracker.models import Universe, UserWatchlist
 
 CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "config"
 CSV_PATH = CONFIG_DIR / "universe.csv"
@@ -156,3 +156,10 @@ def refresh_universe(
     for k in ("entered", "exited", "demo_in", "demo_out", "unclassified"):
         getattr(res, k).sort()
     return res
+
+
+def covered_tickers(session: Session) -> set[str]:
+    """Stocks that get AI coverage: followed by at least one user, or in the demo (rule 8)."""
+    followed = set(session.scalars(select(UserWatchlist.ticker).distinct()))
+    demo = set(session.scalars(select(Universe.ticker).where(Universe.is_demo)))
+    return followed | demo

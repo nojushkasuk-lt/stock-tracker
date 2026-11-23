@@ -17,7 +17,8 @@ from tracker.ai import llm, outputs, prompts
 from tracker.analysis.metrics import Metrics, compute_metrics
 from tracker.data.filing_text import FilingFetcher, Section
 from tracker.data.filings import is_profile_trigger
-from tracker.models import AiOutput, Filing, Fundamental, Universe, UserWatchlist
+from tracker.data.universe import covered_tickers
+from tracker.models import AiOutput, Filing, Fundamental, Universe
 from tracker.ai.citations import Checked, Claim, Source, Validator, render_sources
 
 PROFILE_MAX_TOKENS = 12_000  # includes adaptive thinking; a profile itself is about 1k tokens
@@ -122,13 +123,6 @@ def write_profile(session: Session, f: Filing, fetcher: FilingFetcher, *, client
         session, kind="profile", scope_key=f.ticker, job="profiles", task="profile", system=system_prompt(),
         user=user_prompt(u.name, u.ticker, filing_label(f), sources), output_model=ProfileOut, sources=sources,
         validate=lambda out: validate(out, sources), max_tokens=PROFILE_MAX_TOKENS, client=client, now=now)
-
-
-def covered_tickers(session: Session) -> set[str]:
-    """Stocks that get AI coverage: followed by at least one user, or in the demo (rule 8)."""
-    followed = set(session.scalars(select(UserWatchlist.ticker).distinct()))
-    demo = set(session.scalars(select(Universe.ticker).where(Universe.is_demo)))
-    return followed | demo
 
 
 def _now() -> datetime:

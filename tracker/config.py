@@ -63,3 +63,14 @@ EFFORT_ROUTINE = os.environ.get("EFFORT_ROUTINE") or "medium"
 EFFORT_PROFILE = os.environ.get("EFFORT_PROFILE") or "medium"
 # Haiku's price rises fivefold above 100k prompt tokens (rule 5); we refuse prompts above this.
 MAX_PROMPT_TOKENS = _int("MAX_PROMPT_TOKENS", 100_000)
+
+# Moves and the attribution ladder (AGENTS.md rule 14)
+MARKET_ALERT_PCT = _float("MARKET_ALERT_PCT", 2.0)
+MARKET_MAJOR_PCT = _float("MARKET_MAJOR_PCT", 3.0)
+MOVE_THRESHOLD_PCT = _float("MOVE_THRESHOLD_PCT", 5.0)
+DEMO_MOVE_THRESHOLD_PCT = _float("DEMO_MOVE_THRESHOLD_PCT", 3.0)
+RESIDUAL_PCT = _float("RESIDUAL_PCT", 3.0)
+INDUSTRY_MIN_PEERS = _int("INDUSTRY_MIN_PEERS", 3)
+INDUSTRY_MOVE_PCT = _float("INDUSTRY_MOVE_PCT", 3.0)
+RECHECK_AFTER_HOURS = _float("RECHECK_AFTER_HOURS", 8.0)  # rule 14: recheck unexplained moves after 6-12 hours
+MARKET_NOTE_MIN_INTERVAL_HOURS = _float("MARKET_NOTE_MIN_INTERVAL_HOURS", 3.0)
