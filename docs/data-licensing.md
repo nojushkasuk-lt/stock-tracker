@@ -11,8 +11,36 @@ daily percent changes (stocks and SPY), stored in `daily_returns`.
 | Provider | Terms summary | Permission status |
 |---|---|---|
 | yfinance | Personal use only. Local development only; blocked when `APP_ENV=prod`. | n/a (dev only) |
-| Alpha Vantage | Free key is personal use. Written permission requested for a non-commercial public portfolio site. | Not yet asked |
-| Tiingo (optional) | Asked for the same. | Not yet asked |
+| Alpha Vantage | Free key is personal use. Written permission requested for a non-commercial public portfolio site. | Asked 2026-11-23 (see below) |
+| Tiingo | Free plan is internal use only. Redistribution licence requested. | Asked 2026-11-23 (see below) |
+
+### What the terms say (read 2026-11-23)
+
+**Alpha Vantage** (Terms of Service PDF; support and premium pages)
+- Licence is "for personal, non-commercial use, unless you and Alpha Vantage have agreed otherwise in writing" (ToS 2a).
+- "Commercial use" includes any purpose "that goes beyond investment analysis, research, testing, monitoring, and any
+  other activities that are private and individual in nature" (2a.i). Showing data to other people (employers) is not
+  private and individual, so we need their written agreement. Contact for this: premium@alphavantage.co (ToS 2).
+- Free key: 25 requests per day, "and unlimited API requests for verified open-source or educational projects"
+  (support page). Our repo is public, so we ask to be verified as open source. 25/day is not enough for ~133 symbols.
+- Cheapest premium plan $49.99/month (75 requests/minute); the pages do not say premium plans allow display to others.
+- No attribution requirement stated; no wording on derived data (percent changes).
+
+**Tiingo** (Terms of Use, effective 2022-01-16, last updated 2026-11-05; pricing, overview, developer pages)
+- Starter (free) and Power ($30/month) are "Internal Use Only": "you may only use the data for your own personal use and
+  you may not display or share the data with another person or organization."
+- Starter may not store Tiingo data or Derived Products persistently (ToS 1.6a): our `daily_returns` table would break this.
+- Derived Products (ToS 1.6c): percentage returns/changes may be allowed when "their scope, granularity, and
+  presentation do not permit the underlying Tiingo Data to be reconstructed"; series rebased or indexed to 100 are not.
+  A full daily return series can be rebased, so our use needs their approval either way.
+- Websites and apps that show data need a redistribution licence ("flat rate", price not listed): email sales with the
+  use case, website link, and whether a start-up (<5 employees) or enterprise. Attribution required: "Tiingo must be
+  clearly attributed as the data source."
+
+**What we show in prod** (to describe accurately in the requests): daily percent changes of ~133 symbols (100 stocks,
+32 index funds/ETFs, SPY), returns over fixed ranges (1D to 5Y), volatility, beta, largest drop, best and worst day,
+and alerts on big moves. No prices, OHLC, or charts from the provider (prices and charts are TradingView widgets).
+We store only daily percent changes. Access is private (shared links), noindex, no ads, no payments.
 
 ### Custom chart (dev only for now)
 
