@@ -72,11 +72,14 @@
       if (none) none.hidden = shown > 0;
     };
     [q, sector, region, onlyMine].forEach(function (el) { if (el) el.addEventListener(el.tagName === "INPUT" && el.type === "search" ? "input" : "change", apply); });
-    document.querySelectorAll("[data-unpick]").forEach(function (b) {
-      b.addEventListener("click", function () {
-        var box = pick.querySelector('input[value="' + b.dataset.unpick + '"]');
-        if (box) { box.checked = false; box.dispatchEvent(new Event("change", { bubbles: true })); }
-        var row = b.closest("[data-sel]"); if (row) row.remove();
+    document.querySelectorAll("[data-unpick]").forEach(function (button) {
+      var box = pick.querySelector('input[value="' + button.dataset.unpick + '"]');
+      if (!box) return;
+      var row = button.closest("[data-sel]");
+      box.addEventListener("change", function () { row.hidden = !box.checked; });
+      button.addEventListener("click", function () {
+        box.checked = false;
+        box.dispatchEvent(new Event("change", { bubbles: true }));
       });
     });
     var count = document.querySelector("[data-count]"), short = document.querySelector("[data-count-short]");
@@ -90,7 +93,22 @@
       boxes.forEach(function (b) { b.disabled = !b.checked && n >= max; });
       if (need) need.disabled = n < min;
     };
-    pick.addEventListener("change", update); update();
+    pick.addEventListener("change", function () { update(); apply(); }); update();
+  }
+
+  var form = document.querySelector("form.settings");
+  var savebar = document.querySelector("[data-settings-save]");
+  function settingsValues() {
+    return new URLSearchParams(new FormData(form)).toString();
+  }
+  var savedValues = savebar ? settingsValues() : null;
+  function updateSavebar() {
+    if (savebar) savebar.hidden = settingsValues() === savedValues;
+  }
+  if (savebar) {
+    form.addEventListener("input", updateSavebar);
+    form.addEventListener("change", updateSavebar);
+    window.addEventListener("pageshow", updateSavebar);
   }
 
   document.querySelectorAll("[data-outlets]").forEach(function (b) {
@@ -102,12 +120,9 @@
       });
       var c = document.querySelector("[data-outlet-count]"), n = document.querySelectorAll('input[name="outlet"]:checked').length;
       if (c) c.textContent = (n || "All") + " selected";
-      var d = document.querySelector("[data-dirty]"); if (d) d.hidden = false;
+      updateSavebar();
     });
   });
-
-  var form = document.querySelector("form.settings"), dirty = document.querySelector("[data-dirty]");
-  if (form && dirty) form.addEventListener("change", function () { dirty.hidden = false; });
 
   document.querySelectorAll("[data-copy]").forEach(function (b) {
     b.addEventListener("click", function () {

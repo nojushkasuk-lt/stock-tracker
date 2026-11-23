@@ -183,3 +183,6 @@
 
 - [x] Audit the chart markup across all active stocks and funds. Add alternate-market embeds where available and direct primary-market chart links on every page.
 - Codex: verified 189 stock embeds, 11 primary-market chart links, and all 32 fund embeds locally. Live rendering still needs a Cloud Run deployment check.
+
+- [x] Put saved watchlist stocks first in Settings and show Save changes only while the form differs from the saved values.
+- Codex: verified saved-stock order, post-save confirmation, and undo behavior. Cloud Run deployment remains pending.

@@ -398,3 +398,18 @@ def test_every_fund_has_an_exchange_qualified_chart(client, monkeypatch):
         assert ":" in fund.tv_symbol
         assert f'"symbol": "{fund.tv_symbol}"' in page.text
         assert "tradingview.com/chart/" in page.text
+
+
+def test_settings_puts_saved_stocks_first_after_save(client):
+    sign_in(client)
+    initial = client.get("/settings").text
+    assert initial.index('value="AAPL"') < initial.index('value="ZZZ"')
+    assert "data-settings-save hidden" in initial
+
+    response = client.post("/settings", data={"ticker": ["MSFT", "ZZZ"]})
+    assert response.status_code == 200
+    saved = response.text
+    assert "Settings saved." in saved
+    assert saved.index('value="MSFT" checked') < saved.index('value="AAPL"')
+    assert saved.index('value="ZZZ" checked') < saved.index('value="AAPL"')
+    assert "data-settings-save hidden" in saved

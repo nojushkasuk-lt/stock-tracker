@@ -234,8 +234,9 @@ def _settings_ctx(me: views.Viewer) -> dict:
     from tracker.accounts import MARKETS_MAX, THRESHOLDS
     from tracker.data import markets
 
-    stocks = services.get_followable_stocks(me.email)
-    mine = {s.ticker for s in services.get_watchlist(me.email)}
+    followed = services.get_watchlist(me.email)
+    mine = {stock.ticker for stock in followed}
+    stocks = followed + [stock for stock in services.get_followable_stocks(me.email) if stock.ticker not in mine]
     outlets = services.get_outlets()
     return dict(stocks=stocks, mine=mine, starts=services.get_start_dates(me.email), today=date.today().isoformat(),
                 industries=sorted({s.industry for s in stocks}), regions=sorted({s.region for s in stocks}),

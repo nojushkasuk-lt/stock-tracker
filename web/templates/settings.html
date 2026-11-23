@@ -17,7 +17,7 @@
 
     <section class="card" id="stocks">
       <div class="row-between"><h2 class="h2">Stocks</h2><span class="note-small" data-count data-max="{{ max_stocks }}">{{ mine|length }} of {{ max_stocks }} selected</span></div>
-      <p class="muted sect-intro">Follow up to {{ max_stocks }} of the 100 largest US companies. Profiles, move notes and alerts cover the stocks you follow.</p>
+      <p class="muted sect-intro">Follow up to {{ max_stocks }} US, European and Asian stocks. Your saved stocks appear first.</p>
 
       <div class="selected" data-selected aria-live="polite">
         {% for st in stocks if st.ticker in mine %}
@@ -51,7 +51,7 @@
         {% endfor %}
       </div>
       <p class="note-small" data-none hidden style="margin: 12px 0 0">No stocks match these filters.</p>
-      <p class="note-small" style="margin: 12px 0 0">Region uses each company's home country. European and Asian companies are planned.</p>
+      <p class="note-small" style="margin: 12px 0 0">Region uses each company's home country.</p>
     </section>
 
     <section class="card" id="markets">
@@ -130,6 +130,10 @@
       </div>
     </section>
   </div>
-  <div class="savebar"><span class="note-small" data-dirty hidden>Unsaved changes</span><button class="btn primary" type="submit">Save changes</button></div>
+  <div class="savebar" data-settings-save hidden>
+    <span class="note-small">Unsaved changes</span>
+    <button class="btn primary" type="submit">Save changes</button>
+  </div>
+  <noscript><div class="savebar"><button class="btn primary" type="submit">Save changes</button></div></noscript>
 </form>
 {% endblock %}
