@@ -51,6 +51,9 @@ EDGAR_USER_AGENT_EMAIL = os.environ.get("EDGAR_USER_AGENT_EMAIL", "")
 
 # Custom chart data. Local dev defaults to yfinance; prod defaults to "none" (TradingView widgets) until a
 # licensed provider is recorded in docs/data-licensing.md (AGENTS.md rule 13).
+# Who sees figures made from the price provider (daily % changes, returns, risk, move notes, alerts):
+# "owner" until docs/data-licensing.md records permission to show them to others (rule 13), then "all".
+PRICE_DATA_DISPLAY = (os.environ.get("PRICE_DATA_DISPLAY") or ("owner" if APP_ENV == "prod" else "all")).lower()
 CHART_PROVIDER = os.environ.get("CHART_PROVIDER") or ("none" if APP_ENV == "prod" else "yfinance_dev")
 CHART_CACHE_SECONDS = _int("CHART_CACHE_SECONDS", 1800)  # in-memory only, under 1 hour
 

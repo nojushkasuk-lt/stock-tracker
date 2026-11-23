@@ -5,7 +5,7 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from tracker import accounts
+from tracker import accounts, config
 from tracker.models import AiOutput, DailyReturn, MarketDay, Move, UserWatchlist
 
 
@@ -18,6 +18,8 @@ def notify_followers(s: Session, day: date | None = None) -> int:
         return 0
     day = md.date
     users = sorted(set(s.scalars(select(UserWatchlist.email))))
+    if config.PRICE_DATA_DISPLAY != "all":  # alerts are provider moves: owner only until licensed (rule 13)
+        users = [u for u in users if config.OWNER_EMAIL and u.lower() == config.OWNER_EMAIL.lower()]
     for email in users:
         p = accounts.prefs(s, email)
         if p.market_alerts and md.level != "none":

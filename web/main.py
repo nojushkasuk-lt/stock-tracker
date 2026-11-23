@@ -39,6 +39,7 @@ auth.register(app)
 
 def viewer(request: Request) -> views.Viewer:
     s = request.session
+    services.set_viewer(s.get("email"))  # price-provider figures are shown to the owner only until licensed
     return views.Viewer(email=s.get("email"), name=s.get("name"), demo=bool(s.get("demo")) and not s.get("email"))
 
 

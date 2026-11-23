@@ -3,6 +3,7 @@
 Demo mode is read-only (rule 7): everything in this file reads, nothing writes.
 """
 
+from contextvars import ContextVar
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -42,6 +43,25 @@ class Stock:
 REGIONS = {"United States": "North America", "Canada": "North America", "Mexico": "North America",
            "Japan": "Asia", "South Korea": "Asia", "Taiwan": "Asia", "China": "Asia", "India": "Asia", "Hong Kong": "Asia",
            "Singapore": "Asia", "Australia": "Asia-Pacific"}
+
+
+# ---- who may see price-provider figures (rule 13) ----------------------------------------------------------
+
+_viewer_email: ContextVar[str | None] = ContextVar("viewer_email", default=None)
+
+
+def set_viewer(email: str | None) -> None:
+    """The web layer names the signed-in viewer once per request (each request has its own context)."""
+    _viewer_email.set(email)
+
+
+def price_data_visible(email: str | None = None) -> bool:
+    """Daily % changes and everything made from them are provider data. Until a provider allows showing them to
+    others (config.PRICE_DATA_DISPLAY = "all"), only the owner sees them: that is personal use."""
+    if config.PRICE_DATA_DISPLAY == "all":
+        return True
+    e = (email if email is not None else _viewer_email.get()) or ""
+    return bool(config.OWNER_EMAIL) and e.strip().lower() == config.OWNER_EMAIL.strip().lower()
 
 
 def region_of(country: str | None) -> str:
@@ -380,6 +400,9 @@ def get_move_note(ticker: str, email: str | None = None) -> MoveNote | None:
     a newer refresh. None when there is nothing yet. Read-only, also in demo mode."""
     from tracker.models import Move
 
+    if not price_data_visible(email):
+        return None  # notes explain provider move sizes
+
     try:
         with session_scope() as s:
             ticker = ticker.upper()
@@ -408,6 +431,9 @@ class MarketStatus:
 def get_market_status(email: str | None = None) -> MarketStatus | None:
     """The latest trading day for the S&P 500 and, on alert days, the shared market note."""
     from tracker.models import MarketDay
+
+    if not price_data_visible(email):
+        return None
 
     try:
         with session_scope() as s:
@@ -457,6 +483,9 @@ _RANGE_CAPTIONS = {"1W": "past week", "1M": "past month", "6M": "past 6 months",
 def _returns(s, ticker: str, limit: int = 1300):
     from tracker.models import DailyReturn
 
+    if not price_data_visible():
+        return []
+
     rows = s.execute(select(DailyReturn.date, DailyReturn.return_pct).where(DailyReturn.ticker == ticker)
                      .order_by(DailyReturn.date.desc()).limit(limit)).all()
     return [(d, float(r)) for d, r in reversed(rows)]
@@ -494,7 +523,7 @@ def get_last_moves(tickers: list[str]) -> dict[str, tuple[str, float]]:
 
     from tracker.models import DailyReturn
 
-    if not tickers:
+    if not tickers or not price_data_visible():
         return {}
     try:
         with session_scope() as s:
@@ -798,12 +827,16 @@ class Alert:
 
 
 def get_alerts(email: str, limit: int = 30) -> list[Alert]:
+    if not price_data_visible(email):
+        return []  # every alert is a provider move
     with session_scope() as s:
         return [Alert(n.kind, n.title, n.body, n.url, f"{n.created_at:%Y-%m-%d %H:%M}", n.read_at is None)
                 for n in accounts.notifications(s, email, limit)]
 
 
 def unread_alerts(email: str) -> int:
+    if not price_data_visible(email):
+        return 0
     try:
         with session_scope() as s:
             return accounts.unread_count(s, email)
@@ -856,6 +889,10 @@ class NewsPage:
     outlets: str
 
 
+class _Hidden(Exception):
+    pass
+
+
 def get_news_page(email: str | None, live: bool = False, days: int = 30) -> NewsPage:
     """Stored notes (ours) for the market and the viewer's stocks; live headlines only when asked for, within
     the user's daily coverage cap (results are kept in memory only, rule 13)."""
@@ -870,6 +907,8 @@ def get_news_page(email: str | None, live: bool = False, days: int = 30) -> News
     try:
         with session_scope() as s:
             domains = accounts.outlets(s, email) if email else set()
+            if not price_data_visible(email):
+                raise _Hidden
             since = _date.today() - timedelta(days=days)
             rows = s.scalars(select(Move).where(Move.ticker.in_(list(by)), Move.note_id.is_not(None), Move.date >= since)
                              .order_by(Move.date.desc(), Move.ticker)).all()
@@ -877,7 +916,7 @@ def get_news_page(email: str | None, live: bool = False, days: int = 30) -> News
                 note = s.get(AiOutput, m.note_id)
                 if note is not None:
                     moves.append((by[m.ticker], _note_view(note, float(m.return_pct), domains or None)))
-    except OperationalError:
+    except (OperationalError, _Hidden):
         pass
     coverage = None
     if live:

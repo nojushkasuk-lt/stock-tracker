@@ -23,10 +23,18 @@ gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregi
 SA="$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')-compute@developer.gserviceaccount.com"
 # Newer projects build with the default compute account, which needs the Cloud Run builder role.
 gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$SA" --role=roles/run.builder --condition=None --quiet >/dev/null
-put_secret() {  # name, value from stdin
-  gcloud secrets describe "$1" >/dev/null 2>&1 || gcloud secrets create "$1" --replication-policy=automatic --quiet >/dev/null
-  gcloud secrets versions add "$1" --data-file=- --quiet >/dev/null
-  gcloud secrets add-iam-policy-binding "$1" --member="serviceAccount:$SA" --role=roles/secretmanager.secretAccessor --quiet >/dev/null
+put_secret() {  # name, value from stdin. Adds a version only when the value changed, and destroys the old one
+  # (Secret Manager is free up to 6 active versions).
+  local new; new=$(cat)
+  if ! gcloud secrets describe "$1" >/dev/null 2>&1; then
+    gcloud secrets create "$1" --replication-policy=automatic --quiet >/dev/null
+    gcloud secrets add-iam-policy-binding "$1" --member="serviceAccount:$SA" --role=roles/secretmanager.secretAccessor --quiet >/dev/null
+  elif [ "$(gcloud secrets versions access latest --secret "$1" 2>/dev/null)" = "$new" ]; then
+    echo "secret $1: unchanged"; return
+  fi
+  local old; old=$(gcloud secrets versions list "$1" --filter=state=enabled --format='value(name)' 2>/dev/null)
+  printf '%s' "$new" | gcloud secrets versions add "$1" --data-file=- --quiet >/dev/null
+  for v in $old; do gcloud secrets versions destroy "$v" --secret "$1" --quiet >/dev/null 2>&1; done
   echo "secret $1: updated"
 }
 [ -n "$(envval NEON_DATABASE_URL)" ] || { echo "add NEON_DATABASE_URL=... to .env first"; exit 1; }
@@ -47,6 +55,10 @@ VARS="^|^APP_ENV=prod|ACCESS_MODE=link|GOOGLE_CLIENT_ID=$(envval GOOGLE_CLIENT_I
 gcloud run deploy $SERVICE --source . --region $REGION --allow-unauthenticated \
   --min-instances 0 --max-instances 2 --memory 512Mi --cpu 1 --concurrency 40 --timeout 60 \
   --set-env-vars "$VARS" --set-secrets "$SECRETS" --quiet
+
+# Keep only the two newest builds (Artifact Registry is free up to 0.5 GB).
+gcloud artifacts repositories set-cleanup-policies cloud-run-source-deploy --location "$REGION" \
+  --policy deploy/cleanup-policy.json --no-dry-run --quiet >/dev/null 2>&1 || true
 
 echo
 echo "Live at: $URL   (private: only you and holders of a shared link get in)"

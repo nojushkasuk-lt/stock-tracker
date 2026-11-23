@@ -11,4 +11,4 @@ tests/
 docs/
 jobs/
 app.py
-deploy/
+deploy/*.sh

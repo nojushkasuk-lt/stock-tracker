@@ -273,3 +273,40 @@ def test_hidden_attribute_always_hides():
     from pathlib import Path
     css = (Path(__file__).resolve().parents[1] / "web/static/style.css").read_text()
     assert "[hidden] { display: none !important; }" in css
+
+
+def test_until_licensed_only_the_owner_sees_price_provider_figures(client, monkeypatch):
+    monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "owner")
+    monkeypatch.setattr(config, "OWNER_EMAIL", "owner@example.com")
+    monkeypatch.setattr(services, "get_price_chart", lambda t: None)  # prod: TradingView chart
+    sign_in(client, "guest@example.com")
+    for url in ("/portfolio", "/stock/AAPL", "/market", "/etf/SPY", "/news", "/alerts"):
+        r = client.get(url)
+        assert r.status_code == 200, url
+    page = client.get("/stock/AAPL").text
+    assert "Volatility" not in page and "Beta vs S&amp;P 500" not in page  # risk comes from daily changes
+    assert "Apple &lt;b&gt;makes&lt;/b&gt; phones." in page                 # profiles and SEC figures stay
+    assert not services.price_data_visible("guest@example.com") and services.price_data_visible("Owner@Example.com")
+    client.get("/logout")
+    sign_in(client, "owner@example.com")
+    assert "Volatility" in client.get("/stock/AAPL").text
+
+
+def test_alerts_go_to_the_owner_only_until_licensed(tmp_path, monkeypatch):
+    from tracker import accounts
+    from tracker.alerts import notify_followers
+    from tracker.models import MarketDay
+    monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "owner")
+    monkeypatch.setattr(config, "OWNER_EMAIL", "owner@example.com")
+    engine = make_engine(f"sqlite:///{tmp_path / 'a.db'}")
+    create_tables(engine)
+    with Session(engine) as s:
+        s.add(Universe(ticker="AAPL", cik="1", name="Apple", industry="X", active=True, updated_at=datetime(2026, 1, 1)))
+        s.add(MarketDay(date=D0, index_return_pct=-3.2, level="major"))
+        s.add(DailyReturn(ticker="AAPL", date=D0, return_pct=-8.0))
+        for e in ("owner@example.com", "guest@example.com"):
+            accounts.ensure_user(s, e)
+            accounts.set_watchlist(s, e, ["AAPL"])
+        s.flush()
+        notify_followers(s, D0)
+        assert accounts.unread_count(s, "owner@example.com") == 2 and accounts.unread_count(s, "guest@example.com") == 0
