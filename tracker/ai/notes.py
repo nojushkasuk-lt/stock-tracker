@@ -13,7 +13,7 @@ from typing import Literal
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from tracker import config
@@ -184,7 +184,7 @@ def explain_day(session: Session, d, brave, fetcher, *, client=None, now: dateti
     MARKET_NOTE_MIN_INTERVAL_HOURS), one note per industry, one per stock. Each needs one search. Moves with
     no catalyst are rechecked once after RECHECK_AFTER_HOURS (only_pending=True: rechecks only).
     """
-    now = now or datetime.now()
+    now = now or datetime.now(UTC).replace(tzinfo=None)
     report = DayReport()
     by_ticker = {m.ticker: m for m in session.scalars(select(Move).where(Move.date == d.date))}
     names = dict(session.execute(select(Universe.ticker, Universe.name)).all())
@@ -250,3 +250,39 @@ def explain_day(session: Session, d, brave, fetcher, *, client=None, now: dateti
         report.stopped = f"{type(e).__name__}: {e}"
     session.flush()
     return report
+
+
+def refresh_stock(session: Session, ticker: str, brave, fetcher, *, client=None,
+                  now: datetime | None = None) -> AiOutput | None:
+    """"Refresh now": a fresh search and stock note for the latest trading day, whatever the move size.
+    Caps are checked by tracker.accounts.request_refresh before this runs. If that day has a recorded move,
+    the move is linked to the new note."""
+    from tracker.data.prices import MARKET_TICKER
+    from tracker.data.universe import covered_tickers
+    from tracker.models import DailyReturn
+
+    now = now or datetime.now(UTC).replace(tzinfo=None)
+    ticker = ticker.upper()
+    u = session.get(Universe, ticker)
+    if u is None:
+        return None
+    day = session.scalar(select(func.max(DailyReturn.date)).where(DailyReturn.ticker == MARKET_TICKER))
+    d = moves.load_day(session, day, covered_tickers(session) | {ticker}) if day else None
+    if d is None or ticker not in d.returns:
+        return None
+    peers = moves.peer_average(ticker, u.industry, d.returns, d.industries)
+    m = MoveInput(subject=f"{ticker} ({u.name})", scope="stock", return_pct=d.returns[ticker],
+                  market_return_pct=d.index_return_pct, industry_return_pct=peers, industry=u.industry,
+                  date=day.isoformat())
+    primary = earnings_source(session, fetcher, ticker, day)
+    results = news.cached_search(session, brave, news.coverage_query(u.name, ticker),
+                                 freshness=news.day_window(day), job="refresh")
+    sources = ([primary] if primary else []) + sources_from_links(news.coverage_links(results, news.load_outlets()))
+    note = write_note(session, m, sources, ticker=ticker, job="refresh", client=client, now=now)
+    move = session.scalars(select(Move).where(Move.ticker == ticker, Move.date == day)).first()
+    if move is not None and note is not None:
+        move.note_id = note.id
+        move.status = _status(note, rechecked=True)
+        move.recheck_after = None
+    session.flush()
+    return note

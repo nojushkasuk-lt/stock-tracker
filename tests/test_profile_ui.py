@@ -29,7 +29,9 @@ def use_db(tmp_path, monkeypatch, rows=()):
     engine = make_engine(f"sqlite:///{tmp_path / 't.db'}")
     create_tables(engine)
     with Session(engine) as s:
-        s.add_all(rows)
+        for r in rows:  # in order: the models have no relationships, so foreign keys need parents first
+            s.add(r)
+            s.flush()
         s.commit()
 
     @contextmanager

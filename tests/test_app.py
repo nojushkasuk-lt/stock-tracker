@@ -37,20 +37,41 @@ def test_app_uses_the_custom_chart_when_points_exist_and_falls_back_otherwise(mo
 def test_tabs_render_and_coverage_is_off_without_sign_in(monkeypatch):
     from tracker import services
 
-    monkeypatch.setattr(services, "coverage_enabled", lambda: False)
     at = AppTest.from_file(APP, default_timeout=30).run()
     assert not at.exception
     labels = [t.label for t in at.tabs]
-    assert {"Stocks", "Market"} <= set(labels)
+    assert {"Stocks", "Market"} <= set(labels) and "Settings" not in labels
     if at.selectbox:  # database loaded: the stock has its own sub-tabs
-        assert {"Financials", "Coverage", "Filings"} <= set(labels)
-    assert not at.button  # no live search button in demo mode
-    assert not any("Brave" in c.value for c in at.caption)
+        assert {"Profile", "Financials", "Coverage", "Filings"} <= set(labels)
+    buttons = {b.label for b in at.button}
+    assert not buttons & {"Find coverage", "Refresh now", "Save"}  # demo mode: read-only (rule 7)
+    assert any("Brave Search API" in c.value for c in at.caption)  # rule 12 credit line
 
 
 def test_coverage_service_refuses_in_demo_mode(monkeypatch):
     from tracker import services
 
-    monkeypatch.setattr(services, "coverage_enabled", lambda: False)
     cov = services.get_coverage("AAPL")
     assert cov.links == [] and "signed-in" in cov.message
+
+
+def test_signed_in_user_without_stocks_is_sent_to_settings(monkeypatch):
+    from tracker import services
+
+    monkeypatch.setattr(services, "sign_in", lambda email: None)
+    monkeypatch.setattr(services, "get_watchlist", lambda email: [])
+    monkeypatch.setattr(services, "get_outlet_choice", lambda email: set())
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.session_state["dev_email"] = "a@example.com"
+    at.run()
+    assert not at.exception
+    assert "Settings" in [t.label for t in at.tabs]
+    assert any("Pick up to 15" in i.value for i in at.info)
+    assert "Save" in {b.label for b in at.button}
+
+
+def test_dev_sign_in_is_never_offered_in_prod(monkeypatch):
+    from tracker import config, services
+
+    monkeypatch.setattr(config, "APP_ENV", "prod")
+    assert services.dev_sign_in_allowed() is False

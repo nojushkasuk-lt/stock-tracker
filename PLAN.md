@@ -62,12 +62,12 @@
 
 ## Day 5 — Users, moves and the ladder
 
-- [ ] Google sign-in (`st.login`), `users`, `user_watchlist`, `user_outlets`; setup page to pick stocks (max 15) and outlets
-- [ ] Demo mode: read-only, no AI calls, no searches
-- [ ] `moves.py`: detection and the market → industry → stock ladder, with tests for each branch (including a day when 40 stocks fall together: one market note, no per-stock searches)
-- [ ] Market alert page and note (at most one refresh per 3 hours)
-- [ ] Refresh button and "more coverage" searches with caps (AGENTS.md rule 6)
-- [ ] Done when: a 6% single-stock move gets its own note, a market-wide drop gets one shared note, and a 4th refresh in a day is refused
+- [ ] Google sign-in (`st.login`), `users`, `user_watchlist`, `user_outlets`; setup page to pick stocks (max 15) and outlets. Built and tested with the local dev sign-in; Google itself waits for the owner's OAuth client (`.streamlit/secrets.toml.example`).
+- [x] Demo mode: read-only, no AI calls, no searches
+- [x] `moves.py`: detection and the market → industry → stock ladder, with tests for each branch (including a day when 40 stocks fall together: one market note, no per-stock searches)
+- [x] Market alert page and note (at most one refresh per 3 hours)
+- [x] Refresh button and "more coverage" searches with caps (AGENTS.md rule 6)
+- [x] Done when: a 6% single-stock move gets its own note, a market-wide drop gets one shared note, and a 4th refresh in a day is refused
 
 ## UI design pass (after Day 5, before Day 6)
 
@@ -134,3 +134,5 @@
 - 2026-11-23, Claude Code: Day 4 model test done (docs/model-test.md): 20 real moves, no unsupported claims, no causes stated as fact from headlines, relevant links first. Fixed: earnings exhibit lookup by EX-99 type (TJX), news-after-the-move rule, no talk about inputs, 60-word summaries. 140 tests; live spend about $0.19, about 47 Brave searches.
 - 2026-11-23, Claude Code: Profile tab on the stock page (services.get_profile, source links per point, Markdown/$ escaped). Apple profile generated for the demo ($0.06). Day 4 done. 143 tests; live spend about $0.25.
 - Next: Day 5 (sign-in, watchlist, moves.py ladder, market page note, caps). Profiles are not scheduled yet (Day 6 Actions); run `python -m jobs.profiles` by hand.
+- 2026-11-23, Claude Code: Day 5 built: moves.py ladder (tests for every branch and the 40-stock day), daily job writes market / industry / stock notes with earnings releases filed before the close, rechecks (`jobs.daily --recheck`), market note at most every 3 hours; accounts.py (watchlist max 15, outlets, 3 refreshes/day, 300/month, 6-hour shared refresh, 10 coverage searches/day); page: sign-in (Google or local dev box), watchlist and outlet settings, move-note card, Refresh now, market alert with the shared note. Live: Nov 20 sell-off, 10 demo moves -> 7 notes. All timestamps now UTC. 190 tests; spend about $0.25.
+- Next: owner creates the Google OAuth client and .streamlit/secrets.toml to test real sign-in; then the UI design pass (owner's list of changes), then Day 6.

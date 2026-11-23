@@ -180,3 +180,22 @@ def test_search_cap_stops_cleanly(db, monkeypatch):
     rep = run(db, d, fake(parsed=EXPLAINED))
     assert rep.stopped.startswith("SearchCapReached") and statuses(db) == {"UNH": "pending"}
     assert db.scalars(select(UsageLog)).first() is None
+
+
+def test_refresh_writes_a_stock_note_for_the_latest_day_and_links_the_move(db):
+    d = setup_day(db, {"UNH": -6.0, "AAA": 0.2}, -0.3)
+    run(db, d, fake(parsed=NOTHING))
+    news.clear_cache()
+    note = notes.refresh_stock(db, "unh", FakeBrave("fresh"), FakeFetcher(), client=fake(parsed=EXPLAINED), now=NOW)
+    m = db.scalars(select(Move)).one()
+    assert (note.kind, note.scope_key, m.note_id, m.status) == ("stock_note", "UNH", note.id, "explained")
+
+
+def test_refresh_works_for_a_small_move_too(db):
+    setup_day(db, {"AAA": 0.4}, -0.3)
+    note = notes.refresh_stock(db, "AAA", FakeBrave(), FakeFetcher(), client=fake(parsed=NOTHING), now=NOW)
+    assert note.content["return_pct"] == 0.4 and db.scalars(select(Move)).first() is None
+
+
+def test_refresh_of_an_unknown_ticker_does_nothing(db):
+    assert notes.refresh_stock(db, "NOPE", FakeBrave(), FakeFetcher(), client=fake(parsed=NOTHING), now=NOW) is None

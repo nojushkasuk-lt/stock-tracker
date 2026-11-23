@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Callable
 
 from pydantic import BaseModel
@@ -61,7 +61,7 @@ def generate[T: BaseModel](
     content["dropped"] = [{"where": d.where, "text": d.text, "reason": d.reason} for d in checked.dropped]
     row = AiOutput(kind=kind, scope_key=scope_key, model=result.model, input_hash=h, content=content,
                    sources=checked.stored_sources(sources), confidence=confidence(out),
-                   created_at=now or datetime.now(), valid_until=valid_until)
+                   created_at=now or datetime.now(UTC).replace(tzinfo=None), valid_until=valid_until)
     session.add(row)
     session.flush()
     return row

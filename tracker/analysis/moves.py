@@ -12,7 +12,7 @@ The scope decides what gets searched: one market note, one note per industry, or
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from statistics import mean
 from typing import Literal
 
@@ -115,7 +115,7 @@ def load_day(session: Session, day: date, covered: set[str]) -> Day | None:
 
 def record_day(session: Session, d: Day, now: datetime | None = None) -> list[Move]:
     """Upsert market_days and moves (status pending). A move already explained keeps its note and status."""
-    now = now or datetime.now()
+    now = now or datetime.now(UTC).replace(tzinfo=None)
     md = session.get(MarketDay, d.date) or MarketDay(date=d.date)
     md.index_return_pct, md.level = d.index_return_pct, d.level
     session.add(md)

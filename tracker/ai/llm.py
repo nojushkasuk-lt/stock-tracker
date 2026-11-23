@@ -9,7 +9,7 @@ the model ran.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Generic, Literal, TypeVar
 
 from pydantic import BaseModel
@@ -86,7 +86,7 @@ def _month_start(now: datetime) -> datetime:
 
 
 def month_to_date_cost(session: Session, now: datetime | None = None) -> float:
-    now = now or datetime.now()
+    now = now or datetime.now(UTC).replace(tzinfo=None)
     q = select(func.coalesce(func.sum(UsageLog.cost_usd), 0)).where(UsageLog.created_at >= _month_start(now))
     return float(session.execute(q).scalar_one())
 
@@ -97,7 +97,7 @@ def budget_left(session: Session, now: datetime | None = None) -> float:
 
 def log_usage(session: Session, job: str, model: str, input_tokens: int, output_tokens: int, cost: float,
               now: datetime | None = None) -> None:
-    session.add(UsageLog(created_at=now or datetime.now(), job=job, model=model, input_tokens=input_tokens,
+    session.add(UsageLog(created_at=now or datetime.now(UTC).replace(tzinfo=None), job=job, model=model, input_tokens=input_tokens,
                          output_tokens=output_tokens, search_calls=0, cost_usd=round(cost, 6)))
     session.flush()
 
