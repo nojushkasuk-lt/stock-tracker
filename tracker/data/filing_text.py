@@ -110,6 +110,32 @@ def periodic_sections(text: str, form: str, url: str) -> list[Section]:
         body = section(text, start, ends)
         if body:
             out.append(Section(key, label, cap(body, CAPS[key]), url))
+    if not any(s.key == "mdna" for s in out):
+        out += named_sections(text, form, url, have={s.key for s in out})
+    return out
+
+
+# Some large filers (banks, Intel, GE) keep "Item" headings only in a cross-reference index and write the
+# report under their own headings. Fallback: find the section by its name.
+NAMED = {"mdna": re.compile(r"^.{0,40}management[’'`]?s discussion and analysis\b", re.I | re.M),
+         "risk_factors": re.compile(r"^\s*risk factors\s*$", re.I | re.M)}
+NAMED_LABELS = {"mdna": "MD&A", "risk_factors": "Risk Factors"}
+
+
+def named_sections(text: str, form: str, url: str, have: set[str] = frozenset(), min_len: int = 5_000) -> list[Section]:
+    """The occurrence of each heading followed by the most text before the next occurrence (the section itself,
+    not an index or a running header), capped like the Item sections."""
+    out = []
+    for key, pat in NAMED.items():
+        if key in have or (key == "risk_factors" and form != "10-K"):
+            continue
+        starts = [m.start() for m in pat.finditer(text)]
+        if not starts:
+            continue
+        spans = [(b - a, a) for a, b in zip(starts, starts[1:] + [len(text)])]
+        length, at = max(spans)
+        if length >= min_len:
+            out.append(Section(key, f"{form} {NAMED_LABELS[key]} (found by heading)", cap(text[at:at + length].strip(), CAPS[key]), url))
     return out
 
 

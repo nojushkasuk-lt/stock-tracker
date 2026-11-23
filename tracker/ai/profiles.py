@@ -229,6 +229,8 @@ def initial_sections(fetcher: FilingFetcher, latest: Filing, annual: Filing | No
     from tracker.data.filing_text import cap
 
     secs = fetcher.sections(latest.form, latest.items, latest.url)
+    if not secs and latest.form == "10-Q" and annual is not None:
+        return fetcher.sections(annual.form, annual.items, annual.url)  # 10-Q layout we could not split: use the 10-K
     if latest.form == "10-Q" and annual is not None:
         for sec in fetcher.sections(annual.form, annual.items, annual.url):
             if sec.key in CONTEXT_CAPS:
@@ -280,6 +282,8 @@ def submit_first_profiles(session: Session, fetcher: FilingFetcher, *, sonnet_to
         prev = outputs.latest(session, "profile", u.ticker) if force else None
         sources = build_sources(prev, metrics, sections, reference=_reference(session, u.ticker))
         model = model_for_rank(u.market_cap_rank, sonnet_top)
+        if sections and sections[0].url != latest.url:  # fell back to the 10-K
+            latest = _latest(session, u.ticker, ("10-K",)) or latest
         system, user = system_prompt(), user_prompt(u.name, u.ticker, filing_label(latest), sources)
         reqs.append(llm.BatchRequest(custom_id=u.ticker.replace(".", "_"), system=system, user=user, model=model))
         items[u.ticker.replace(".", "_")] = {"scope_key": u.ticker, "model": model, "filing": latest.accession,

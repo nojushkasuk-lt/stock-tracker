@@ -107,3 +107,15 @@ def test_followed_haiku_profiles_are_upgrade_targets(db):
     db.add(UserWatchlist(email="a@x.com", ticker="S02", added_at=N))
     db.flush()
     assert profiles.upgrade_targets(db) == ["S02"]
+
+
+def test_a_10q_we_cannot_split_falls_back_to_the_10k():
+    from tracker.data import filing_text as ft
+
+    class Fetcher:
+        def sections(self, form, items, url):
+            return [] if form == "10-Q" else [ft.Section("business", "10-K Item 1 Business", "text", url)]
+    q = Filing(accession="q", ticker="X", form="10-Q", filed_at=datetime(2026, 11, 1), url="https://sec/q.htm")
+    k = Filing(accession="k", ticker="X", form="10-K", filed_at=datetime(2026, 2, 1), url="https://sec/k.htm")
+    secs = profiles.initial_sections(Fetcher(), q, k)
+    assert [s.url for s in secs] == ["https://sec/k.htm"]

@@ -216,3 +216,11 @@ def test_wikipedia_lead_and_condensed_history():
     out = wikipedia.lead_and_history(text, max_chars=3000)
     assert out.startswith("Lead text.") and "1976–1984: Early." in out and "2007–2011: The iPhone." in out
     assert "Mac." not in out and len(out) <= 3000
+
+
+def test_mdna_found_by_heading_when_items_are_only_an_index():
+    body = "Revenue grew 4% on higher net interest income. " * 300
+    text = ("Form 10-Q cross-reference index\nItem 2. Management's Discussion and Analysis 5\nItem 4. Controls 90\n"
+            "MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION\n" + body + "\nFINANCIAL STATEMENTS\nBalance sheet.")
+    [sec] = ft.periodic_sections(text, "10-Q", "u")
+    assert sec.key == "mdna" and "found by heading" in sec.label and "Revenue grew 4%" in sec.text

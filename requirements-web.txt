@@ -1,0 +1,12 @@
+# What the website container needs (Cloud Run). The jobs and local development use requirements.txt.
+fastapi>=0.115
+uvicorn[standard]>=0.30
+jinja2>=3.1
+authlib>=1.3
+itsdangerous>=2.1
+python-multipart>=0.0.9
+sqlalchemy>=2.0
+psycopg[binary]>=3.2
+httpx>=0.27
+pydantic>=2.0
+anthropic

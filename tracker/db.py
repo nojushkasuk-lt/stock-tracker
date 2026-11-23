@@ -10,12 +10,22 @@ from tracker import config
 from tracker.models import Base
 
 
+def normalize_url(url: str) -> str:
+    """Neon and other hosts hand out postgres:// or postgresql:// URLs; we use the psycopg (v3) driver."""
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
 def make_engine(url: str | None = None) -> Engine:
     url = url or config.DATABASE_URL
-    # Neon / some hosts hand out postgres:// or postgresql:// URLs; use the psycopg-agnostic default driver name.
-    if url.startswith("postgres://"):
-        url = "postgresql://" + url[len("postgres://"):]
-    engine = create_engine(url, future=True)
+    url = normalize_url(url)
+    kw = {}
+    if url.startswith("postgresql"):
+        # Neon closes idle connections and scales to zero: test each pooled connection before use, keep the pool small.
+        kw = {"pool_pre_ping": True, "pool_size": 3, "max_overflow": 2, "pool_recycle": 300}
+    engine = create_engine(url, future=True, **kw)
     if engine.dialect.name == "sqlite":
         from sqlalchemy import event
 

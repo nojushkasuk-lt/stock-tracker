@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.streamlit/
+.git/
+.venv/
+**/__pycache__/
+*.db
+*.sqlite*
+tests/
+docs/
+jobs/
+app.py
