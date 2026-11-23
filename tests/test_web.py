@@ -310,3 +310,16 @@ def test_alerts_go_to_the_owner_only_until_licensed(tmp_path, monkeypatch):
         s.flush()
         notify_followers(s, D0)
         assert accounts.unread_count(s, "owner@example.com") == 2 and accounts.unread_count(s, "guest@example.com") == 0
+
+
+def test_tradingview_chart_gets_our_own_change_header_or_the_live_quote(client, monkeypatch):
+    monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "owner")
+    monkeypatch.setattr(config, "OWNER_EMAIL", "owner@example.com")
+    monkeypatch.setattr(services, "get_price_chart", lambda t: None)  # prod: TradingView chart
+    sign_in(client, "owner@example.com")
+    page = client.get("/stock/AAPL").text
+    assert 'class="perf-head"' in page and "embed-widget-single-quote" not in page and "advanced-chart" in page
+    client.get("/logout")
+    sign_in(client, "guest@example.com")
+    page = client.get("/stock/AAPL").text
+    assert 'class="perf-head"' not in page and "embed-widget-single-quote" in page and "advanced-chart" in page

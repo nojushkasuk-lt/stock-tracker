@@ -34,7 +34,22 @@
 </section>
 {% else %}
 <section class="card">
-  <div class="eyebrow" style="margin-bottom: 12px">Price</div>
+  {% if perf %}
+  {# Our figures, in our type: the day's change large, the longer ranges beside it. #}
+  <div class="perf-head">
+    <div>
+      <div class="eyebrow">Last session · {{ perf.as_of|short_date }}</div>
+      <div class="perf-num big-num {{ perf.ranges[0].pct|tone }}">{{ perf.ranges[0].pct|pct }}</div>
+    </div>
+    <div class="range-strip">
+      {% for r in perf.ranges[1:] %}<div><span class="l">{{ r.label }}</span><span class="v {{ r.pct|tone }}">{{ r.pct|pct }}</span></div>{% endfor %}
+    </div>
+  </div>
+  {% elif quote_widget %}
+  <div class="tv-quote">{{ quote_widget|safe }}</div>
+  {% else %}
+  <div class="eyebrow">Price</div>
+  {% endif %}
   <div class="tv">{{ chart_widget|safe }}</div>
 </section>
 {% endif %}

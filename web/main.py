@@ -135,6 +135,7 @@ def _stock_page(request: Request, ticker: str, coverage=None):
     return page(
         request, "stock.html", s=stock, m=model, following=following, nav="stocks",
         chart_widget=None if chart else tv.chart_widget_html(stock.tv_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID),
+        quote_widget=None if chart or perf else tv.quote_html(stock.tv_symbol),
         refreshes_left=services.refreshes_left(me.email) if me.email else 0,
         coverage_on=services.coverage_enabled(me.email),
         searches_left=services.coverage_searches_left(me.email) if me.email else 0,
@@ -182,7 +183,8 @@ def fund(request: Request, ticker: str):
     if f is None:
         raise HTTPException(404, "Unknown fund")
     return page(request, "fund.html", f=f, chart=f.chart, nav="market",
-                chart_widget=None if f.chart else tv.chart_widget_html(f.tv_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID))
+                chart_widget=None if f.chart else tv.chart_widget_html(f.tv_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID),
+                quote_widget=None if f.chart or f.perf else tv.quote_html(f.tv_symbol))
 
 
 @app.post("/etf/{ticker}/follow")

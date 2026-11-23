@@ -69,6 +69,15 @@ def symbol_info_html(symbol: str, height: int = SYMBOL_INFO_HEIGHT, theme: str =
     return _widget("symbol-info", config, f"{symbol.split(':')[-1]} quote", symbol, height)
 
 
+QUOTE_HEIGHT = 96
+
+
+def quote_html(symbol: str, theme: str = "dark") -> str:
+    """Compact live quote (price and day change). Shown above the chart where our own figures cannot be."""
+    config = {"symbol": symbol, "width": "100%", "isTransparent": True, "colorTheme": theme, "locale": "en"}
+    return _widget("single-quote", config, f"{symbol.split(':')[-1]} quote", symbol, QUOTE_HEIGHT)
+
+
 HEATMAP_HEIGHT = 520
 CALENDAR_HEIGHT = 520
 

@@ -102,6 +102,13 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.015em; }
 .seg button[aria-pressed="true"] { background: var(--line-2); color: var(--text); }
 .chart svg { width: 100%; height: 260px; display: block; }
 .tv { margin-top: 12px; }
+.perf-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; }
+.big-num { font-size: 40px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; margin-top: 4px; }
+.range-strip { display: flex; flex-wrap: wrap; gap: 6px; }
+.range-strip > div { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 8px 12px; border-radius: 9px; background: var(--bar); min-width: 64px; }
+.range-strip .l { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--faint); }
+.range-strip .v { font-family: var(--mono); font-size: 16px; font-weight: 600; }
+.tv-quote { margin: -4px -4px 0; }
 .tv .tradingview-widget-copyright a { color: var(--faint); }
 
 /* ---- text blocks ---- */
