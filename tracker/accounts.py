@@ -7,7 +7,7 @@ refresh_requests with its outcome, and the caps are counted from that table.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Callable, Literal
 
 from sqlalchemy import delete, func, select
@@ -15,7 +15,8 @@ from sqlalchemy.orm import Session
 
 from tracker import config
 from tracker.data.news import load_outlets
-from tracker.models import RefreshRequest, Universe, User, UserOutlet, UserWatchlist
+from tracker.models import (Notification, RefreshRequest, ShareLink, Universe, User, UserMarket, UserOutlet, UserPrefs,
+                            UserWatchlist)
 
 
 def utcnow() -> datetime:
@@ -182,3 +183,164 @@ def use_coverage_search(session: Session, email: str, ticker: str, now: datetime
         return False
     _log(session, email, ticker.upper(), "coverage_search", "done", now)
     return True
+
+
+# ---- start dates (performance "since you started") -------------------------------------------------
+
+def start_dates(session: Session, email: str) -> dict[str, date]:
+    """{ticker: date performance is measured from}: the chosen start date, else the day it was added."""
+    rows = session.execute(select(UserWatchlist.ticker, UserWatchlist.start_date, UserWatchlist.added_at)
+                           .where(UserWatchlist.email == normalize_email(email))).all()
+    return {t: (sd or added.date()) for t, sd, added in rows}
+
+
+def set_start_date(session: Session, email: str, ticker: str, start: date | None, now: datetime | None = None) -> None:
+    """None resets to the day the stock was added. Future dates and dates before 1990 are refused."""
+    now = now or utcnow()
+    if start is not None and (start > now.date() or start.year < 1990):
+        raise WatchlistError("Pick a start date between 1990 and today.")
+    row = session.get(UserWatchlist, (normalize_email(email), ticker.upper()))
+    if row is None:
+        raise WatchlistError("Follow the stock first.")
+    row.start_date = start
+    session.flush()
+
+
+# ---- markets (index funds / ETFs) ----------------------------------------------------------------------
+
+MARKETS_MAX = 12
+
+
+def followed_markets(session: Session, email: str) -> list[str]:
+    q = select(UserMarket.ticker).where(UserMarket.email == normalize_email(email)).order_by(UserMarket.added_at, UserMarket.ticker)
+    return list(session.scalars(q))
+
+
+def set_markets(session: Session, email: str, tickers: list[str], now: datetime | None = None) -> list[str]:
+    from tracker.data import markets
+
+    now = now or utcnow()
+    email = normalize_email(email)
+    known = set(markets.tickers())
+    wanted = list(dict.fromkeys(t.strip().upper() for t in tickers if t.strip()))
+    unknown = [t for t in wanted if t not in known]
+    if unknown:
+        raise WatchlistError(f"Unknown market: {', '.join(unknown)}")
+    if len(wanted) > MARKETS_MAX:
+        raise WatchlistError(f"You can follow at most {MARKETS_MAX} markets.")
+    current = set(followed_markets(session, email))
+    session.execute(delete(UserMarket).where(UserMarket.email == email, UserMarket.ticker.notin_(wanted)))
+    for t in wanted:
+        if t not in current:
+            session.add(UserMarket(email=email, ticker=t, added_at=now))
+    session.flush()
+    return followed_markets(session, email)
+
+
+# ---- preferences and onboarding --------------------------------------------------------------------------
+
+PREF_CHOICES = {"digest": ("off", "daily", "weekly"), "home": ("portfolio", "market", "news"),
+                "perf_basis": ("start", "1D", "1M", "1Y")}
+THRESHOLDS = (3.0, 4.0, 5.0, 7.5, 10.0)
+
+
+def prefs(session: Session, email: str) -> UserPrefs:
+    """The user's preferences (defaults when none saved yet; nothing is written)."""
+    row = session.get(UserPrefs, normalize_email(email))
+    return row or UserPrefs(email=normalize_email(email), onboarded_at=None, stock_alerts=True, market_alerts=True,
+                            alert_threshold_pct=5.0, email_alerts=False, digest="weekly", home="portfolio", perf_basis="start")
+
+
+def set_prefs(session: Session, email: str, **values) -> UserPrefs:
+    email = normalize_email(email)
+    row = session.get(UserPrefs, email)
+    if row is None:
+        row = prefs(session, email)
+        session.add(row)
+    for k, v in values.items():
+        if k in PREF_CHOICES and v not in PREF_CHOICES[k]:
+            raise ValueError(f"{k} must be one of {PREF_CHOICES[k]}")
+        if k == "alert_threshold_pct" and float(v) not in THRESHOLDS:
+            raise ValueError(f"alert_threshold_pct must be one of {THRESHOLDS}")
+        if k not in {"onboarded_at", "stock_alerts", "market_alerts", "alert_threshold_pct", "email_alerts", *PREF_CHOICES}:
+            raise ValueError(f"Unknown preference {k}")
+        setattr(row, k, v)
+    session.flush()
+    return row
+
+
+def needs_onboarding(session: Session, email: str) -> bool:
+    row = session.get(UserPrefs, normalize_email(email))
+    return row is None or row.onboarded_at is None
+
+
+# ---- notifications ---------------------------------------------------------------------------------------
+
+def notify(session: Session, email: str, *, kind: str, title: str, body: str, url: str, dedupe_key: str,
+           ticker: str | None = None, now: datetime | None = None) -> bool:
+    """Add an in-site alert unless the same one (dedupe_key) exists. Returns True when added."""
+    email = normalize_email(email)
+    exists = session.scalar(select(Notification.id).where(Notification.email == email, Notification.dedupe_key == dedupe_key))
+    if exists:
+        return False
+    session.add(Notification(email=email, kind=kind, ticker=ticker, title=title, body=body, url=url,
+                             dedupe_key=dedupe_key, created_at=now or utcnow()))
+    session.flush()
+    return True
+
+
+def notifications(session: Session, email: str, limit: int = 30) -> list[Notification]:
+    q = (select(Notification).where(Notification.email == normalize_email(email))
+         .order_by(Notification.created_at.desc(), Notification.id.desc()).limit(limit))
+    return list(session.scalars(q))
+
+
+def unread_count(session: Session, email: str) -> int:
+    return int(session.scalar(select(func.count()).select_from(Notification)
+                              .where(Notification.email == normalize_email(email), Notification.read_at.is_(None))) or 0)
+
+
+def mark_read(session: Session, email: str, now: datetime | None = None) -> None:
+    from sqlalchemy import update
+
+    session.execute(update(Notification).where(Notification.email == normalize_email(email), Notification.read_at.is_(None))
+                    .values(read_at=now or utcnow()))
+
+
+# ---- share links (private access) ---------------------------------------------------------------------------
+
+def create_share_link(session: Session, label: str, now: datetime | None = None) -> ShareLink:
+    import secrets
+
+    row = ShareLink(token=secrets.token_urlsafe(18), label=label.strip()[:80] or "Shared link", created_at=now or utcnow(), uses=0)
+    session.add(row)
+    session.flush()
+    return row
+
+
+def use_share_link(session: Session, token: str, now: datetime | None = None) -> bool:
+    row = session.get(ShareLink, token)
+    if row is None or row.revoked_at is not None:
+        return False
+    row.uses = (row.uses or 0) + 1
+    row.last_used_at = now or utcnow()
+    session.flush()
+    return True
+
+
+def share_link_valid(session: Session, token: str | None) -> bool:
+    if not token:
+        return False
+    row = session.get(ShareLink, token)
+    return row is not None and row.revoked_at is None
+
+
+def share_links(session: Session) -> list[ShareLink]:
+    return list(session.scalars(select(ShareLink).order_by(ShareLink.created_at.desc())))
+
+
+def revoke_share_link(session: Session, token: str, now: datetime | None = None) -> None:
+    row = session.get(ShareLink, token)
+    if row is not None and row.revoked_at is None:
+        row.revoked_at = now or utcnow()
+        session.flush()

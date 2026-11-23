@@ -154,25 +154,28 @@ COST_SOURCES = [
 
 
 def test_profile_keeps_valid_claims_and_drops_invented_ones():
+    P = profiles.Point
     out = ProfileOut(
-        overview=[Claim(text="Costco operated 914 warehouses worldwide as of September 1, 2026.", source_ids=["K1"]),
-                  Claim(text="It has about 95 million members.", source_ids=["K1"])],
-        strategy_and_trajectory=[Claim(text="It plans 30 net new warehouses in fiscal 2027, including Sweden.", source_ids=["K2"])],
-        bull_case=[Claim(text="Net debt to EBITDA is -0.6x, a net cash position.", source_ids=["M1"])],
-        bear_case=[Claim(text="A headline reports that some investors think the shares have become too expensive.", source_ids=["N1"]),
-                   Claim(text="The shares are too expensive.", source_ids=["N1"])],
+        about=[Claim(text="Costco operated 914 warehouses worldwide as of September 1, 2026.", source_ids=["K1"])],
+        business=[P(title="Warehouses", text="Costco operated 914 warehouses worldwide as of September 1, 2026.", source_ids=["K1"]),
+                  P(title="Members", text="It has about 95 million members.", source_ids=["K1"])],
+        strategy_and_trajectory=[P(title="Growth", text="It plans 30 net new warehouses in fiscal 2027, including Sweden.", source_ids=["K2"])],
+        bull_case=[P(title="Net cash", text="Net debt to EBITDA is -0.6x, a net cash position.", source_ids=["M1"])],
+        bear_case=[P(title="Valuation", text="A headline reports that some investors think the shares have become too expensive.", source_ids=["N1"]),
+                   P(title="Valuation", text="The shares are too expensive.", source_ids=["N1"])],
         what_changed="The warehouse count is now 914, up from about 890.")
     profile, checked = profiles.validate(out, COST_SOURCES)
-    assert len(profile.overview) == 1 and len(profile.bear_case) == 1
+    assert len(profile.business) == 1 and len(profile.bear_case) == 1
     assert profile.what_changed.startswith("The warehouse count")
     assert sorted(d.reason.split(":")[0] for d in checked.dropped) == ["headline-only claim without cautious wording", "numbers not in the input"]
 
 
 def test_profile_with_an_empty_section_is_not_published():
-    out = ProfileOut(overview=[Claim(text="Costco operated 914 warehouses.", source_ids=["K1"])],
-                     strategy_and_trajectory=[Claim(text="It plans 30 new warehouses.", source_ids=["K2"])],
-                     bull_case=[Claim(text="Shares will double.", source_ids=["Z1"])],
-                     bear_case=[Claim(text="Tariffs could raise costs.", source_ids=["K3"])])
+    P = profiles.Point
+    out = ProfileOut(about=[Claim(text="Costco operated 914 warehouses.", source_ids=["K1"])],
+                     business=[P(title="Warehouses", text="Costco operated 914 warehouses.", source_ids=["K1"])],
+                     bull_case=[P(title="Upside", text="Shares will double.", source_ids=["Z1"])],
+                     bear_case=[P(title="Tariffs", text="Tariffs could raise costs.", source_ids=["K3"])])
     profile, _ = profiles.validate(out, COST_SOURCES)
     assert profile is None
 

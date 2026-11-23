@@ -110,3 +110,52 @@ def test_ten_coverage_searches_per_user_per_day(db):
     assert accounts.coverage_searches_left_today(db, E, NOW + timedelta(days=1)) == 10
     refused = db.scalars(select(RefreshRequest).where(RefreshRequest.status == "refused_cap")).all()
     assert len(refused) == 1
+
+
+def test_start_date_defaults_to_the_day_added_and_can_be_chosen(db):
+    from datetime import date
+    accounts.set_watchlist(db, E, ["T01"], NOW)
+    assert accounts.start_dates(db, E) == {"T01": NOW.date()}
+    accounts.set_start_date(db, E, "T01", date(2024, 3, 1), NOW)
+    assert accounts.start_dates(db, E) == {"T01": date(2024, 3, 1)}
+    with pytest.raises(accounts.WatchlistError):
+        accounts.set_start_date(db, E, "T01", date(2030, 1, 1), NOW)
+    with pytest.raises(accounts.WatchlistError):
+        accounts.set_start_date(db, E, "T02", date(2024, 1, 1), NOW)  # not followed
+
+
+def test_markets_must_be_on_the_list(db):
+    accounts.set_markets(db, E, ["spy", "QQQ", "SPY"], NOW)
+    assert set(accounts.followed_markets(db, E)) == {"SPY", "QQQ"}
+    with pytest.raises(accounts.WatchlistError):
+        accounts.set_markets(db, E, ["NOPE"], NOW)
+
+
+def test_prefs_have_defaults_validate_and_track_onboarding(db):
+    assert accounts.needs_onboarding(db, E)
+    p = accounts.prefs(db, E)
+    assert (p.alert_threshold_pct, p.email_alerts, p.digest) == (5.0, False, "weekly")
+    accounts.set_prefs(db, E, alert_threshold_pct=3.0, digest="daily", onboarded_at=NOW)
+    assert not accounts.needs_onboarding(db, E) and accounts.prefs(db, E).digest == "daily"
+    with pytest.raises(ValueError):
+        accounts.set_prefs(db, E, digest="hourly")
+    with pytest.raises(ValueError):
+        accounts.set_prefs(db, E, alert_threshold_pct=1.0)
+
+
+def test_notifications_are_deduplicated_and_marked_read(db):
+    kw = dict(kind="stock_move", title="T01 fell 6%", body="Coverage points to ...", url="/stock/T01", dedupe_key="move:T01:2026-11-20")
+    assert accounts.notify(db, E, now=NOW, **kw) is True
+    assert accounts.notify(db, E, now=NOW, **kw) is False
+    assert accounts.unread_count(db, E) == 1
+    accounts.mark_read(db, E, NOW)
+    assert accounts.unread_count(db, E) == 0 and len(accounts.notifications(db, E)) == 1
+
+
+def test_share_links_work_until_revoked(db):
+    link = accounts.create_share_link(db, "For Acme recruiting", NOW)
+    assert len(link.token) >= 20 and accounts.share_link_valid(db, link.token)
+    assert accounts.use_share_link(db, link.token, NOW) and db.get(accounts.ShareLink, link.token).uses == 1
+    accounts.revoke_share_link(db, link.token, NOW)
+    assert not accounts.share_link_valid(db, link.token) and not accounts.use_share_link(db, link.token, NOW)
+    assert not accounts.share_link_valid(db, "made-up") and not accounts.share_link_valid(db, None)

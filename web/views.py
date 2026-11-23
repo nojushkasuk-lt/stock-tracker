@@ -92,8 +92,7 @@ class Refs:
 
 # ---- stock page -----------------------------------------------------------------------------------
 
-TAB_TONES = {"Strategy and trajectory": "", "Bull case": "up", "Bear case": "down"}
-TAB_LABELS = {"Strategy and trajectory": "Strategy & outlook", "Bull case": "Bull case", "Bear case": "Bear case"}
+TAB_TONES = {"Bull case": "up", "Bear case": "down", "What to watch": "neutral"}
 
 
 def _exchange(tv_symbol: str) -> str:
@@ -160,18 +159,14 @@ def stock_model(*, stock, perf, profile, financials, note, filings, coverage, fa
     m["about"] = None
     m["tabs"] = []
     if profile:
-        sections = dict(profile.sections)
-        overview = sections.get("Overview and sector", [])
-        if overview:
-            m["about"] = {"sentences": [{"text": p.text, "refs": refs.numbers(p.sources)} for p in overview]}
-        for title in ("Strategy and trajectory", "Bull case", "Bear case"):
-            pts = sections.get(title, [])
-            if pts:
-                m["tabs"].append({"id": title.split()[0].lower(), "label": TAB_LABELS[title], "tone": TAB_TONES[title],
-                                  "points": [{"text": p.text, "refs": refs.numbers(p.sources)} for p in pts]})
+        if profile.about:
+            m["about"] = {"sentences": [{"text": p.text, "refs": refs.numbers(p.sources)} for p in profile.about]}
+        for title, pts in profile.sections:
+            m["tabs"].append({"id": title.split()[0].lower().strip("&"), "label": title, "tone": TAB_TONES.get(title, ""),
+                              "points": [{"title": p.title, "text": p.text, "refs": refs.numbers(p.sources)} for p in pts]})
         if profile.what_changed:
             m["tabs"].append({"id": "changed", "label": "What changed", "tone": "neutral",
-                              "points": [{"text": profile.what_changed, "refs": []}]})
+                              "points": [{"title": "", "text": profile.what_changed, "refs": []}]})
         m["profile_updated"] = profile.updated
 
     m["facts"] = key_facts(stock, facts)

@@ -108,7 +108,9 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.015em; }
 sup.ref { color: var(--accent); font-size: 11px; margin-left: 1px; }
 sup.ref a { color: inherit; }
 .points { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; }
-.points li { display: flex; gap: 12px; color: var(--text-2); }
+.points li { display: flex; gap: 12px; color: var(--text-2); line-height: 1.65; }
+.pt-title { color: var(--text); font-weight: 700; }
+.pt-title::after { content: " —"; color: var(--faint); font-weight: 400; }
 .dot { flex: 0 0 6px; height: 6px; margin-top: 10px; border-radius: 50%; background: var(--accent); }
 .dot.up { background: var(--up); }
 .dot.down { background: var(--down); }

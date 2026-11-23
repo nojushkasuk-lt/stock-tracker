@@ -21,15 +21,25 @@ from tracker.data.universe import covered_tickers
 from tracker.models import AiOutput, Filing, Fundamental, Universe
 from tracker.ai.citations import Checked, Claim, Source, Validator, render_sources
 
-PROFILE_MAX_TOKENS = 12_000  # includes adaptive thinking; a profile itself is about 1k tokens
-SECTIONS = ("overview", "strategy_and_trajectory", "bull_case", "bear_case")
+PROFILE_MAX_TOKENS = 16_000  # includes adaptive thinking; a profile itself is about 3-4k tokens
+SECTIONS = ("about", "business", "strategy_and_trajectory", "latest_report", "bull_case", "bear_case", "what_to_watch")
+REQUIRED = ("about", "business", "bull_case", "bear_case")  # a profile missing one of these is rejected
+
+
+class Point(BaseModel):
+    title: str
+    text: str
+    source_ids: list[str]
 
 
 class ProfileOut(BaseModel):
-    overview: list[Claim] = Field(default_factory=list)
-    strategy_and_trajectory: list[Claim] = Field(default_factory=list)
-    bull_case: list[Claim] = Field(default_factory=list)
-    bear_case: list[Claim] = Field(default_factory=list)
+    about: list[Claim] = Field(default_factory=list)
+    business: list[Point] = Field(default_factory=list)
+    strategy_and_trajectory: list[Point] = Field(default_factory=list)
+    latest_report: list[Point] = Field(default_factory=list)
+    bull_case: list[Point] = Field(default_factory=list)
+    bear_case: list[Point] = Field(default_factory=list)
+    what_to_watch: list[Point] = Field(default_factory=list)
     what_changed: str = ""
 
 
@@ -41,12 +51,23 @@ def user_prompt(company: str, ticker: str, filing: str, sources: list[Source]) -
     return f"Company: {company} ({ticker}). New filing: {filing}.\n\nSources:\n{render_sources(sources)}"
 
 
+def _check_points(v: Validator, where: str, points: list[Point]) -> list[Point]:
+    """A point is checked as one claim (title and text together), so numbers in the title are checked too."""
+    kept = []
+    for p in points:
+        if v.claims(where, [Claim(text=f"{p.title}. {p.text}", source_ids=p.source_ids)]):
+            kept.append(p)
+    return kept
+
+
 def validate(out: ProfileOut, sources: list[Source]) -> tuple[ProfileOut | None, Checked]:
-    """Drop bad claims. None if a section ends up empty (the old profile stays in place)."""
+    """Drop bad claims. None if a required section ends up empty (the old profile stays in place)."""
     v = Validator(sources)
-    kept = {name: v.claims(name, getattr(out, name)) for name in SECTIONS}
+    kept: dict = {"about": v.claims("about", out.about)}
+    for name in SECTIONS[1:]:
+        kept[name] = _check_points(v, name, getattr(out, name))
     what_changed = v.free_text("what_changed", out.what_changed, firm_allowed=True) or ""
-    if any(not claims for claims in kept.values()):
+    if any(not kept[name] for name in REQUIRED):
         return None, v.checked
     return ProfileOut(**kept, what_changed=what_changed), v.checked
 
@@ -83,11 +104,17 @@ def metrics_text(m: Metrics) -> str | None:
 
 def previous_text(row: AiOutput) -> str:
     c = row.content
-    lines = [f"{name}: " + " ".join(cl["text"] for cl in c.get(name, [])) for name in SECTIONS]
+    lines = []
+    for name in (*SECTIONS, "overview"):  # "overview" was the first section before profile version 2
+        items = c.get(name, [])
+        if items:
+            lines.append(f"{name}: " + " ".join((f"{x['title']}: " if x.get("title") else "") + x["text"] for x in items))
     return "\n".join(lines)
 
 
-def build_sources(prev: AiOutput | None, metrics: Metrics | None, sections: list[Section]) -> list[Source]:
+def build_sources(prev: AiOutput | None, metrics: Metrics | None, sections: list[Section],
+                  reference: tuple[str, str] | None = None) -> list[Source]:
+    """reference = (article text, url): the company's Wikipedia lead and history."""
     sources = []
     if prev is not None:
         sources.append(Source(id="P0", kind="own", text=previous_text(prev), label="previous profile",
@@ -98,7 +125,24 @@ def build_sources(prev: AiOutput | None, metrics: Metrics | None, sections: list
     for i, sec in enumerate(sections, 1):
         sources.append(Source(id=f"K{i}", kind="primary", text=sec.text, label=sec.label, url=sec.url,
                               outlet="SEC EDGAR"))
+    if reference:
+        sources.append(Source(id="W1", kind="reference", text=reference[0], label="Wikipedia article (lead and history)",
+                              url=reference[1], outlet="Wikipedia"))
     return sources
+
+
+def _reference(session: Session, ticker: str) -> tuple[str, str] | None:
+    from tracker.data import wikipedia
+    from tracker.models import CompanyFacts
+
+    facts = session.get(CompanyFacts, ticker)
+    if facts is None or not facts.wikipedia_url:
+        return None
+    try:
+        text = wikipedia.fetch(facts.wikipedia_url)
+    except Exception:
+        return None  # the profile is still written from the filing
+    return (text, facts.wikipedia_url) if text else None
 
 
 # ---- generation -----------------------------------------------------------------------------------
@@ -108,7 +152,8 @@ def filing_label(f: Filing) -> str:
     return base + (f" for the period ending {f.period_end.isoformat()}" if f.period_end else "")
 
 
-def write_profile(session: Session, f: Filing, fetcher: FilingFetcher, *, client=None, now: datetime | None = None):
+def write_profile(session: Session, f: Filing, fetcher: FilingFetcher, *, client=None, now: datetime | None = None,
+                  reference: tuple[str, str] | None = None):
     """Generate (or reuse) the profile after filing f. None if the filing had no usable sections or the output
     was rejected; the previous profile then stays in place."""
     u = session.get(Universe, f.ticker)
@@ -118,7 +163,7 @@ def write_profile(session: Session, f: Filing, fetcher: FilingFetcher, *, client
     rows = list(session.scalars(select(Fundamental).where(Fundamental.ticker == f.ticker)))
     metrics = compute_metrics(rows, u.industry) if rows else None
     prev = outputs.latest(session, "profile", f.ticker)
-    sources = build_sources(prev, metrics, sections)
+    sources = build_sources(prev, metrics, sections, reference=reference if reference is not None else _reference(session, f.ticker))
     return outputs.generate(
         session, kind="profile", scope_key=f.ticker, job="profiles", task="profile", system=system_prompt(),
         user=user_prompt(u.name, u.ticker, filing_label(f), sources), output_model=ProfileOut, sources=sources,

@@ -119,7 +119,7 @@
       </div>
       {% for t in m.tabs %}
       <div role="tabpanel" id="panel-{{ t.id }}" aria-labelledby="tab-{{ t.id }}" {% if not loop.first %}hidden{% endif %}>
-        <ul class="points">{% for p in t.points %}<li><span class="dot {{ t.tone }}"></span><span>{{ p.text }}{{ refs(p.refs) }}</span></li>{% endfor %}</ul>
+        <ul class="points">{% for p in t.points %}<li><span class="dot {{ t.tone }}"></span><span>{% if p.title %}<strong class="pt-title">{{ p.title }}</strong> {% endif %}{{ p.text }}{{ refs(p.refs) }}</span></li>{% endfor %}</ul>
       </div>
       {% endfor %}
       <div class="note-small" style="margin-top: 18px">Written by AI from {{ s.name }}'s SEC filings on {{ m.profile_updated|nice_date }}. Updated when the company files its next report.</div>

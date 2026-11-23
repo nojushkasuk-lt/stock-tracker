@@ -178,17 +178,22 @@ class SourceLink:
 class ProfilePoint:
     text: str
     sources: list[SourceLink]
+    title: str = ""
 
 
 @dataclass(frozen=True)
 class Profile:
-    sections: list[tuple[str, list[ProfilePoint]]]  # (title, points)
+    about: list[ProfilePoint]                          # sentences of the About paragraph
+    sections: list[tuple[str, list[ProfilePoint]]]     # (title, points), in page order
     what_changed: str
     updated: str  # YYYY-MM-DD
+    filing: str = ""                                   # e.g. "10-K filed 2026-10-31"
 
 
-PROFILE_TITLES = {"overview": "Overview and sector", "strategy_and_trajectory": "Strategy and trajectory",
-                  "bull_case": "Bull case", "bear_case": "Bear case"}
+PROFILE_TITLES = {"business": "Products & revenue", "strategy_and_trajectory": "Strategy & outlook",
+                  "latest_report": "Latest report", "bull_case": "Bull case", "bear_case": "Bear case",
+                  "what_to_watch": "What to watch"}
+_V1_TITLES = {"strategy_and_trajectory": "Strategy & outlook", "bull_case": "Bull case", "bear_case": "Bear case"}
 
 
 def _source_link(src: dict | None) -> SourceLink | None:
@@ -202,26 +207,29 @@ def _source_link(src: dict | None) -> SourceLink | None:
 
 
 def get_profile(ticker: str) -> Profile | None:
-    """The latest validated AI profile, or None. Never generates one (no model calls from the UI)."""
+    """The latest validated AI profile, or None. Never generates one (no model calls from the UI).
+    Reads both the current format (about + titled points) and version 1 (overview + plain claims)."""
     try:
         with session_scope() as s:
             row = outputs.latest(s, "profile", ticker.upper())
             if row is None:
                 return None
             by_id = {src["id"]: src for src in row.sources}
-            sections = []
-            for key, title in PROFILE_TITLES.items():
-                points = []
-                for claim in row.content.get(key, []):
-                    links = [_source_link(by_id.get(i)) for i in claim["source_ids"]]
-                    seen, uniq = set(), []
-                    for l in links:
-                        if l and (l.label, l.url) not in seen:
-                            seen.add((l.label, l.url))
-                            uniq.append(l)
-                    points.append(ProfilePoint(claim["text"], uniq))
-                sections.append((title, points))
-            return Profile(sections, row.content.get("what_changed", ""), row.created_at.date().isoformat())
+
+            def point(item: dict) -> ProfilePoint:
+                seen, uniq = set(), []
+                for l in (_source_link(by_id.get(i)) for i in item.get("source_ids", [])):
+                    if l and (l.label, l.url) not in seen:
+                        seen.add((l.label, l.url))
+                        uniq.append(l)
+                return ProfilePoint(item["text"], uniq, item.get("title", ""))
+
+            c = row.content
+            v2 = "about" in c or "business" in c
+            about = [point(x) for x in c.get("about" if v2 else "overview", [])]
+            titles = PROFILE_TITLES if v2 else _V1_TITLES
+            sections = [(title, [point(x) for x in c.get(key, [])]) for key, title in titles.items() if c.get(key)]
+            return Profile(about, sections, c.get("what_changed", ""), row.created_at.date().isoformat(), c.get("filing", ""))
     except OperationalError:
         return None
 
@@ -566,3 +574,230 @@ def get_price_chart(ticker: str) -> PriceChart | None:
     first = closes[0][0]
     out.append(_chart_range("MAX", f"since {first:%b} {first.year}", closes, day))
     return PriceChart(closes[-1][1], out)
+
+
+# ---- markets: index funds and ETFs -----------------------------------------------------------------
+
+@dataclass(frozen=True)
+class MarketTile:
+    ticker: str
+    name: str
+    group: str
+    tracks: str
+    issuer: str
+    day: float | None
+    month: float | None
+    year: float | None
+    spark: str | None       # SVG points for a 1-year growth line (local development only)
+    followed: bool
+
+
+def _tile(fund, rets: list[float], followed: bool, spark: bool) -> MarketTile:
+    from tracker.analysis import performance as pf
+
+    def last(n):
+        return pf.compound(rets[-n:]) if len(rets) >= n * 0.9 else None
+    line = pf.svg_points(pf.index_line(rets[-252:]), width=120, height=36, pad=3, max_points=60) if spark and len(rets) > 40 else None
+    return MarketTile(fund.ticker, fund.name, fund.group, fund.tracks, fund.issuer,
+                      rets[-1] if rets else None, last(21), last(252), line, followed)
+
+
+def _sparklines_allowed() -> bool:
+    return config.CHART_PROVIDER != "none"  # same gate as the custom chart (rule 13)
+
+
+def get_markets(email: str | None = None) -> list[tuple[str, list[MarketTile]]]:
+    """All funds by group, with day / 1-month / 1-year change from stored daily changes."""
+    from tracker.data import markets
+
+    try:
+        with session_scope() as s:
+            mine = set(accounts.followed_markets(s, email)) if email else set()
+            data = {f.ticker: [r for _, r in _returns(s, f.ticker, 260)] for f in markets.load()}
+    except OperationalError:
+        return []
+    spark = _sparklines_allowed()
+    return [(g, [_tile(f, data[f.ticker], f.ticker in mine, spark) for f in markets.load() if f.group == g]) for g in markets.GROUPS]
+
+
+def get_followed_markets(email: str | None) -> list[MarketTile]:
+    from tracker.data import markets
+
+    by = markets.by_ticker()
+    try:
+        with session_scope() as s:
+            mine = accounts.followed_markets(s, email) if email else list(markets.DEFAULT_FOLLOWED)
+            data = {t: [r for _, r in _returns(s, t, 260)] for t in mine if t in by}
+    except OperationalError:
+        return []
+    spark = _sparklines_allowed()
+    return [_tile(by[t], data[t], True, spark) for t in mine if t in by]
+
+
+def save_markets(email: str, tickers: list[str]) -> str | None:
+    try:
+        with session_scope() as s:
+            accounts.set_markets(s, email, tickers)
+    except accounts.WatchlistError as e:
+        return str(e)
+    return None
+
+
+@dataclass(frozen=True)
+class FundPage:
+    ticker: str
+    name: str
+    group: str
+    tracks: str
+    issuer: str
+    tv_symbol: str
+    perf: Performance | None
+    chart: PriceChart | None
+    followed: bool
+
+
+def get_fund(ticker: str, email: str | None = None) -> FundPage | None:
+    from tracker.data import markets
+
+    f = markets.by_ticker().get(ticker.upper())
+    if f is None:
+        return None
+    try:
+        with session_scope() as s:
+            followed = bool(email) and f.ticker in accounts.followed_markets(s, email)
+    except OperationalError:
+        followed = False
+    return FundPage(f.ticker, f.name, f.group, f.tracks, f.issuer, f.tv_symbol, get_performance(f.ticker),
+                    get_price_chart(f.ticker), followed)
+
+
+# ---- portfolio: performance since each stock's start date ------------------------------------------------
+
+@dataclass(frozen=True)
+class Holding:
+    stock: Stock
+    start: str | None          # YYYY-MM-DD performance is measured from
+    since_start: float | None  # compounded daily changes after the start date
+    day: float | None
+    day_date: str | None
+    spark: str | None          # since-start growth line (local development only)
+
+
+def get_portfolio(email: str) -> tuple[list[Holding], float | None, float | None]:
+    """(holdings, equal-weight average since start, S&P 500 (SPY) over the same windows, averaged)."""
+    from tracker.analysis import performance as pf
+    from tracker.data.prices import MARKET_TICKER
+
+    stocks = get_watchlist(email)
+    out, mine, bench = [], [], []
+    spark = _sparklines_allowed()
+    with session_scope() as s:
+        starts = accounts.start_dates(s, email)
+        spy = _returns(s, MARKET_TICKER)
+        for st in stocks:
+            rows = _returns(s, st.ticker)
+            start = starts.get(st.ticker)
+            after = [r for d, r in rows if start and d > start]
+            since = pf.compound(after) if after else (0.0 if start else None)
+            if since is not None:
+                mine.append(since)
+                bench.append(pf.compound([r for d, r in spy if d > start]))
+            line = pf.svg_points(pf.index_line(after), width=120, height=36, pad=3, max_points=60) if spark and len(after) > 2 else None
+            out.append(Holding(st, start.isoformat() if start else None, since,
+                               rows[-1][1] if rows else None, rows[-1][0].isoformat() if rows else None, line))
+    avg = sum(mine) / len(mine) if mine else None
+    bavg = sum(bench) / len(bench) if bench else None
+    return out, avg, bavg
+
+
+def set_start_date(email: str, ticker: str, start) -> str | None:
+    try:
+        with session_scope() as s:
+            accounts.set_start_date(s, email, ticker, start)
+    except accounts.WatchlistError as e:
+        return str(e)
+    return None
+
+
+# ---- preferences, onboarding, notifications, share links -------------------------------------------------
+
+@dataclass(frozen=True)
+class Prefs:
+    stock_alerts: bool
+    market_alerts: bool
+    alert_threshold_pct: float
+    email_alerts: bool
+    digest: str
+    home: str
+    perf_basis: str
+    onboarded: bool
+
+
+def get_prefs(email: str) -> Prefs:
+    with session_scope() as s:
+        p = accounts.prefs(s, email)
+        return Prefs(p.stock_alerts, p.market_alerts, float(p.alert_threshold_pct), p.email_alerts, p.digest, p.home,
+                     p.perf_basis, p.onboarded_at is not None)
+
+
+def save_prefs(email: str, **values) -> str | None:
+    try:
+        with session_scope() as s:
+            accounts.set_prefs(s, email, **values)
+    except ValueError as e:
+        return str(e)
+    return None
+
+
+def needs_onboarding(email: str) -> bool:
+    with session_scope() as s:
+        return accounts.needs_onboarding(s, email)
+
+
+def finish_onboarding(email: str) -> None:
+    from datetime import UTC, datetime
+
+    with session_scope() as s:
+        accounts.set_prefs(s, email, onboarded_at=datetime.now(UTC).replace(tzinfo=None))
+
+
+@dataclass(frozen=True)
+class Alert:
+    kind: str
+    title: str
+    body: str
+    url: str
+    created: str      # YYYY-MM-DD HH:MM
+    unread: bool
+
+
+def get_alerts(email: str, limit: int = 30) -> list[Alert]:
+    with session_scope() as s:
+        return [Alert(n.kind, n.title, n.body, n.url, f"{n.created_at:%Y-%m-%d %H:%M}", n.read_at is None)
+                for n in accounts.notifications(s, email, limit)]
+
+
+def unread_alerts(email: str) -> int:
+    try:
+        with session_scope() as s:
+            return accounts.unread_count(s, email)
+    except OperationalError:
+        return 0
+
+
+def mark_alerts_read(email: str) -> None:
+    with session_scope() as s:
+        accounts.mark_read(s, email)
+
+
+def share_link_valid(token: str | None) -> bool:
+    try:
+        with session_scope() as s:
+            return accounts.share_link_valid(s, token)
+    except OperationalError:
+        return False
+
+
+def use_share_link(token: str) -> bool:
+    with session_scope() as s:
+        return accounts.use_share_link(s, token)

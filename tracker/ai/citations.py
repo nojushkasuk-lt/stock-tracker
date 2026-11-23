@@ -16,8 +16,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-SourceKind = Literal["headline", "primary", "metrics", "own"]
+SourceKind = Literal["headline", "primary", "metrics", "own", "reference"]
 # headline: a news result seen as a headline only. primary: an SEC filing / earnings release read in full.
+# reference: an encyclopedia article read in full (history and background only).
 # metrics: our own numbers computed from EDGAR or the price provider. own: our previous profile or note.
 
 NO_CATALYST = "No clear catalyst found yet."
@@ -116,8 +117,8 @@ def wording_problem(text: str, cited: list[Source], input_text: str) -> str | No
         return "says beat/miss but the input gives no expectation"
     if any(s.kind == "primary" for s in cited):
         return None
-    if all(s.kind in ("metrics", "own") for s in cited):
-        return None  # our own numbers and earlier text: facts, but no causes
+    if all(s.kind in ("metrics", "own", "reference") for s in cited):
+        return None  # our own numbers, earlier text, encyclopedia background: facts, but no causes
     if not is_hedged(text):
         return "headline-only claim without cautious wording"
     cause = FIRM_CAUSE.search(text)

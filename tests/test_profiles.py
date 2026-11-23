@@ -8,7 +8,7 @@ from sqlalchemy import select
 from test_llm import NOW, db, fake  # noqa: F401
 from tracker.ai import profiles
 from tracker.ai.citations import Claim
-from tracker.ai.profiles import ProfileOut
+from tracker.ai.profiles import Point, ProfileOut
 from tracker.analysis.metrics import Metrics
 from tracker.data import filing_text as ft
 from tracker.models import AiOutput, Filing, Universe, User, UserWatchlist
@@ -92,10 +92,15 @@ def test_metrics_text_formats_numbers_the_model_can_quote():
 
 # ---- queue ----------------------------------------------------------------------------------------
 
-GOOD = ProfileOut(overview=[Claim(text="Costco operated 914 warehouses.", source_ids=["K1"])],
-                  strategy_and_trajectory=[Claim(text="It plans 30 net new warehouses.", source_ids=["K1"])],
-                  bull_case=[Claim(text="Net sales increased 8%.", source_ids=["K1"])],
-                  bear_case=[Claim(text="Tariffs could raise costs.", source_ids=["K1"])])
+def pt(title, text, ids=("K1",)):
+    return Point(title=title, text=text, source_ids=list(ids))
+
+
+GOOD = ProfileOut(about=[Claim(text="Costco operated 914 warehouses.", source_ids=["K1"])],
+                  business=[pt("Warehouse model", "Costco operated 914 warehouses.")],
+                  strategy_and_trajectory=[pt("More warehouses", "It plans 30 net new warehouses.")],
+                  bull_case=[pt("Sales growth", "Net sales increased 8%.")],
+                  bear_case=[pt("Tariff risk", "Tariffs could raise costs.")])
 
 
 class FakeFetcher:
@@ -165,7 +170,7 @@ def test_budget_stop_leaves_filings_queued(setup, monkeypatch):
 
 
 def test_rejected_output_marks_filing_done_and_keeps_old_profile(setup):
-    bad = ProfileOut(overview=[Claim(text="Invented.", source_ids=["Z1"])])
+    bad = ProfileOut(about=[Claim(text="Invented.", source_ids=["Z1"])])
     out = profiles.process_queue(setup, FakeFetcher(), client=fake(parsed=bad), now=NOW)
     assert all(v.startswith("no profile") for v in out.values())
     assert status(setup)["c-new"] is True and setup.scalars(select(AiOutput)).first() is None
@@ -183,3 +188,31 @@ def test_build_sources_orders_previous_metrics_then_filing():
     secs = [ft.Section("mdna", "10-Q Item 2 MD&A", "text", "https://sec/x.htm")]
     ids = [s.id for s in profiles.build_sources(None, Metrics(revenue_ttm=1e9), secs)]
     assert ids == ["M1", "K1"]
+    ref = profiles.build_sources(None, None, secs, reference=("Founded in 1976.", "https://en.wikipedia.org/wiki/X"))
+    assert [(s.id, s.kind) for s in ref] == [("K1", "primary"), ("W1", "reference")]
+
+
+def test_points_are_checked_title_and_text_together():
+    from tracker.ai.citations import Source
+    src = [Source(id="K1", kind="primary", text="Net sales increased 8%.", label="10-K")]
+    out = ProfileOut(about=[Claim(text="Net sales increased 8%.", source_ids=["K1"])],
+                     business=[pt("Sales up 8%", "Net sales increased 8%."), pt("Sales up 12%", "Net sales increased 8%.")],
+                     bull_case=[pt("Growth", "Net sales increased 8%.")], bear_case=[pt("Risk", "Net sales increased 8%.")])
+    kept, checked = profiles.validate(out, src)
+    assert [p.title for p in kept.business] == ["Sales up 8%"]       # 12% appears nowhere in the input
+    assert any("12" in d.reason for d in checked.dropped)
+
+
+def test_profile_without_a_required_section_is_rejected():
+    from tracker.ai.citations import Source
+    src = [Source(id="K1", kind="primary", text="Net sales increased 8%.", label="10-K")]
+    out = ProfileOut(about=[Claim(text="Net sales increased 8%.", source_ids=["K1"])], business=[pt("Growth", "Net sales increased 8%.")])
+    assert profiles.validate(out, src)[0] is None
+
+
+def test_wikipedia_lead_and_condensed_history():
+    from tracker.data import wikipedia
+    text = "Lead text.\n\n== History ==\n\n=== 1976–1984 ===\n" + "Early. " * 400 + "\n=== 2007–2011 ===\nThe iPhone.\n\n== Products ==\nMac."
+    out = wikipedia.lead_and_history(text, max_chars=3000)
+    assert out.startswith("Lead text.") and "1976–1984: Early." in out and "2007–2011: The iPhone." in out
+    assert "Mac." not in out and len(out) <= 3000
