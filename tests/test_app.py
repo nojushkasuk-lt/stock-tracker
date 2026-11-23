@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from streamlit.testing.v1 import AppTest
 
 APP = str(Path(__file__).resolve().parent.parent / "app.py")
@@ -55,6 +57,10 @@ def test_coverage_service_refuses_in_demo_mode(monkeypatch):
     assert cov.links == [] and "signed-in" in cov.message
 
 
+_GOOGLE_SECRETS = (Path(__file__).resolve().parent.parent / ".streamlit" / "secrets.toml").exists()
+
+
+@pytest.mark.skipif(_GOOGLE_SECRETS, reason="Streamlit uses Google sign-in when secrets.toml exists; the old app is being replaced by web/")
 def test_signed_in_user_without_stocks_is_sent_to_settings(monkeypatch):
     from tracker import services
 

@@ -19,7 +19,7 @@ The app does not republish articles. It shows headlines, outlets, links and its 
 ## Stack
 
 - Python 3.12
-- Streamlit for the UI (may be replaced by NiceGUI later, so keep the UI thin)
+- Website: FastAPI + server-rendered Jinja templates + hand-written CSS (`web/`), Google sign-in via Authlib. Replaces the Streamlit app (`app.py`, kept until the new site covers everything). Design: "Midnight" (dark navy, Manrope + IBM Plex Mono), mockups at https://claude.ai/artifact/MrZqaUub8gP6irMyBEetQo
 - SQLAlchemy 2.x; SQLite locally, Neon Postgres when deployed (only `DATABASE_URL` changes)
 - TradingView free embed widgets for all price charts, quotes, heatmap and economic calendar (embedded with `st.iframe`, since `st.components.v1.html` is deprecated; keep the TradingView link on each widget). `st.iframe` gives an HTML string same-origin access to the app, so only ever pass HTML that `ui/tradingview.py` builds from a validated ticker, never user or model text. `data:` URLs (which would isolate the widget) did not render the widgets
 - Plotly only for charts of our own EDGAR-derived numbers (revenue, margins)
@@ -31,7 +31,12 @@ The app does not republish articles. It shows headlines, outlets, links and its 
 ## Folder layout
 
 ```
-app.py                  # UI only
+web/
+  main.py               # routes; display only (rule 1): data from tracker/services.py, widgets from ui/
+  auth.py               # Google sign-in (Authlib), signed session cookie; local dev sign-in only without Google keys
+  views.py              # shapes service results for templates (formatting, source numbering)
+  templates/, static/   # Jinja pages (autoescaped) and style.css / app.js
+app.py                  # old Streamlit UI, being replaced by web/
 ui/
   tradingview.py        # builds TradingView widget HTML (chart, symbol info, heatmap, calendar)
   text.py               # md(): escape model text before st.markdown (no links, no $ math)
@@ -53,6 +58,7 @@ tracker/
   analysis/
     metrics.py          # TTM, margins, growth, EPS, net debt/EBITDA from EDGAR figures (definitions in docs/metrics.md)
     moves.py            # move detection and the market -> industry -> stock ladder
+    performance.py      # range performance and risk (volatility, beta, drawdown) from daily returns only
   ai/
     llm.py              # single wrapper: all model calls, budget check, cost log
     prompts/            # one .md file per prompt (rules.md is shared by all)
@@ -103,7 +109,7 @@ The universe is the 100 largest US-listed companies by market cap **as reported 
 9. **EDGAR:** send a `User-Agent` with a name and contact email from config; stay under 10 requests per second.
 10. **Secrets** live in `.env` (local), `st.secrets` (Streamlit Cloud) and GitHub Actions secrets. Never commit them. Never put `ANTHROPIC_API_KEY` in a shell profile: Claude Code would then bill the API instead of the subscription.
 11. **Public text:** never reproduce article text. Show headline, outlet, link and our own note. Headlines come from live search results and are not stored (rule 13).
-12. **Footer:** "For information only. Not investment advice." plus "News search by Brave Search API" (Brave's free credit requires the credit line). Keep the TradingView link on every widget.
+12. **Footer:** "For information only. Not investment advice." plus "News search by Brave Search API" (Brave's free credit requires the credit line) and the owner credit "Designed and built by Nojus Šukaitis" (`config.OWNER_CREDIT`). Keep the TradingView link on every widget.
 13. **Data licensing. Read this twice.**
     - Most free price and news APIs are licensed for the account holder's own use only, not for showing data to other people. Do not add one to the public site without recording its terms in `docs/data-licensing.md`.
     - On the public site, prices, charts, quotes and market-wide visuals are shown only through TradingView widgets. We never store price history or OHLC.
@@ -135,7 +141,7 @@ The universe is the 100 largest US-listed companies by market cap **as reported 
 ```
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-streamlit run app.py
+uvicorn web.main:app --reload    # then open http://localhost:8000
 pytest
 python -m jobs.daily
 ```

@@ -1,0 +1,7 @@
+{% macro refs(numbers) -%}
+{%- if numbers %}<sup class="ref">{% for n in numbers %}<a href="#src-{{ n }}">{{ n }}</a>{% if not loop.last %} {% endif %}{% endfor %}</sup>{% endif -%}
+{%- endmacro %}
+
+{% macro logo(stock, size="") -%}
+<span class="logo {{ size }}" aria-hidden="true">{{ stock.name[:1] }}</span>
+{%- endmacro %}

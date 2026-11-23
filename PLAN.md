@@ -145,5 +145,12 @@
 - Company history: Wikipedia allowed as a cited source, for history only. The About section is one paragraph: a few historical facts that explain how the company reached its position, plus its main selling points. Not a history lesson.
 - Look: minimalist but sophisticated, dark blue / blue-gray palette. Mockups: https://claude.ai/artifact/MrZqaUub8gP6irMyBEetQo (A Midnight, B Harbor, C Slate). Owner picks one.
 - Then, in order: new site on the existing services; richer content (About, sections, risk metrics from daily returns, logos); ETFs; international (20-F filers, then EU ESEF, then Korea DART, Japan last); deploy on the domain (licensing gate still applies).
-- [ ] Owner picks a design direction
+- [x] Owner picks a design direction: A · Midnight (2026-11-23). Changes asked: range tabs show that range's performance (1D default), plainer start-page wording, a Coverage section with key articles from the chosen outlets, owner credit in the footer.
 - [ ] Owner picks the host and buys the domain
+- [x] New site, first slice (`web/`): start page (Google / demo), portfolio, stock page (performance ranges, chart, latest move, About, profile tabs, coverage, filings, numbered sources, key facts, valuation widget, growth/balance/risk metrics), market, settings. Tested (`tests/test_web.py`).
+- [ ] Owner adds `http://localhost:8000/auth/callback` to the Google OAuth client's redirect URIs
+- [ ] Portfolio "since your start date" (start date per stock; local only until a display-licensed price source)
+- [ ] About paragraph from Wikipedia + Wikidata key facts (CEO, HQ, founded, employees), logos
+- [ ] Retire the Streamlit app once the new site covers the revenue/margin chart
+- 2026-11-23, Claude Code: redesign decided (Midnight, FastAPI, Google only, Wikipedia for history); first slice of the new site built on the existing services, with range performance and risk stats from daily returns. 203 tests.
+- Next: owner adds the new redirect URI; then start dates and since-start performance, About from Wikipedia/Wikidata, logos, ETFs, international.

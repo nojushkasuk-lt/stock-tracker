@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="start">
+  <section class="start-left">
+    <div class="brand">{% include "_mark.html" %}Stock Tracker</div>
+    <div style="max-width: 520px">
+      <h1 style="margin: 0 0 24px; font-size: 34px; line-height: 1.15; font-weight: 800">Large-cap stocks from the US, Europe and Asia</h1>
+      <dl class="features">
+        <div><dt>Watchlist</dt><dd>Up to 15 stocks, with performance from a start date you choose.</dd></div>
+        <div><dt>Fundamentals</dt><dd>Revenue, margins, growth and debt, computed from official filings.</dd></div>
+        <div><dt>Company profiles</dt><dd>Business, strategy, bull and bear case, updated after each report.</dd></div>
+        <div><dt>Move alerts</dt><dd>A short sourced note when a stock or the market moves sharply.</dd></div>
+      </dl>
+    </div>
+    <div class="faint" style="font-size: 12.5px">{{ credit }}</div>
+  </section>
+  <section class="start-right">
+    <div class="start-box">
+      <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 6px">Sign in</h2>
+      {% if flash %}<div class="flash" role="status">{{ flash }}</div>{% endif %}
+      {% if google %}
+        <a class="btn light block" href="/login">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M45.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h11.8c-.5 2.7-2.1 5-4.4 6.6v5.5h7.1c4.2-3.9 6.6-9.6 6.6-16.1z"/><path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-7.1-5.5c-2 1.3-4.5 2.1-7.4 2.1-5.7 0-10.5-3.8-12.2-9H4.5v5.7C8.1 41.1 15.5 46 24 46z"/><path fill="#FBBC05" d="M11.8 28.3c-.4-1.3-.7-2.7-.7-4.3s.3-3 .7-4.3V14H4.5C3 17 2 20.4 2 24s1 7 2.5 10l7.3-5.7z"/><path fill="#EA4335" d="M24 10.7c3.2 0 6.1 1.1 8.4 3.3l6.3-6.3C34.9 4.2 29.9 2 24 2 15.5 2 8.1 6.9 4.5 14l7.3 5.7c1.7-5.2 6.5-9 12.2-9z"/></svg>
+          Sign in with Google
+        </a>
+      {% elif dev_login %}
+        <form method="post" action="/dev-login" style="display: flex; flex-direction: column; gap: 10px">
+          <label class="search"><span class="sr-only">Email</span><input name="email" type="email" placeholder="you@example.com (local dev sign-in)" required></label>
+          <button class="btn primary block" type="submit">Sign in locally</button>
+        </form>
+      {% endif %}
+      <div class="or">or</div>
+      <a class="btn block" href="/demo">Explore the demo</a>
+      <p class="faint" style="margin: 6px 0 0; font-size: 13px; line-height: 1.6">The demo shows the 20 largest US companies, read-only. Signing in lets you choose your own stocks, news outlets and alerts.</p>
+      <p class="faint" style="margin: 18px 0 0; font-size: 12px">For information only. Not investment advice.</p>
+    </div>
+  </section>
+</div>
+{% endblock %}

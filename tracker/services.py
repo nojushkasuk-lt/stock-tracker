@@ -394,3 +394,76 @@ def dev_sign_in_allowed() -> bool:
 
 def watchlist_max() -> int:
     return config.WATCHLIST_MAX
+
+
+# ---- performance and risk (from stored daily percent changes; no prices stored) -------------------
+
+@dataclass(frozen=True)
+class RangeView:
+    label: str          # 1D, 1W, 1M, 6M, 1Y, 5Y
+    pct: float
+    caption: str        # "Nov 20, last session" / "past year"
+    points: str         # SVG polyline points (1000 x 250 box) for the growth line
+
+
+@dataclass(frozen=True)
+class Performance:
+    as_of: str
+    ranges: list[RangeView]
+    risk: "performance.Risk | None"
+
+
+_RANGE_CAPTIONS = {"1W": "past week", "1M": "past month", "6M": "past 6 months", "1Y": "past year", "5Y": "past 5 years"}
+
+
+def _returns(s, ticker: str, limit: int = 1300):
+    from tracker.models import DailyReturn
+
+    rows = s.execute(select(DailyReturn.date, DailyReturn.return_pct).where(DailyReturn.ticker == ticker)
+                     .order_by(DailyReturn.date.desc()).limit(limit)).all()
+    return [(d, float(r)) for d, r in reversed(rows)]
+
+
+def get_performance(ticker: str) -> Performance | None:
+    """Range performance (compounded daily changes) and 1-year risk stats vs the S&P 500 (SPY)."""
+    from tracker.analysis import performance
+    from tracker.data.prices import MARKET_TICKER
+
+    try:
+        with session_scope() as s:
+            rows = _returns(s, ticker.upper())
+            spy = dict(_returns(s, MARKET_TICKER))
+    except OperationalError:
+        return None
+    if not rows:
+        return None
+    rets = [r for _, r in rows]
+    last = rows[-1][0]
+    views = []
+    for rp in performance.ranges(rets):
+        seg = rets[-rp.days:]
+        caption = f"{last:%b} {last.day}, last session" if rp.label == "1D" else _RANGE_CAPTIONS[rp.label]
+        pts = "0,125 1000,125" if rp.label == "1D" else performance.svg_points(performance.index_line(seg))
+        views.append(RangeView(rp.label, rp.pct, caption, pts))
+    aligned = [(r, spy[d]) for d, r in rows[-performance.TRADING_DAYS:] if d in spy]
+    rk = performance.risk([a for a, _ in aligned], [b for _, b in aligned]) if aligned else None
+    return Performance(last.isoformat(), views, rk)
+
+
+def get_last_moves(tickers: list[str]) -> dict[str, tuple[str, float]]:
+    """Latest daily change per ticker: {ticker: (YYYY-MM-DD, pct)}."""
+    from sqlalchemy import func
+
+    from tracker.models import DailyReturn
+
+    if not tickers:
+        return {}
+    try:
+        with session_scope() as s:
+            latest = (select(DailyReturn.ticker, func.max(DailyReturn.date).label("d"))
+                      .where(DailyReturn.ticker.in_([t.upper() for t in tickers])).group_by(DailyReturn.ticker).subquery())
+            rows = s.execute(select(DailyReturn.ticker, DailyReturn.date, DailyReturn.return_pct)
+                             .join(latest, (DailyReturn.ticker == latest.c.ticker) & (DailyReturn.date == latest.c.d))).all()
+            return {t: (d.isoformat(), float(r)) for t, d, r in rows}
+    except OperationalError:
+        return {}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "_macros.html" import logo %}
+{% block title %}Portfolio · Stock Tracker{% endblock %}
+{% block content %}
+<section class="summary">
+  <div class="card">
+    <div class="eyebrow">{% if me.demo %}Demo · 20 largest US companies{% else %}Your stocks{% endif %}</div>
+    {% if summary %}
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-top: 8px; flex-wrap: wrap">
+        <div class="mono {{ summary.avg|tone }}" style="font-size: 40px">{{ summary.avg|pct }}</div>
+        <div class="muted" style="font-size: 14px">average on {{ summary.date|short_date }}
+          {% if market %} · S&amp;P 500 <span class="mono {{ market.index_return_pct|tone }}">{{ market.index_return_pct|pct }}</span>{% endif %}</div>
+      </div>
+      <div class="note-small" style="margin-top: 6px">{{ summary.up }} up, {{ summary.down }} down in the last session. Equal weight.</div>
+    {% else %}
+      <p class="muted" style="margin: 8px 0 0">No price data yet.</p>
+    {% endif %}
+  </div>
+  <div class="card">
+    <div class="eyebrow">Market</div>
+    {% if market and market.level != "none" %}
+      <div style="margin-top: 10px; color: var(--text-2)"><strong style="color: var(--warn)">Market alert:</strong>
+        the S&amp;P 500 {{ "fell" if market.index_return_pct < 0 else "rose" }} {{ market.index_return_pct|pct(signed=False)|replace("−", "") }} on {{ market.date|short_date }}.</div>
+      <a href="/market" style="display: inline-block; margin-top: 10px; font-weight: 700; font-size: 14px">Read the market note</a>
+    {% elif market %}
+      <div style="margin-top: 10px; color: var(--text-2)">S&amp;P 500 <span class="mono {{ market.index_return_pct|tone }}">{{ market.index_return_pct|pct }}</span> on {{ market.date|short_date }}. No alert.</div>
+      <a href="/market" style="display: inline-block; margin-top: 10px; font-weight: 700; font-size: 14px">Market overview</a>
+    {% else %}
+      <p class="muted" style="margin: 10px 0 0">No market data yet.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% if note %}
+<section class="card hl move">
+  {{ logo(note_stock, "sm") }}
+  <div class="move-body">
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline">
+      <a href="/stock/{{ note_stock.ticker }}" style="font-size: 16px; font-weight: 700; color: var(--text)">{{ note_stock.name }}</a>
+      <span class="mono {{ note.return_pct|tone }}">{{ note.return_pct|pct }}</span>
+      <span class="chip">{{ note.scope_label }}</span>
+      <span class="faint" style="font-size: 12.5px">{{ note.date|nice_date }}</span>
+    </div>
+    <p>{{ note.summary }}</p>
+    <div class="note-small" style="margin-top: 6px">AI note{% if note.headline_based %} based on headlines; causes are not confirmed{% endif %}. Sources on the stock page.</div>
+  </div>
+</section>
+{% endif %}
+
+<div class="row-between">
+  <h2 style="font-size: 20px">{% if me.demo %}Demo stocks{% else %}Following{% endif %}</h2>
+  {% if not me.demo %}<span class="faint" style="font-size: 13px">{{ cards|length }} of {{ max_stocks }}</span>{% endif %}
+</div>
+
+{% if not cards and not me.demo %}
+  <div class="card"><p style="margin: 0">You don't follow any stocks yet.</p><p style="margin: 12px 0 0"><a class="btn primary" href="/settings">Pick up to {{ max_stocks }} stocks</a></p></div>
+{% else %}
+<div class="grid">
+  {% for c in cards %}
+  <a class="stock-card" href="/stock/{{ c.s.ticker }}">
+    <span class="top">{{ logo(c.s, "sm") }}<span style="flex: 1; min-width: 0"><span class="nm">{{ c.s.name }}</span><span class="sub">{{ c.s.ticker }} · {{ c.s.industry }}</span></span></span>
+    <span class="nums">
+      <span>Last session<span class="mono {{ c.day|tone }}">{{ c.day|pct }}</span></span>
+      <span style="text-align: right">{{ c.date|short_date }}</span>
+    </span>
+  </a>
+  {% endfor %}
+  {% if not me.demo and cards|length < max_stocks %}<a class="add-card" href="/settings">+ Add a stock</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

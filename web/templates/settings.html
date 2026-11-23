@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_macros.html" import logo %}
+{% block title %}Settings · Stock Tracker{% endblock %}
+{% block content %}
+<form method="post" action="/settings">
+  <div style="display: flex; flex-direction: column; gap: 24px">
+    <h1 style="font-size: 28px; font-weight: 800">Settings</h1>
+    {% if error %}<div class="alert alert-major" role="alert">{{ error }}</div>{% endif %}
+
+    <section>
+      <div class="row-between"><h2 style="font-size: 20px">Your stocks</h2><span class="note-small" data-count data-max="{{ max_stocks }}">{{ mine|length }} of {{ max_stocks }} selected</span></div>
+      <label class="search" style="margin-top: 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <span class="sr-only">Search stocks</span><input type="search" placeholder="Search by name or ticker" data-filter=".pick label"></label>
+      <div class="pick">
+        {% for st in stocks %}
+        <label data-text="{{ st.name|lower }} {{ st.ticker|lower }}">
+          <input type="checkbox" name="ticker" value="{{ st.ticker }}" {% if st.ticker in mine %}checked{% endif %}>
+          {{ logo(st, "sm") }}
+          <span style="min-width: 0"><span class="nm">{{ st.name }}</span><span class="sub">{{ st.ticker }} · {{ st.industry }}</span></span>
+        </label>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <h2 style="font-size: 20px">News outlets</h2>
+      <p class="muted" style="margin: 4px 0 0">Coverage and note links come only from the outlets you pick. None picked means all of them.</p>
+      <div class="pick">
+        {% for o in outlets %}
+        <label><input type="checkbox" name="outlet" value="{{ o.domain }}" {% if o.domain in my_outlets %}checked{% endif %}>
+          <span><span class="nm">{{ o.name }}</span><span class="sub">{{ o.domain }}{% if o.paywall %} · subscription{% endif %}</span></span></label>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+  <div class="savebar"><span class="note-small">Changes apply to your portfolio, coverage and notes.</span><button class="btn primary" type="submit">Save</button></div>
+</form>
+{% endblock %}

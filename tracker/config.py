@@ -81,3 +81,10 @@ REFRESH_PER_USER_PER_DAY = _int("REFRESH_PER_USER_PER_DAY", 3)
 REFRESH_PER_MONTH = _int("REFRESH_PER_MONTH", 300)
 REFRESH_SHARE_HOURS = _float("REFRESH_SHARE_HOURS", 6.0)  # a refresh of a ticker is shared with everyone
 COVERAGE_SEARCHES_PER_USER_PER_DAY = _int("COVERAGE_SEARCHES_PER_USER_PER_DAY", 10)
+
+# Web app (web/): Google sign-in and signed session cookies
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID") or ""
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET") or ""
+SESSION_SECRET = os.environ.get("SESSION_SECRET") or ""
+BASE_URL = (os.environ.get("BASE_URL") or "http://localhost:8000").rstrip("/")
+OWNER_CREDIT = "Designed and built by Nojus Šukaitis"

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Market · Stock Tracker{% endblock %}
+{% block content %}
+<h1 style="font-size: 28px; font-weight: 800">Market</h1>
+{% if market and market.level != "none" %}
+  <div class="alert alert-{{ market.level }}" role="status">Market alert: the S&amp;P 500 {{ "fell" if market.index_return_pct < 0 else "rose" }}
+    {{ market.index_return_pct|pct(signed=False)|replace("−", "") }} on {{ market.date|nice_date }}.</div>
+  {% if market.note %}
+  {% set n = market.note %}
+  <section class="card hl">
+    <div class="eyebrow">Market note</div>
+    <div class="move-body">
+      <p>{{ n.summary }}</p>
+      {% if n.points %}<ul>{% for p in n.points %}<li>{{ p.text }}{% for l in p.sources %} <a href="{{ l.url }}" rel="noopener nofollow" target="_blank" class="faint" style="font-size: 12.5px">{{ l.label }}</a>{% endfor %}</li>{% endfor %}</ul>{% endif %}
+    </div>
+    {% if n.links %}
+    <details class="sources" style="margin-top: 14px">
+      <summary style="padding: 8px 0"><span>Coverage <span class="muted" style="font-weight: 500">· {{ n.links|length }}</span></span><span class="toggle"></span></summary>
+      <ul class="news">{% for l in n.links %}<li><span class="outlet">{{ l.label }}</span><a href="{{ l.url }}" rel="noopener nofollow" target="_blank">Article cited in the note</a></li>{% endfor %}</ul>
+    </details>
+    {% endif %}
+    <div class="note-small" style="margin-top: 12px">AI note, written {{ n.written }}. Based on headlines; causes are not confirmed.</div>
+  </section>
+  {% endif %}
+{% elif market %}
+  <section class="card"><span class="muted">S&amp;P 500</span> <span class="mono {{ market.index_return_pct|tone }}">{{ market.index_return_pct|pct }}</span>
+    <span class="muted">on {{ market.date|nice_date }}. No market alert (alerts start at a 2% move).</span></section>
+{% endif %}
+<section class="card"><div class="eyebrow" style="margin-bottom: 12px">S&amp;P 500 today</div>{{ heatmap|safe }}</section>
+<section class="card"><div class="eyebrow" style="margin-bottom: 12px">Economic calendar</div>{{ calendar|safe }}</section>
+<section class="card">
+  <div class="eyebrow" style="margin-bottom: 8px">Official sources</div>
+  <ul class="news">
+    <li><span class="outlet">Federal Reserve</span><a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" rel="noopener" target="_blank">FOMC meeting calendar</a></li>
+    <li><span class="outlet">US Treasury</span><a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve" rel="noopener" target="_blank">Daily yield curve rates</a></li>
+    <li><span class="outlet">BLS</span><a href="https://www.bls.gov/cpi/" rel="noopener" target="_blank">Consumer prices (CPI)</a></li>
+    <li><span class="outlet">BLS</span><a href="https://www.bls.gov/news.release/empsit.toc.htm" rel="noopener" target="_blank">Jobs report</a></li>
+  </ul>
+</section>
+{% endblock %}

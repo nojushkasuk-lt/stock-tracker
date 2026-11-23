@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% from "_macros.html" import refs, logo %}
+{% block title %}{{ s.name }} ({{ s.ticker }}) · Stock Tracker{% endblock %}
+{% block content %}
+{% set perf = m.perf %}
+<section class="stock-head">
+  <div class="ident">
+    {{ logo(s) }}
+    <div style="min-width: 0">
+      <h1 class="stock-name">{{ s.name }}</h1>
+      <div class="meta">
+        <span class="mono" style="color: var(--text)">{{ s.ticker }}</span>
+        {% for label, value in m.facts[1:3] %}<span>·</span><span>{{ value }}</span>{% endfor %}
+        <span class="chip">{{ s.industry }}</span>
+      </div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+    {% if perf %}
+    <div class="last">
+      <div class="mono faint" style="font-size: 13px">Last session · {{ perf.as_of|short_date }}</div>
+      <div class="big {{ perf.ranges[0].pct|tone }}">{{ perf.ranges[0].pct|pct }}</div>
+    </div>
+    {% endif %}
+    {% if me.email %}
+      {% if following %}<a class="btn primary" href="/settings">Following</a>{% else %}<a class="btn" href="/settings">Follow</a>{% endif %}
+    {% endif %}
+  </div>
+</section>
+
+<section class="card" data-perf>
+  <div class="row-between" style="align-items: center; margin-bottom: 12px">
+    <div>
+      <div class="eyebrow">Performance</div>
+      {% if perf %}
+      <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 2px">
+        <span class="perf-num {{ perf.ranges[0].pct|tone }}" data-perf-num>{{ perf.ranges[0].pct|pct }}</span>
+        <span class="muted" style="font-size: 13px" data-perf-caption>{{ perf.ranges[0].caption }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% if perf %}
+    <div class="seg" role="group" aria-label="Time range">
+      {% for r in perf.ranges %}
+      <button type="button" aria-pressed="{{ 'true' if loop.first else 'false' }}" data-range="{{ r.label }}"
+              data-pct="{{ r.pct|pct }}" data-tone="{{ r.pct|tone }}" data-caption="{{ r.caption }}" data-points="{{ r.points }}">{{ r.label }}</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% if local_chart %}
+  <div class="chart">
+    <svg viewBox="0 0 1000 250" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="fillA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7DB2FF" stop-opacity="0.22"></stop><stop offset="1" stop-color="#7DB2FF" stop-opacity="0"></stop></linearGradient></defs>
+      <line x1="0" y1="62" x2="1000" y2="62" stroke="#1C2A44"></line><line x1="0" y1="125" x2="1000" y2="125" stroke="#1C2A44"></line><line x1="0" y1="188" x2="1000" y2="188" stroke="#1C2A44"></line>
+      <polygon fill="url(#fillA)" points="" data-area></polygon>
+      <polyline fill="none" stroke="#7DB2FF" stroke-width="2" vector-effect="non-scaling-stroke" stroke-dasharray="6 6" points="{{ perf.ranges[0].points }}" data-line></polyline>
+    </svg>
+    <div class="note-small" style="margin-top: 8px" data-chart-note>Growth line from daily changes (local development). For the intraday line, see the TradingView chart below.</div>
+  </div>
+  {% endif %}
+  <div class="tv">{{ chart_widget|safe }}</div>
+</section>
+
+{% if m.note %}
+{% set n = m.note.n %}
+<section class="card hl">
+  <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline">
+    <span class="eyebrow">Latest move</span>
+    <span class="mono {{ n.return_pct|tone }}">{{ n.return_pct|pct }}</span>
+    <span class="faint" style="font-size: 13px">{{ n.date|nice_date }}</span>
+    <span class="chip">{{ n.scope_label }}</span>
+  </div>
+  <div class="move-body">
+    <p>{{ n.summary }}{{ refs(m.note.summary_refs) }}</p>
+    {% if m.note.points %}<ul>{% for p in m.note.points %}<li>{{ p.text }}{{ refs(p.refs) }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+  <div class="row-between" style="margin-top: 14px; align-items: center">
+    <span class="note-small">AI note, written {{ n.written }}. {% if n.headline_based %}Based on headlines; causes are not confirmed.{% else %}Based on the company's SEC filing and coverage.{% endif %}</span>
+    {% if me.email %}
+    <form method="post" action="/stock/{{ s.ticker }}/refresh" style="display: flex; gap: 10px; align-items: center">
+      <span class="note-small">{{ refreshes_left }} refreshes left today</span>
+      <button class="btn" type="submit" {% if refreshes_left == 0 %}disabled{% endif %}>Refresh now</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% elif me.email %}
+<section class="card row-between" style="align-items: center">
+  <span class="muted">No big move to explain. Notes appear when the stock moves 5% or more in a day.</span>
+  <form method="post" action="/stock/{{ s.ticker }}/refresh" style="display: flex; gap: 10px; align-items: center">
+    <span class="note-small">{{ refreshes_left }} refreshes left today</span>
+    <button class="btn" type="submit" {% if refreshes_left == 0 %}disabled{% endif %}>Write a note now</button>
+  </form>
+</section>
+{% endif %}
+
+<div class="cols">
+  <div class="col-main">
+    <section class="card">
+      <div class="eyebrow">About</div>
+      {% if m.about %}
+        <p class="about">{% for x in m.about.sentences %}{{ x.text }}{{ refs(x.refs) }}{% if not loop.last %} {% endif %}{% endfor %}</p>
+      {% else %}
+        <p class="about muted">No profile yet. It is written when {{ s.name }} files its next annual or quarterly report.</p>
+      {% endif %}
+    </section>
+
+    {% if m.tabs %}
+    <section class="card" style="padding-top: 8px" data-tabs>
+      <div class="tabs" role="tablist" aria-label="Profile">
+        {% for t in m.tabs %}<button type="button" role="tab" id="tab-{{ t.id }}" aria-controls="panel-{{ t.id }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ t.label }}</button>{% endfor %}
+      </div>
+      {% for t in m.tabs %}
+      <div role="tabpanel" id="panel-{{ t.id }}" aria-labelledby="tab-{{ t.id }}" {% if not loop.first %}hidden{% endif %}>
+        <ul class="points">{% for p in t.points %}<li><span class="dot {{ t.tone }}"></span><span>{{ p.text }}{{ refs(p.refs) }}</span></li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+      <div class="note-small" style="margin-top: 18px">Written by AI from {{ s.name }}'s SEC filings on {{ m.profile_updated|nice_date }}. Updated when the company files its next report.</div>
+    </section>
+    {% endif %}
+
+    <section class="card" id="coverage">
+      <div class="row-between" style="margin-bottom: 6px">
+        <div class="eyebrow">Coverage</div>
+        <div class="note-small">{% if me.email %}Key articles from {{ outlets }}{% else %}For signed-in users{% endif %}</div>
+      </div>
+      {% if m.coverage %}
+        {% if m.coverage.message %}<p class="muted">{{ m.coverage.message }}</p>{% endif %}
+        <ul class="news">
+          {% for l in m.coverage.links[:8] %}
+          <li><span class="outlet">{{ l.outlet }}</span><a href="{{ l.url }}" rel="noopener nofollow" target="_blank">{{ l.title }}</a>
+            <span class="when">{% if l.published %}{{ l.published.strftime("%b %d") }}{% endif %}{% if l.paywall %} · subscription{% endif %}</span></li>
+          {% endfor %}
+        </ul>
+      {% elif m.note and m.note.n.links %}
+        <ul class="news">
+          {% for l in m.note.n.links[:5] %}<li><span class="outlet">{{ l.label }}</span><a href="{{ l.url }}" rel="noopener nofollow" target="_blank">Article cited in the move note</a><span class="when">{{ m.note.n.date|short_date }}</span></li>{% endfor %}
+        </ul>
+      {% endif %}
+      {% if coverage_on %}
+      <form method="post" action="/stock/{{ s.ticker }}/coverage#coverage" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 14px">
+        <button class="btn" type="submit" {% if searches_left == 0 %}disabled{% endif %}>{% if m.coverage %}Search again{% else %}Find recent coverage{% endif %}</button>
+        <span class="note-small">{{ searches_left }} searches left today. Live news search; headlines link to the outlet and are not stored.</span>
+      </form>
+      {% elif not me.email %}
+      <p class="note-small" style="margin: 12px 0 0">Sign in to search recent coverage from the outlets you choose.</p>
+      {% endif %}
+    </section>
+
+    {% if m.filings %}
+    <section class="card">
+      <div class="eyebrow" style="margin-bottom: 8px">Recent filings</div>
+      <ul class="news">{% for f in m.filings %}<li><span class="outlet">{{ f.form }}</span><a href="{{ f.url }}" rel="noopener" target="_blank">{{ f.label }}</a><span class="when">{{ f.filed|short_date }}</span></li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+
+    {% if m.refs.items %}
+    <details class="card tight sources" id="sources">
+      <summary><span>Sources &amp; further reading <span class="muted" style="font-weight: 500">· {{ m.refs.items|length }}</span></span><span class="toggle"></span></summary>
+      <ol>
+        {% for r in m.refs.items %}<li id="src-{{ r.n }}">{% if r.url %}<a href="{{ r.url }}" rel="noopener nofollow" target="_blank">{{ r.label }}</a>{% else %}{{ r.label }}{% endif %}</li>{% endfor %}
+      </ol>
+    </details>
+    {% endif %}
+  </div>
+
+  <aside class="col-side">
+    <section class="card">
+      <div class="eyebrow">Key facts</div>
+      <dl class="facts">{% for label, value in m.facts %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>
+    </section>
+    <section class="card">
+      <div class="row-between"><div class="eyebrow">Valuation</div><div class="note-small">via TradingView</div></div>
+      <div class="tv">{{ quote_widget|safe }}</div>
+    </section>
+    {% for g in m.groups %}
+    <section class="card">
+      <div class="row-between"><div class="eyebrow">{{ g.title }}</div><div class="note-small">{{ g.note }}</div></div>
+      <div class="metrics">{% for label, value, cls in g.metrics %}<div class="metric"><div class="l">{{ label }}</div><div class="v {{ cls }}">{{ value }}</div></div>{% endfor %}</div>
+    </section>
+    {% endfor %}
+  </aside>
+</div>
+{% endblock %}
