@@ -88,7 +88,9 @@ def test_sonnet_adobe_note_keeps_hedged_claims_and_drops_unhedged_one():
     assert note.ranked_source_ids == ["N1", "N2", "N3", "N4"]
     assert checked.stored_sources(ADBE_SOURCES) == [
         {"id": "N1", "url": "https://www.reuters.com/N1", "outlet": "Reuters"},
-        {"id": "N2", "url": "https://www.reuters.com/N2", "outlet": "Bloomberg"}]
+        {"id": "N2", "url": "https://www.reuters.com/N2", "outlet": "Bloomberg"},
+        {"id": "N3", "url": "https://www.reuters.com/N3", "outlet": "CNBC"},   # ranked links are kept too
+        {"id": "N4", "url": "https://www.reuters.com/N4", "outlet": "Yahoo Finance"}]
 
 
 def test_haiku_nike_note_loses_the_headline_beat_and_gets_a_safe_summary():
