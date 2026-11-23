@@ -41,3 +41,13 @@ updates (rare: about 4 filings a year per followed company, so the cost differen
 
 Caveat: one sample per model, and the subagents ran inside Claude Code rather than through the bare API.
 The Day 4 model test (20 real moves) is the fuller check.
+
+## First live API calls (2026-11-23)
+
+Same inputs through `tracker/ai/llm.py` with the new prompts. Cost: Haiku notes $0.0003 each, Sonnet profile $0.011.
+
+- Nike (Haiku): no "beat" this time; firm claims only from the 8-K; headline claims hedged. Nothing dropped.
+- Adobe (Haiku): hedged claims kept; one uncited claim restating the move was dropped by the validator.
+- Costco (Sonnet): all claims passed, but one mislabels a figure ("net margin of 3.6% at the operating level";
+  3.6% is the operating margin). The number check only confirms a number appears in the input, not that it is
+  attached to the right label. Keep this in mind for the Day 7 hand-check; a label-aware check is possible later.
