@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 
 from tracker.analysis.metrics import AnnualPoint, Metrics, annual_history, compute_metrics
+from tracker.data.global_listings import listings
 from tracker.data.charts import get_chart_series
 from tracker.db import session_scope
 from tracker import config
@@ -32,12 +33,26 @@ class Stock:
     segment: str = "US"  # universe seats: US (top 100), Europe, Asia (SEC-registered foreign filers, mostly ADRs)
 
     @property
+    def global_listing(self) -> bool:
+        return self.ticker in listings()
+
+    @property
+    def listing_overview(self) -> str | None:
+        row = listings().get(self.ticker)
+        return row["about"] if row else None
+
+    @property
+    def quote_embeddable(self) -> bool:
+        row = listings().get(self.ticker)
+        return row is None or row["embed"] == "1"
+
+    @property
     def region(self) -> str:
         return region_of(self.country)
 
     @property
     def foreign_filer(self) -> bool:
-        return self.segment != "US"
+        return self.segment != "US" and not self.global_listing
 
 
 REGIONS = {"United States": "North America", "Canada": "North America", "Mexico": "North America",
@@ -83,8 +98,24 @@ def _query():
 def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None, country: str | None = None) -> Stock:
     from tracker.data.wikidata import logo_thumb
 
-    return Stock(u.ticker, u.name, u.industry, u.market_cap_rank, tv_symbol(u.ticker, exchange),
+    return Stock(u.ticker, u.name, u.industry, u.market_cap_rank, u.ticker if u.ticker in listings() else tv_symbol(u.ticker, exchange),
                  logo_thumb(logo_url, 128) if logo_url else None, u.country or country or "United States", u.region or "US")
+
+
+def register_global_stocks() -> None:
+    from tracker.db import create_tables
+    from tracker.data.global_listings import seed_global_listings
+
+    # Production already has its schema. A fresh local install needs the universe table.
+    if config.APP_ENV != "prod":
+        create_tables()
+    with session_scope() as session:
+        seed_global_listings(session)
+
+
+def get_global_stocks() -> list[Stock]:
+    return [Stock(t, row["name"], row["industry"], None, t, country=row["country"], segment=row["region"])
+            for t, row in listings().items()]
 
 
 def get_demo_stocks() -> list[Stock]:
@@ -333,6 +364,9 @@ def refreshes_left(email: str) -> int:
 
 def request_refresh(email: str, ticker: str) -> str:
     """Rate-limited "Refresh now" (rule 6). Returns a message for the user."""
+    if ticker.upper() in listings():
+        return "Move notes are unavailable for this listing."
+
     from tracker.ai.notes import refresh_stock
     from tracker.data.edgar import EdgarClient
     from tracker.data.filing_text import FilingFetcher

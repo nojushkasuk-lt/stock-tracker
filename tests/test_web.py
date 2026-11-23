@@ -323,3 +323,31 @@ def test_tradingview_chart_gets_our_own_change_header_or_the_live_quote(client, 
     sign_in(client, "guest@example.com")
     page = client.get("/stock/AAPL").text
     assert 'class="perf-head"' not in page and "embed-widget-single-quote" in page and "advanced-chart" in page
+
+
+def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
+    from tracker.data.global_listings import listings, seed_global_listings
+
+    assert len(listings()) == 50
+    with services.session_scope() as session:
+        seed_global_listings(session)
+        seed_global_listings(session)
+
+    monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "owner")
+    client.get("/demo")
+    assert "Samsung Electronics" in client.get("/international").text
+    assert "KRX:005930" in {i["t"] for i in client.get("/search.json").json()}
+    samsung = client.get("/stock/KRX:005930")
+    assert samsung.status_code == 200
+    assert "tradingview.com/symbols/KRX-005930/" in samsung.text
+    assert "embed-widget-single-quote" not in samsung.text
+    bmw = client.get("/stock/XETR:BMW")
+    assert bmw.status_code == 200
+    assert "embed-widget-single-quote" in bmw.text and '"symbol": "XETR:BMW"' in bmw.text
+    assert "embed-widget-ticker-tape" in client.get("/portfolio").text
+
+    client.get("/logout")
+    sign_in(client)
+    assert services.save_watchlist("a@example.com", ["KRX:005930"]) is None
+    assert "Samsung Electronics" in client.get("/portfolio").text
+    assert "Write a note now" not in client.get("/stock/KRX:005930").text

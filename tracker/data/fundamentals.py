@@ -107,7 +107,7 @@ def refresh_fundamentals(session: Session, edgar: EdgarClient, tickers: list[str
 
     Day 3 will make this filing-triggered (refetch when a new 10-Q/10-K appears).
     """
-    q = select(Universe.ticker, Universe.cik)
+    q = select(Universe.ticker, Universe.cik).where(Universe.cik != "")
     if tickers:
         q = q.where(Universe.ticker.in_(tickers))
     have = set(session.scalars(select(Fundamental.ticker).distinct())) if only_missing else set()

@@ -171,3 +171,6 @@
 - Next: owner turns on Google Cloud billing, signs in to gcloud, creates Neon; then copy data and deploy link-only. Quarterly 6-K press releases (TSMC, Alibaba) are not yet detected as profile triggers.
 - 2026-11-23 (5), Claude Code: deployed to Cloud Run + Neon (link-only); provider figures owner-only so share links are safe now. 252 tests.
 - Next: push to GitHub; scheduled jobs (JOBS_ENABLED) once a licensed price provider is chosen; owner sends the provider emails.
+- [x] Add 50 international listings to browsing, search and watchlists. Use TradingView for daily changes in embeds where supported and via symbol links elsewhere. Keep the new listings outside paid quote and profile jobs.
+- 2026-11-23, Codex: added a TradingView portfolio quote strip and a 50-stock international catalog, including Samsung and European luxury and auto makers.
+- Next: deploy to Cloud Run and check real widget rendering from a shared link.

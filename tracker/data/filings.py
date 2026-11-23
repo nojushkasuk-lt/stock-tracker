@@ -80,7 +80,7 @@ def record_filings(session: Session, ticker: str, parsed: list[dict], now: datet
 
 def check_filings(session: Session, edgar: EdgarClient, tickers: list[str] | None = None) -> dict[str, list[Filing]]:
     """Check every active stock (or the given ones). Returns {ticker: new queued filings} for those with any."""
-    q = select(Universe.ticker, Universe.cik).where(Universe.active)
+    q = select(Universe.ticker, Universe.cik).where(Universe.active, Universe.cik != "")
     if tickers:
         q = q.where(Universe.ticker.in_(tickers))
     out = {}

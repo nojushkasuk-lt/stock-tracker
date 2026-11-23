@@ -13,7 +13,7 @@
       </div>
       <div class="note-small" style="margin-top: 6px">{{ summary.up }} up, {{ summary.down }} down in the last session. Equal weight.</div>
     {% else %}
-      <p class="muted" style="margin: 8px 0 0">No price data yet.</p>
+      <p class="muted" style="margin: 8px 0 0">Open a stock for its price and daily change.</p>
     {% endif %}
   </div>
   <div class="card">
@@ -26,10 +26,12 @@
       <div style="margin-top: 10px; color: var(--text-2)">S&amp;P 500 <span class="mono {{ market.index_return_pct|tone }}">{{ market.index_return_pct|pct }}</span> on {{ market.date|short_date }}. No alert.</div>
       <a href="/market" style="display: inline-block; margin-top: 10px; font-weight: 700; font-size: 14px">Market overview</a>
     {% else %}
-      <p class="muted" style="margin: 10px 0 0">No market data yet.</p>
+      {{ market_quote|safe }}
     {% endif %}
   </div>
 </section>
+
+{% if ticker_tape %}<section class="card" aria-label="Stock quotes">{{ ticker_tape|safe }}</section>{% endif %}
 
 {% if note %}
 <section class="card hl move">
@@ -59,10 +61,11 @@
   {% for c in cards %}
   <a class="stock-card" href="/stock/{{ c.s.ticker }}">
     <span class="top">{{ logo(c.s, "sm") }}<span style="flex: 1; min-width: 0"><span class="nm">{{ c.s.name }}</span><span class="sub">{{ c.s.ticker }} · {{ c.s.industry }}</span></span></span>
+    {% if c.day is none %}<span class="nums">View daily change</span>{% else %}
     <span class="nums">
       <span>Last session<span class="mono {{ c.day|tone }}">{{ c.day|pct }}</span></span>
       <span style="text-align: right">{{ c.date|short_date }}</span>
-    </span>
+    </span>{% endif %}
   </a>
   {% endfor %}
   {% if not me.demo and cards|length < max_stocks %}<a class="add-card" href="/settings">+ Add a stock</a>{% endif %}

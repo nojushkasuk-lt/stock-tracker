@@ -76,7 +76,7 @@ def main(years: int = 5, recheck_only: bool = False) -> None:
             return
         n = load_universe(s)
         print(f"universe: {n} new rows")
-        tickers = sorted(set(s.scalars(select(Universe.ticker))) | {MARKET_TICKER} | set(market_tickers()))
+        tickers = sorted(set(s.scalars(select(Universe.ticker).where(Universe.cik != ""))) | {MARKET_TICKER} | set(market_tickers()))
         start = date.today() - timedelta(days=365 * years + 5)
         returns = get_provider().daily_returns(tickers, start)
         missing = sorted(set(tickers) - set(returns))

@@ -2,6 +2,7 @@
 
 from sqlalchemy import select
 
+from tracker.data.global_listings import listings as global_listings
 from tracker.data.edgar import EdgarClient
 from tracker.data.listings import discover_new_listings, discovered_candidates
 from tracker.data.prices import get_provider
@@ -24,7 +25,7 @@ def main() -> None:
         pool = {c["ticker"]: c for c in csv_cands}
         pool.update({c["ticker"]: c for c in discovered_candidates(s)})
         intl = read_csv(INTERNATIONAL_PATH)
-        tickers = sorted(known | set(pool) | {c["ticker"] for c in intl})
+        tickers = sorted((known | set(pool) | {c["ticker"] for c in intl}) - set(global_listings()))
         caps = get_provider().market_caps(tickers)
         print(f"market caps for {len(caps)}/{len(tickers)} tickers")
         pins = read_pins()

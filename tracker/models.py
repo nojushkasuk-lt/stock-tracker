@@ -39,7 +39,7 @@ class Universe(Base):
     __table_args__ = (Index("idx_universe_industry", "industry"),)
 
     ticker: Mapped[str] = mapped_column(Text, primary_key=True)
-    cik: Mapped[str] = mapped_column(Text)  # zero-padded to 10 digits
+    cik: Mapped[str] = mapped_column(Text)  # zero-padded to 10 digits, empty for market-data-only listings
     name: Mapped[str] = mapped_column(Text)
     industry: Mapped[str] = mapped_column(Text)
     sic_code: Mapped[str | None] = mapped_column(Text)

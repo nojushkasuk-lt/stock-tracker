@@ -28,7 +28,7 @@ def save(session, facts_by_cik: dict[str, wikidata.Facts], now: datetime,
 def main() -> None:
     create_tables(get_engine())
     with session_scope() as s:
-        pairs = sorted((u.cik, u.ticker) for u in s.scalars(select(Universe)))
+        pairs = sorted((u.cik, u.ticker) for u in s.scalars(select(Universe).where(Universe.cik != "")))
     ciks = [c for c, _ in pairs]
     facts = wikidata.fetch(ciks)
     missing = [t.replace("-", ".") for c, t in pairs if c not in facts]

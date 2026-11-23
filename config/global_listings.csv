@@ -1,0 +1,51 @@
+ticker,name,industry,country,region,embed,about
+EURONEXT:MC,LVMH,Luxury Goods,France,Europe,0,"Operates luxury brands in fashion, leather goods, jewelry, perfumes and wines and spirits."
+EURONEXT:RMS,Hermès,Luxury Goods,France,Europe,0,"Makes luxury leather goods, ready-to-wear apparel, silk accessories, watches and jewelry."
+EURONEXT:KER,Kering,Luxury Goods,France,Europe,0,"Operates luxury fashion and jewelry houses including Gucci, Saint Laurent and Bottega Veneta."
+EURONEXT:OR,L’Oréal,Consumer Staples,France,Europe,0,"Develops and sells cosmetics, skincare, hair care and fragrances across consumer and professional brands."
+SIX:CFR,Richemont,Luxury Goods,Switzerland,Europe,1,Owns luxury jewelry and watch houses including Cartier and Van Cleef & Arpels.
+MIL:MONC,Moncler,Luxury Goods,Italy,Europe,1,"Sells premium outerwear, clothing and accessories through its Moncler and Stone Island brands."
+MIL:PRY,Prysmian,Industrials,Italy,Europe,1,"Makes cable systems for power transmission, distribution and telecommunications."
+XETR:BMW,BMW,Automobiles,Germany,Europe,1,"Produces BMW and MINI cars, Rolls-Royce luxury cars and BMW motorcycles."
+XETR:MBG,Mercedes-Benz Group,Automobiles,Germany,Europe,1,Builds Mercedes-Benz passenger vehicles and vans and offers vehicle financing.
+XETR:VOW3,Volkswagen (preferred),Automobiles,Germany,Europe,1,"Produces passenger and commercial vehicles through brands including Volkswagen, Audi and Škoda."
+XETR:P911,Porsche AG (preferred),Automobiles,Germany,Europe,1,"Designs and builds Porsche sports cars, sedans and SUVs."
+EURONEXT:RNO,Renault,Automobiles,France,Europe,0,Develops and sells passenger cars and light commercial vehicles under brands including Renault and Dacia.
+XETR:CON,Continental,Auto Parts,Germany,Europe,1,Develops tires and rubber-based industrial products.
+XETR:SIE,Siemens,Industrials,Germany,Europe,1,"Supplies industrial automation, building systems, rail technology and related software."
+XETR:ALV,Allianz,Insurance,Germany,Europe,1,"Provides property and casualty insurance, life insurance and asset management."
+XETR:RHM,Rheinmetall,Aerospace & Defense,Germany,Europe,1,"Supplies defense equipment including armored vehicles, ammunition and related systems."
+XETR:ENR,Siemens Energy,Industrials,Germany,Europe,1,Supplies power generation and grid technology and builds wind turbines through Siemens Gamesa.
+EURONEXT:AIR,Airbus,Aerospace & Defense,Netherlands,Europe,0,"Builds commercial aircraft, helicopters and defense and space systems."
+EURONEXT:SU,Schneider Electric,Industrials,France,Europe,0,Supplies equipment and software for energy management and industrial automation.
+EURONEXT:SAF,Safran,Aerospace & Defense,France,Europe,0,"Develops aircraft engines, landing systems and other aviation equipment."
+SIX:NESN,Nestlé,Consumer Staples,Switzerland,Europe,1,"Sells packaged foods, coffee, nutrition products and pet food."
+SIX:ROG,Roche (non-voting),Pharma & Biotech,Switzerland,Europe,1,Develops medicines and diagnostic tests and equipment.
+SIX:ABBN,ABB,Industrials,Switzerland,Europe,1,"Supplies electrification, industrial automation and motion-control products."
+BME:ITX,Inditex,Apparel Retail,Spain,Europe,1,"Operates fashion retail brands including Zara, Massimo Dutti and Bershka."
+BME:IBE,Iberdrola,Utilities,Spain,Europe,1,Generates electricity and operates power transmission and distribution networks.
+OMXSTO:VOLV_B,Volvo Group,Heavy Trucks,Sweden,Europe,1,"Makes trucks, buses, construction equipment and marine and industrial engines."
+OMXSTO:ATCO_A,Atlas Copco,Industrials,Sweden,Europe,1,"Supplies compressors, vacuum equipment, industrial tools and portable power equipment."
+KRX:005930,Samsung Electronics,Semiconductors,South Korea,Asia,0,"Makes memory chips, displays, smartphones and consumer electronics."
+KRX:000660,SK hynix,Semiconductors,South Korea,Asia,0,Produces memory semiconductors including DRAM and NAND flash.
+KRX:005380,Hyundai Motor,Automobiles,South Korea,Asia,0,"Builds passenger and commercial vehicles, including electric and hybrid models."
+KRX:000270,Kia,Automobiles,South Korea,Asia,0,"Designs and sells passenger vehicles, SUVs and electric vehicles."
+KRX:373220,LG Energy Solution,Batteries,South Korea,Asia,0,Makes rechargeable batteries for electric vehicles and energy storage.
+KRX:207940,Samsung Biologics,Pharma & Biotech,South Korea,Asia,0,Manufactures biologic medicines under contract for pharmaceutical companies.
+KRX:012450,Hanwha Aerospace,Aerospace & Defense,South Korea,Asia,0,"Develops aircraft engines, land defense systems and aerospace equipment."
+KRX:035420,NAVER,Internet & Media,South Korea,Asia,0,"Operates internet search, e-commerce and other digital services."
+KRX:068270,Celltrion,Pharma & Biotech,South Korea,Asia,0,Develops and manufactures biologic medicines and biosimilars.
+KRX:006400,Samsung SDI,Batteries,South Korea,Asia,0,Makes rechargeable batteries and electronic materials.
+HKEX:700,Tencent,Internet & Media,China,Asia,0,"Operates Weixin and WeChat, publishes video games and provides payments and cloud services."
+HKEX:1810,Xiaomi,Technology Hardware,China,Asia,0,Sells smartphones and connected consumer devices and builds electric vehicles.
+HKEX:3690,Meituan,Internet & Media,China,Asia,0,Operates local commerce services including food delivery and travel booking.
+SZSE:002594,BYD,Automobiles,China,Asia,1,Builds electric and plug-in hybrid vehicles and makes batteries.
+SZSE:300750,CATL,Batteries,China,Asia,1,Develops lithium-ion batteries for electric vehicles and stationary energy storage.
+SSE:600519,Kweichow Moutai,Consumer Staples,China,Asia,1,"Produces and sells premium baijiu, a Chinese distilled spirit."
+TSE:6501,Hitachi,Industrials,Japan,Asia,0,"Supplies digital, energy, rail and industrial systems."
+TSE:9984,SoftBank Group,Capital Markets,Japan,Asia,0,Invests in technology businesses and holds a controlling stake in Arm.
+TSE:6752,Panasonic Holdings,Technology Hardware,Japan,Asia,0,"Supplies batteries, industrial components and consumer electronics."
+TSE:8035,Tokyo Electron,Semiconductors,Japan,Asia,0,Makes equipment used to manufacture semiconductors.
+TSE:6861,Keyence,Industrials,Japan,Asia,0,"Makes sensors, machine vision systems and measuring equipment for factory automation."
+TSE:7974,Nintendo,Video Games,Japan,Asia,0,Develops video games and consoles and licenses its entertainment properties.
+BSE:500325,Reliance Industries,Oil & Gas,India,Asia,1,"Operates businesses in energy, petrochemicals, retail and digital telecommunications."

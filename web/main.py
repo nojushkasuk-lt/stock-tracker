@@ -6,6 +6,7 @@ tracker.services, widgets come from ui.tradingview. Jinja autoescapes all text, 
 Run locally:  uvicorn web.main:app --reload   (then open http://localhost:8000)
 """
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -20,7 +21,14 @@ from web import access, auth, views
 
 HERE = Path(__file__).resolve().parent
 
-app = FastAPI(title="Stock Tracker", docs_url=None, redoc_url=None, openapi_url=None)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from starlette.concurrency import run_in_threadpool
+    await run_in_threadpool(services.register_global_stocks)
+    yield
+
+
+app = FastAPI(lifespan=lifespan, title="Stock Tracker", docs_url=None, redoc_url=None, openapi_url=None)
 
 
 def _closed(request: Request) -> HTMLResponse:
@@ -93,8 +101,11 @@ def portfolio(request: Request):
     cards = [views.stock_card(s, moves.get(s.ticker)) for s in stocks]
     pairs = [(s, n) for s in stocks if (n := services.get_move_note(s.ticker, me.email))]
     note_stock, note = views.latest_note(pairs)
+    quote_symbols = [c["s"].tv_symbol for c in cards if c["day"] is None and c["s"].quote_embeddable]
     return page(request, "portfolio.html", cards=cards, market=services.get_market_status(me.email),
                 summary=views.day_summary(cards), note=note, note_stock=note_stock,
+                market_quote=tv.quote_html("AMEX:SPY"),
+                ticker_tape=tv.ticker_tape_html(quote_symbols) if quote_symbols else None,
                 max_stocks=services.watchlist_max(), nav="portfolio")
 
 
@@ -104,10 +115,17 @@ def search_index(request: Request):
     from fastapi.responses import JSONResponse
 
     me = require_viewer(request)
-    stocks = services.get_demo_stocks() if me.demo else services.get_followable_stocks(me.email)
+    stocks = (services.get_demo_stocks() + services.get_global_stocks()
+              if me.demo else services.get_followable_stocks(me.email))
     items = [{"t": s.ticker, "n": s.name, "k": s.industry, "u": f"/stock/{s.ticker}"} for s in stocks]
     items += [{"t": f.ticker, "n": f.name, "k": f.group, "u": f"/etf/{f.ticker}"} for f in services.get_market_list()]
     return JSONResponse(items, headers={"Cache-Control": "private, max-age=300"})
+
+
+@app.get("/international", response_class=HTMLResponse)
+def international(request: Request):
+    require_viewer(request)
+    return page(request, "international.html", stocks=services.get_global_stocks(), nav="international")
 
 
 # ---- stock page -----------------------------------------------------------------------------------
@@ -116,7 +134,7 @@ def _stock_or_404(me: views.Viewer, ticker: str):
     stock = services.get_stock(ticker)
     if stock is None:
         raise HTTPException(404, "Unknown stock")
-    if me.demo and stock.ticker not in {s.ticker for s in services.get_demo_stocks()}:
+    if me.demo and not stock.global_listing and stock.ticker not in {s.ticker for s in services.get_demo_stocks()}:
         raise HTTPException(404, "The demo covers the 20 largest US companies. Sign in to see this stock.")
     return stock
 
@@ -126,7 +144,7 @@ def _stock_page(request: Request, ticker: str, coverage=None):
     stock = _stock_or_404(me, ticker)
     following = bool(me.email) and stock.ticker in {s.ticker for s in services.get_watchlist(me.email)}
     perf = services.get_performance(stock.ticker)
-    chart = services.get_price_chart(stock.ticker)  # None in prod: the TradingView chart is shown instead
+    chart = None if stock.global_listing else services.get_price_chart(stock.ticker)  # None in prod: the TradingView chart is shown instead
     model = views.stock_model(
         stock=stock, perf=perf, profile=services.get_profile(stock.ticker),
         financials=services.get_financials(stock.ticker), note=services.get_move_note(stock.ticker, me.email),
@@ -134,8 +152,10 @@ def _stock_page(request: Request, ticker: str, coverage=None):
         facts=services.get_key_facts(stock.ticker), chart=chart)
     return page(
         request, "stock.html", s=stock, m=model, following=following, nav="stocks",
-        chart_widget=None if chart else tv.chart_widget_html(stock.tv_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID),
-        quote_widget=None if chart or perf else tv.quote_html(stock.tv_symbol),
+        chart_widget=tv.chart_widget_html(stock.tv_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID)
+        if not chart and stock.quote_embeddable else None,
+        quote_widget=tv.quote_html(stock.tv_symbol) if not chart and not perf and stock.quote_embeddable else None,
+        quote_url=tv.symbol_url(stock.tv_symbol) if stock.global_listing else None,
         refreshes_left=services.refreshes_left(me.email) if me.email else 0,
         coverage_on=services.coverage_enabled(me.email),
         searches_left=services.coverage_searches_left(me.email) if me.email else 0,

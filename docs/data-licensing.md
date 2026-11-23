@@ -80,3 +80,9 @@ Added 2026-11-23 (owner approved Wikidata / Wikipedia as sources for company fac
   Commons are public-domain text logos; each file page states its licence and they remain trademarks of their
   owners (used only to identify the company). The stock page's sources list links the logo's file page.
 - Requests send a generic User-Agent ("StockTracker/0.1 (personal portfolio project)"), no personal data.
+
+The international catalog uses TradingView embeds on exchanges listed in their widget coverage and direct symbol links
+elsewhere. In particular, the widget coverage list does not include KRX, even though TradingView hosts Korean stock pages.
+International catalog entries incur no server-side quote, SEC, or AI profile requests.
+See [European widget coverage](https://www.tradingview.com/widget-docs/markets/europe/) and
+[Asia-Pacific widget coverage](https://www.tradingview.com/widget-docs/markets/asia-pacific/).

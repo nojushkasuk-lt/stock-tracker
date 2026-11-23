@@ -26,7 +26,7 @@ def tv_symbol(ticker: str, exchange: str | None) -> str:
     return f"{ex}:{sym}" if ex else sym
 
 
-def _symbol_url(symbol: str) -> str:
+def symbol_url(symbol: str) -> str:
     return "https://www.tradingview.com/symbols/" + symbol.replace(":", "-") + "/"
 
 
@@ -37,7 +37,7 @@ def _widget(name: str, config: dict, link_text: str, symbol: str | None, height:
 <div class="tradingview-widget-container" style="height:{height}px;width:100%">
   <div class="tradingview-widget-container__widget" style="height:{height - 22}px;width:100%"></div>
   <div class="tradingview-widget-copyright" style="font:12px sans-serif;text-align:right">
-    <a href="{escape(link or _symbol_url(symbol))}" rel="noopener nofollow" target="_blank">{escape(link_text)}</a>
+    <a href="{escape(link or symbol_url(symbol))}" rel="noopener nofollow" target="_blank">{escape(link_text)}</a>
     <span> by TradingView</span>
   </div>
   <script type="text/javascript" src="{_SCRIPT.format(name=name)}" async>{payload}</script>
@@ -76,6 +76,16 @@ def quote_html(symbol: str, theme: str = "dark") -> str:
     """Compact live quote (price and day change). Shown above the chart where our own figures cannot be."""
     config = {"symbol": symbol, "width": "100%", "isTransparent": True, "colorTheme": theme, "locale": "en"}
     return _widget("single-quote", config, f"{symbol.split(':')[-1]} quote", symbol, QUOTE_HEIGHT)
+
+
+def ticker_tape_html(symbols: list[str]) -> str:
+    """Daily changes for portfolio stocks without displayable provider returns."""
+    config = {
+        "symbols": [{"proName": symbol} for symbol in symbols],
+        "colorTheme": "dark", "isTransparent": True, "displayMode": "regular", "locale": "en",
+    }
+    return _widget("ticker-tape", config, "Market quotes", None, 68,
+                   link="https://www.tradingview.com/markets/stocks-usa/")
 
 
 HEATMAP_HEIGHT = 520

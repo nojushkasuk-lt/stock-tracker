@@ -102,7 +102,7 @@ def refresh_universe(
     exit_rank = exit_rank or (config.UNIVERSE_EXIT_RANK if us else config.INTL_EXIT_RANK)
 
     pins = set(pins or ())
-    rows = {u.ticker: u for u in session.scalars(select(Universe).where(Universe.region == region))}
+    rows = {u.ticker: u for u in session.scalars(select(Universe).where(Universe.region == region, Universe.cik != ""))}
     cand = {c["ticker"]: c for c in candidates if (c.get("region") or "US") == region and c["ticker"] not in
             set(session.scalars(select(Universe.ticker).where(Universe.region != region)))}
     pins &= set(rows) | set(cand)

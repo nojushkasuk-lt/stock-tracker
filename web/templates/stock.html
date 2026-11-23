@@ -53,7 +53,7 @@
     {% endif %}
   </div>
 </section>
-{% elif me.email %}
+{% elif me.email and not s.global_listing %}
 <section class="card row-between" style="align-items: center">
   <span class="muted">No big move to explain. Notes appear when the stock moves 5% or more in a day.</span>
   <form method="post" action="/stock/{{ s.ticker }}/refresh" style="display: flex; gap: 10px; align-items: center">
@@ -69,6 +69,9 @@
       <div class="eyebrow">About</div>
       {% if m.about %}
         <p class="about">{% for x in m.about.sentences %}{{ x.text }}{{ refs(x.refs) }}{% if not loop.last %} {% endif %}{% endfor %}</p>
+      {% elif s.global_listing %}
+        <p class="about">{{ s.listing_overview }}</p>
+        <p class="note-small"><a href="{{ quote_url }}" target="_blank" rel="noopener">Company information and financials on TradingView</a></p>
       {% else %}
         <p class="about muted">No profile yet. It is written when {{ s.name }} files its next annual or quarterly report.</p>
       {% endif %}

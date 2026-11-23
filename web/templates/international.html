@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_macros.html" import logo %}
+{% block title %}International stocks · Stock Tracker{% endblock %}
+{% block content %}
+<h1>International stocks</h1>
+{% for region, stocks_in_region in stocks|groupby("segment") %}
+  <h2>{{ region }}</h2>
+  <div class="grid">
+    {% for s in stocks_in_region %}
+    <a class="stock-card" href="/stock/{{ s.ticker }}">
+      <span class="top">{{ logo(s, "sm") }}<span><span class="nm">{{ s.name }}</span>
+        <span class="sub">{{ s.ticker }} · {{ s.country }}</span></span></span>
+      <span class="nums">View daily change</span>
+    </a>
+    {% endfor %}
+  </div>
+{% endfor %}
+{% endblock %}

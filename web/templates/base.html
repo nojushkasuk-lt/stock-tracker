@@ -20,6 +20,7 @@
     {% if not bare %}
     <nav class="nav" aria-label="Main">
       <a href="/portfolio" {% if nav == "portfolio" %}aria-current="page"{% endif %}>Portfolio</a>
+      <a href="/international" {% if nav == "international" %}aria-current="page"{% endif %}>International</a>
       <a href="/market" {% if nav == "market" %}aria-current="page"{% endif %}>Markets</a>
       <a href="/news" {% if nav == "news" %}aria-current="page"{% endif %}>News</a>
       {% if me.email %}<a href="/settings" {% if nav == "settings" %}aria-current="page"{% endif %}>Settings</a>{% endif %}

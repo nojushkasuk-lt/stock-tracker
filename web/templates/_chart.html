@@ -32,6 +32,11 @@
     </div>
   </div>
 </section>
+{% elif quote_url and not chart_widget %}
+<section class="card">
+  <div class="eyebrow">Price and daily change</div>
+  <p><a class="btn" href="{{ quote_url }}" target="_blank" rel="noopener">View exchange quote on TradingView</a></p>
+</section>
 {% else %}
 <section class="card">
   {% if perf %}
