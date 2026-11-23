@@ -48,18 +48,37 @@ def test_long_sections_are_cut_with_a_visible_marker():
     assert len(out) < 1100 and "section cut here" in out
 
 
-def test_fetcher_finds_the_earnings_release_exhibit():
-    class FakeEdgar:
-        def get_json(self, url):
-            assert url == "https://www.sec.gov/Archives/edgar/data/1/0001/index.json"
-            return {"directory": {"item": [{"name": "x-20261102.htm"}, {"name": "a8-kex991q4.htm"}, {"name": "x.xsd"}]}}
+BASE = "https://www.sec.gov/Archives/edgar/data/109198/000010919826000058"
+INDEX_PAGE = """<table><tr><td>1</td><td>8-K</td><td><a href="/ix?doc=/Archives/x/tjx-20261118.htm">tjx-20261118.htm</a></td><td>8-K</td></tr>
+<tr><td>2</td><td>EX-99.1</td><td><a href="/Archives/edgar/data/109198/000010919826000058/tjxq3fy27earningspressrele.htm">tjxq3</a></td>
+<td>EX-99.1</td></tr></table>"""
 
-        def get_text(self, url):
-            assert url.endswith("a8-kex991q4.htm")
-            return "<p>Revenue was $10.0 billion.</p>"
 
-    [sec] = ft.FilingFetcher(FakeEdgar()).sections("8-K", "2.02,9.01", "https://www.sec.gov/Archives/edgar/data/1/0001/x-20261102.htm")
-    assert sec.key == "earnings_release" and sec.text == "Revenue was $10.0 billion." and sec.url.endswith("a8-kex991q4.htm")
+class FakeEdgar:
+    def __init__(self, index_page=INDEX_PAGE, names=()):
+        self.index_page, self.names = index_page, names
+
+    def get_json(self, url):
+        assert url == f"{BASE}/index.json"
+        return {"directory": {"item": [{"name": n} for n in self.names]}}
+
+    def get_text(self, url):
+        if url.endswith("-index.htm"):
+            assert url == f"{BASE}/0000109198-26-000058-index.htm"
+            return self.index_page
+        return f"<p>Release at {url.rsplit('/', 1)[1]}: revenue was $10.0 billion.</p>"
+
+
+def test_fetcher_finds_the_earnings_release_by_exhibit_type():
+    [sec] = ft.FilingFetcher(FakeEdgar()).sections("8-K", "2.02,9.01", f"{BASE}/tjx-20261118.htm")
+    assert sec.key == "earnings_release" and sec.url == f"{BASE}/tjxq3fy27earningspressrele.htm"
+    assert sec.text == "Release at tjxq3fy27earningspressrele.htm: revenue was $10.0 billion."
+
+
+def test_fetcher_falls_back_to_an_ex99_file_name():
+    edgar = FakeEdgar(index_page="<table></table>", names=["x-20261102.htm", "a8-kex991q4.htm", "x.xsd"])
+    [sec] = ft.FilingFetcher(edgar).sections("8-K", "2.02", f"{BASE}/x-20261102.htm")
+    assert sec.url == f"{BASE}/a8-kex991q4.htm"
 
 
 def test_metrics_text_formats_numbers_the_model_can_quote():

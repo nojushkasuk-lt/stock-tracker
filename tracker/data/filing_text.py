@@ -126,7 +126,15 @@ class FilingFetcher:
         return html_to_text(self.edgar.get_text(url))
 
     def earnings_release_url(self, filing_url: str) -> str | None:
+        """The EX-99.x document, by the Type column of the filing index page (file names vary: TJX calls it
+        tjxq3fy27earningspressrele.htm). Falls back to an ex99-like file name."""
         base = filing_url.rsplit("/", 1)[0]
+        acc = base.rsplit("/", 1)[1]
+        index = self.edgar.get_text(f"{base}/{acc[:10]}-{acc[10:12]}-{acc[12:]}-index.htm")
+        for row in re.findall(r"<tr.*?</tr>", index, re.S | re.I):
+            href = re.search(r'href="([^"]+\.html?)"', row, re.I)
+            if href and re.search(r">\s*EX-99(\.\d+)?\s*<", row, re.I):
+                return f"{base}/{href.group(1).rsplit('/', 1)[-1]}"
         items = self.edgar.get_json(f"{base}/index.json")["directory"]["item"]
         names = sorted(i["name"] for i in items if EXHIBIT_99.search(i["name"]) and i["name"].endswith((".htm", ".html")))
         return f"{base}/{names[0]}" if names else None

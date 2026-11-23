@@ -180,3 +180,9 @@ def test_profile_with_an_empty_section_is_not_published():
 def test_prompts_load_with_rules_inlined():
     for system in (notes.system_prompt(), profiles.system_prompt()):
         assert "{rules}" not in system and "kind=headline" in system
+
+
+def test_long_summaries_keep_whole_sentences_up_to_60_words():
+    long = "First sentence has five words. " + " ".join(["Word"] * 54) + ". Third sentence is cut."
+    assert notes.trim_summary(long) == "First sentence has five words. " + " ".join(["Word"] * 54) + "."
+    assert notes.trim_summary(" ".join(["Only"] * 80) + ".").count("Only") == 80  # first sentence always kept

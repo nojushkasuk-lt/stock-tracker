@@ -6,6 +6,7 @@ also ranks the links; the ranked links are stored (id, url, outlet only) so the 
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Literal
 
@@ -55,6 +56,22 @@ def user_prompt(m: MoveInput, sources: list[Source]) -> str:
     return f"{facts_line(m)}\n\nSources:\n{body}"
 
 
+SUMMARY_MAX_WORDS = 60
+
+
+def trim_summary(text: str, max_words: int = SUMMARY_MAX_WORDS) -> str:
+    """Keep whole sentences up to max_words (always at least the first sentence)."""
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    out, words = [], 0
+    for s in sentences:
+        n = len(s.split())
+        if out and words + n > max_words:
+            break
+        out.append(s)
+        words += n
+    return " ".join(out)
+
+
 def validate(out: MoveNoteOut, m: MoveInput, sources: list[Source]) -> tuple[MoveNoteOut, Checked]:
     """Drop bad claims. If the summary breaks a rule it is replaced by the first valid claim (or the
     no-catalyst line), so a rule-breaking sentence is never shown."""
@@ -64,6 +81,7 @@ def validate(out: MoveNoteOut, m: MoveInput, sources: list[Source]) -> tuple[Mov
     summary = v.free_text("summary", out.summary, firm_allowed=primary_cited)
     if summary is None:
         summary = claims[0].text if claims else NO_CATALYST
+    summary = trim_summary(summary)
     ranked = v.ranked(out.ranked_source_ids)
     v.checked.cited_ids.update(ranked)  # ranked links are shown too, so their url / outlet are kept
     confidence = out.confidence
