@@ -2,7 +2,7 @@
 
 ## Decisions
 
-- Private, non-commercial site: link-only access (shared links, noindex), no ads, no payments (owner decision 2026-11-23). Shared links with provider data only after the Day 6 data-licensing gate is ticked. Google sign-in for users; "View demo" skips sign-in and shows the 20 largest US companies, read-only.
+- Public by URL, non-commercial, and noindex. Anyone can open the read-only demo or sign in with Google. Visitors get TradingView quotes, while the third-party provider figures stay owner-only until the Day 6 licensing gate is ticked.
 - Users pick up to 15 stocks from the 100 largest US companies plus 25 European and 25 Asian SEC-registered foreign filers (`universe` table, `region` column; owner decision 2026-11-23). Non-SEC companies (ESEF, DART, EDINET) later.
 - Display: TradingView free widgets for charts, quotes, heatmap and economic calendar. Fundamentals and ratios from EDGAR. No P/E, VaR or beta in v1 (P/E needs a price; the TradingView symbol-info widget shows it).
 - Moves: a daily percent change of 5% or more triggers an alert. The app decides market vs industry vs stock before searching anything (AGENTS.md rule 14).
@@ -80,7 +80,7 @@
   - written permission from the price provider for this use, or
   - a paid provider whose terms allow display, confirmed in writing, or
   - the fallback: detect moves from news headlines instead of a price feed (build it first).
-  Until one is ticked, do not deploy publicly.
+  Until one is ticked, public visitors get quotes and price changes through TradingView.
 - [ ] Neon database; switch `DATABASE_URL`
 - [ ] GitHub Actions: daily job after US close, Monday/Thursday summary, profile queue
 - [ ] Streamlit Community Cloud deploy with secrets, `APP_ENV=prod`
@@ -174,3 +174,6 @@
 - [x] Add 50 international listings to browsing, search and watchlists. Use TradingView for daily changes in embeds where supported and via symbol links elsewhere. Keep the new listings outside paid quote and profile jobs.
 - 2026-11-23, Codex: added a TradingView portfolio quote strip and a 50-stock international catalog, including Samsung and European luxury and auto makers.
 - Next: deploy to Cloud Run and check real widget rendering from a shared link.
+
+- [x] Configure Cloud Run deployments for a public demo and Google sign-in, with TradingView for visitor quotes.
+- Codex: verified public access and Google callback handling locally. Applying the Cloud Run environment change is pending network access.

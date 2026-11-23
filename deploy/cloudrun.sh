@@ -52,7 +52,7 @@ URL="https://$SERVICE-$NUMBER.$REGION.run.app"
 SECRETS="DATABASE_URL=DATABASE_URL:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,SESSION_SECRET=SESSION_SECRET:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest"
 [ -n "$(envval BRAVE_SEARCH_API_KEY)" ] && SECRETS="$SECRETS,BRAVE_SEARCH_API_KEY=BRAVE_SEARCH_API_KEY:latest"
 [ -n "$(envval SMTP_APP_PASSWORD)" ] && SECRETS="$SECRETS,SMTP_APP_PASSWORD=SMTP_APP_PASSWORD:latest"
-VARS="^|^APP_ENV=prod|ACCESS_MODE=link|GOOGLE_CLIENT_ID=$(envval GOOGLE_CLIENT_ID)|OWNER_EMAIL=$(envval OWNER_EMAIL)|SMTP_USER=$(envval SMTP_USER)|EDGAR_USER_AGENT_NAME=$(envval EDGAR_USER_AGENT_NAME)|EDGAR_USER_AGENT_EMAIL=$(envval EDGAR_USER_AGENT_EMAIL)|BASE_URL=$URL"
+VARS="^|^APP_ENV=prod|ACCESS_MODE=open|PRICE_DATA_DISPLAY=owner|GOOGLE_CLIENT_ID=$(envval GOOGLE_CLIENT_ID)|OWNER_EMAIL=$(envval OWNER_EMAIL)|SMTP_USER=$(envval SMTP_USER)|EDGAR_USER_AGENT_NAME=$(envval EDGAR_USER_AGENT_NAME)|EDGAR_USER_AGENT_EMAIL=$(envval EDGAR_USER_AGENT_EMAIL)|BASE_URL=$URL"
 
 gcloud run deploy $SERVICE --source . --region $REGION --allow-unauthenticated \
   --min-instances 0 --max-instances 2 --memory 512Mi --cpu 1 --concurrency 40 --timeout 60 \
@@ -63,5 +63,5 @@ gcloud artifacts repositories set-cleanup-policies cloud-run-source-deploy --loc
   --policy deploy/cleanup-policy.json --no-dry-run --quiet >/dev/null 2>&1 || true
 
 echo
-echo "Live at: $URL   (private: only you and holders of a shared link get in)"
+echo "Live at: $URL   (public demo and Google sign-in)"
 echo "Google sign-in: add  $URL/auth/callback  to the OAuth client's Authorized redirect URIs."

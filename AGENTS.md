@@ -4,7 +4,7 @@ Instructions for any coding agent (Claude Code, Codex) working in this repo. Rea
 
 ## What this is
 
-A small, non-commercial website for following US-listed stocks. **It is private by design** (owner decision 2026-11-23): `ACCESS_MODE=link`, so only the owner and holders of a shared link (e.g. potential employers) get in; it is not indexed, has no ads and no payments. Anyone with access can open a read-only demo of the 20 largest US companies. Signed-in users (Google) pick up to 15 stocks from the 100 largest US companies and the largest European and Asian companies listed in the US, and get:
+A small, non-commercial website for following US-listed stocks. Production uses `ACCESS_MODE=open`, so anyone with the site URL can sign in with Google or open the read-only demo. The site has no ads or payments and keeps its noindex directive. The demo includes the 20 largest US companies and the curated international catalog. Signed-in users (Google) pick up to 15 stocks from the 100 largest US companies and the largest European and Asian companies listed in the US, and get:
 
 - a live-style price chart and quote for each stock (TradingView widgets, delayed data)
 - fundamentals and ratios computed from SEC filings (EDGAR)
@@ -124,7 +124,7 @@ The universe is the 100 largest US companies by market cap **as reported by the 
     - `yfinance_dev.py` is for local development only. It must raise an error when `APP_ENV=prod`.
     - Do not use Finnhub. Its free plan is personal-use.
     - Brave results must not be stored or cached beyond transient use: keep them in a short in-memory cache (under 1 hour). What we do store is our own note plus the URL and outlet it cites (gray area; revisit if Brave objects).
-    - Do not deploy publicly until the data-licensing gate in PLAN.md (Day 6) is ticked.
+    - Public visitors see prices and daily changes through TradingView. Keep `PRICE_DATA_DISPLAY=owner` until permission to share provider-derived figures is recorded.
 14. **Attribution ladder** (`analysis/moves.py`). Thresholds live in config:
     - Market: S&P 500 (SPY) daily move of at least `MARKET_ALERT_PCT` (2.0) raises an alert; at least `MARKET_MAJOR_PCT` (3.0) is "major". One shared market note per day (rule 6).
     - A stock is a candidate when its move is at least `MOVE_THRESHOLD_PCT` (5.0). Demo stocks use `DEMO_MOVE_THRESHOLD_PCT` (3.0) so the demo is not empty.

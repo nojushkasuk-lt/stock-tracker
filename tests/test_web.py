@@ -351,3 +351,25 @@ def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
     assert services.save_watchlist("a@example.com", ["KRX:005930"]) is None
     assert "Samsung Electronics" in client.get("/portfolio").text
     assert "Write a note now" not in client.get("/stock/KRX:005930").text
+
+
+def test_open_mode_accepts_demo_and_new_google_account(client, monkeypatch):
+    from types import SimpleNamespace
+
+    from web import auth
+
+    class Google:
+        async def authorize_access_token(self, request):
+            return {"userinfo": {"email": "new@example.com", "email_verified": True, "given_name": "New"}}
+
+    monkeypatch.setattr(config, "ACCESS_MODE", "open")
+    monkeypatch.setattr(auth, "oauth", SimpleNamespace(google=Google()))
+
+    assert client.get("/").status_code == 200
+    assert client.get("/demo").status_code == 200
+    assert client.get("/stock/ZZZ").status_code == 404
+    response = client.get("/auth/callback", follow_redirects=False)
+    assert response.headers["location"] == "/welcome"
+    assert services.known_user("new@example.com")
+    assert client.get("/stock/ZZZ").status_code == 200
+    assert client.get("/admin/links").status_code == 404

@@ -1,7 +1,7 @@
 # Data licensing
 
 Which data source the site uses, what its terms allow, and any written permission received.
-**Do not deploy publicly until the Day 6 gate in PLAN.md is ticked** (AGENTS.md rule 13).
+**Sharing price-provider figures requires the Day 6 gate in PLAN.md** (AGENTS.md rule 13). Visitor quotes come from TradingView.
 
 ## Prices
 
@@ -41,7 +41,7 @@ daily percent changes (stocks and SPY), stored in `daily_returns`.
 **What we show in prod** (to describe accurately in the requests): daily percent changes of ~183 US-listed symbols (100 US stocks, 50 European and Asian companies' US listings,
 32 index funds/ETFs, SPY), returns over fixed ranges (1D to 5Y), volatility, beta, largest drop, best and worst day,
 and alerts on big moves. No prices, OHLC, or charts from the provider (prices and charts are TradingView widgets).
-We store only daily percent changes. Access is private (shared links), noindex, no ads, no payments.
+We store only daily percent changes. Provider figures are available to the owner. The site is noindex, with no ads or payments.
 
 ### Custom chart (dev only for now)
 
