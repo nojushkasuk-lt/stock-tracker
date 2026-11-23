@@ -471,6 +471,7 @@ def test_weekly_brief_is_sourced_shared_and_generated_once(client, monkeypatch):
 
     def fake_model(session, **kwargs):
         assert "after the week ended" not in kwargs["user"]
+        assert kwargs["max_tokens"] == 6000
         result = weekly_brief.WeeklyBriefOut(
             cloud=[
                 {"text": "Coverage suggests companies are moving more IT workloads off-site.", "source_ids": ["N3"]},

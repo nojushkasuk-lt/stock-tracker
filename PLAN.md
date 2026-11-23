@@ -191,3 +191,6 @@
 - [x] Add a watchlist earnings calendar with curated issuer-confirmed dates and weekday SEC filing sync. Keep announced dates current in `config/earnings.csv`.
 - [x] Add count-based watchlist exposure by industry and region.
 - Codex: verified public brief display, citation validation, watchlist calendar scoping, and exposure totals locally. Publishing requires the Cloud Run update and the GitHub workflows on the default branch with existing API and database secrets.
+
+- [x] Increase weekly brief output allowance and use low effort for the scheduled brief after the first live run exhausted its token limit.
+- Codex: verified the weekly brief tests with the larger cap. A new GitHub Actions run on the updated commit is needed to verify publication.

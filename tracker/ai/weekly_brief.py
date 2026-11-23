@@ -110,4 +110,4 @@ def generate(session, brave, today: date, fetcher=None):
     return outputs.generate(session, kind=KIND, scope_key=key, job=KIND, task="routine",
                             system=system, user=f"Week {start} through {end}\n\n{material}",
                             output_model=WeeklyBriefOut, sources=sources, validate=validate,
-                            extra={"start": start.isoformat(), "end": key}, max_tokens=1600)
+                            extra={"start": start.isoformat(), "end": key}, max_tokens=6000)
