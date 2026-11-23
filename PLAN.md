@@ -159,7 +159,7 @@
 - [x] News page; private access by shared links (`ACCESS_MODE=link`, `/admin/links`)
 - [x] First profiles for 99 of 100 stocks via the Batch API: top 30 Sonnet, rest Haiku ($1.80); followed Haiku stocks upgrade to Sonnet nightly (ANT: no filing yet)
 - [ ] Portfolio since-start performance and card sparklines; ⌘K search
-- [ ] Day 6 hosting: Google Cloud Run (free tier) + Neon; container, copy script and Actions workflows ready. Blocked by the data-licensing gate
+- [x] Day 6 hosting: Google Cloud Run (free tier, europe-west1) + Neon (Frankfurt), link-only. Price-provider figures owner-only (PRICE_DATA_DISPLAY=owner) until the licensing gate is ticked
 - [ ] Retire the Streamlit app once the new site covers the revenue/margin chart
 - 2026-11-23, Claude Code: redesign decided (Midnight, FastAPI, Google only, Wikipedia for history); first slice of the new site built on the existing services, with range performance and risk stats from daily returns. 203 tests.
 - Next: owner adds the new redirect URI; then start dates and since-start performance, About from Wikipedia/Wikidata, logos, ETFs, international.
@@ -169,3 +169,5 @@
 - Next: owner decides the price-data licensing route (Day 6 gate); owner creates Neon + Google Cloud billing; then deploy.
 - 2026-11-23 (4), Claude Code: Europe and Asia (25 + 25 SEC foreign filers): 20-F/6-K filings, IFRS and local-currency figures, Sonnet profiles for all 50 ($3.07). Deploy script ready; gcloud installed. 250 tests.
 - Next: owner turns on Google Cloud billing, signs in to gcloud, creates Neon; then copy data and deploy link-only. Quarterly 6-K press releases (TSMC, Alibaba) are not yet detected as profile triggers.
+- 2026-11-23 (5), Claude Code: deployed to Cloud Run + Neon (link-only); provider figures owner-only so share links are safe now. 252 tests.
+- Next: push to GitHub; scheduled jobs (JOBS_ENABLED) once a licensed price provider is chosen; owner sends the provider emails.
