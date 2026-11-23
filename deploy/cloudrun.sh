@@ -20,7 +20,8 @@ for l in open(".env"):
 
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com --quiet
 
-SA="$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')-compute@developer.gserviceaccount.com"
+NUMBER=$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')
+SA="$NUMBER-compute@developer.gserviceaccount.com"
 # Newer projects build with the default compute account, which needs the Cloud Run builder role.
 gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$SA" --role=roles/run.builder --condition=None --quiet >/dev/null
 put_secret() {  # name, value from stdin. Adds a version only when the value changed, and destroys the old one
@@ -47,7 +48,7 @@ done
 gcloud secrets describe SESSION_SECRET >/dev/null 2>&1 || /usr/bin/python3 -I -c 'import secrets; print(secrets.token_urlsafe(48), end="")' | put_secret SESSION_SECRET
 
 # Cloud Run's stable address: https://SERVICE-PROJECTNUMBER.REGION.run.app (the one the console shows).
-URL="https://$SERVICE-$(gcloud projects describe "$PROJECT" --format='value(projectNumber)').$REGION.run.app"
+URL="https://$SERVICE-$NUMBER.$REGION.run.app"
 SECRETS="DATABASE_URL=DATABASE_URL:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,SESSION_SECRET=SESSION_SECRET:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest"
 [ -n "$(envval BRAVE_SEARCH_API_KEY)" ] && SECRETS="$SECRETS,BRAVE_SEARCH_API_KEY=BRAVE_SEARCH_API_KEY:latest"
 [ -n "$(envval SMTP_APP_PASSWORD)" ] && SECRETS="$SECRETS,SMTP_APP_PASSWORD=SMTP_APP_PASSWORD:latest"
