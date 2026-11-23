@@ -53,8 +53,8 @@
 
 ## Day 4 — AI layer
 
-- [ ] `llm.py`: one wrapper, budget check, cost log, model names from config
-- [ ] Prompts in `ai/prompts/`; pydantic output models; source-ID validation; cautious wording for headline-only notes
+- [x] `llm.py`: one wrapper, budget check, cost log, model names from config
+- [x] Prompts in `ai/prompts/`; pydantic output models; source-ID validation; cautious wording for headline-only notes
 - [ ] Profile update from a filing (Sonnet); short stock / industry / market notes and link ranking (Haiku)
 - [ ] Cache outputs by input hash
 - [ ] Dev-only model test (not deployed): 20 recent real moves through Haiku, DeepSeek V4.1 Flash and GLM-5.3-Flash. Record: relevant links ranked first yes/no, any unsupported claim, any claim stated as certain when only a headline was seen.
@@ -127,3 +127,5 @@
 - Next: owner adds BRAVE_SEARCH_API_KEY to .env; then verify live search and the site: operator, and tick the remaining Day 3 boxes. Then Day 4 (AI layer, needs Anthropic credit).
 - 2026-11-22, Claude Code: Brave key verified live. `site:` works and OR-combines (Reuters, CNBC, Yahoo Finance, Bloomberg return results; Brave returns no WSJ news at all). Queries now restrict to the chosen outlets, with at most 4 links per outlet. 91 tests.
 - Next: Day 4 (AI layer). Owner: Anthropic prepaid credit (auto top-up off) before the first real model call.
+- 2026-11-23, Claude Code: Haiku 5.5 vs Sonnet 5.5 compared on the same notes and profile (docs/model-choice.md): equal on notes, Sonnet slightly better on profiles, so the split stays. Built llm.py (budget stop incl. worst case of the next call, 100k prompt cap via count_tokens, cost log, refusals logged) and citations.py + prompts + output schemas (unknown source IDs, invented numbers, unhedged headline claims and unsupported "beat" dropped). 118 tests; no real API call yet (key empty).
+- Next: notes/profile generation with ai_outputs and the input-hash cache. Owner: put ANTHROPIC_API_KEY in .env (prepaid credit, auto top-up off) for the first live call.

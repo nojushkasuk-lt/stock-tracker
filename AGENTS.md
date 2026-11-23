@@ -52,7 +52,8 @@ tracker/
     moves.py            # move detection and the market -> industry -> stock ladder
   ai/
     llm.py              # single wrapper: all model calls, budget check, cost log
-    prompts/            # one .md file per prompt
+    prompts/            # one .md file per prompt (rules.md is shared by all)
+    citations.py        # sources in, cited claims out: source-ID, number and wording checks (rules 3, 4)
     profiles.py         # filing-triggered profile updates (Sonnet)
     notes.py            # market / industry / stock notes and link ranking (Haiku)
     digests.py          # Monday/Thursday market summary (Haiku)
@@ -70,6 +71,7 @@ config/
   outlets.toml          # outlets users can choose from: name, domain, paywall (TOML: read by the standard library, no extra dependency)
 docs/
   metrics.md            # how each number is computed and how it was checked
+  model-choice.md       # why Haiku for notes and Sonnet for profiles (side-by-side test)
   data-licensing.md     # which data source is used, what its terms allow, written permissions received
 tests/
 .github/workflows/
