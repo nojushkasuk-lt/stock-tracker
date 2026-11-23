@@ -4,6 +4,7 @@ Logos are Wikimedia Commons files; each file's own licence applies (most are pub
 so pages credit "Logos: Wikimedia Commons". Facts can lag reality, so every fact is shown with its source.
 """
 
+import hashlib
 import re
 import time
 from dataclasses import dataclass
@@ -70,6 +71,15 @@ def pick_logo(urls: list[str]) -> str | None:
         name = unquote(u.rsplit("/", 1)[-1])
         return (bool(_BAD_LOGO.search(name)), not name.lower().endswith(".svg"), not _GOOD_LOGO.search(name), len(name))
     return sorted(urls, key=score)[0]
+
+
+def commons_logo(filename: str) -> tuple[str, str]:
+    """Direct Commons image URL and its attribution and license page."""
+    title = filename.replace(" ", "_")
+    digest = hashlib.md5(title.encode(), usedforsecurity=False).hexdigest()
+    path = quote(title, safe="")
+    return (f"https://upload.wikimedia.org/wikipedia/commons/{digest[0]}/{digest[:2]}/{path}",
+            f"https://commons.wikimedia.org/wiki/File:{path}")
 
 
 def logo_thumb(url: str, width: int = 128) -> str:

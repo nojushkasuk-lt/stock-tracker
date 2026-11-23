@@ -177,3 +177,6 @@
 
 - [x] Configure Cloud Run deployments for a public demo and Google sign-in, with TradingView for visitor quotes.
 - Codex: verified public access and Google callback handling locally. Applying the Cloud Run environment change is pending network access.
+
+- [x] Include all active international stocks in the directory and demo search, restore saved logo display, and add Commons logo fallbacks.
+- Codex: audited the active and reserve lists and clarified that move-note refreshes use stored closing returns. Cloud Run deployment remains pending.

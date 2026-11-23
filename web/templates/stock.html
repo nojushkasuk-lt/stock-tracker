@@ -45,20 +45,20 @@
   </div>
   <div class="row-between" style="margin-top: 14px; align-items: center">
     <span class="note-small">AI note, written {{ n.written }}. {% if n.headline_based %}Based on headlines; causes are not confirmed.{% else %}Based on the company's SEC filing and coverage.{% endif %}</span>
-    {% if me.email %}
+    {% if can_refresh %}
     <form method="post" action="/stock/{{ s.ticker }}/refresh" style="display: flex; gap: 10px; align-items: center">
-      <span class="note-small">{{ refreshes_left }} refreshes left today</span>
+      <span class="note-small">{{ refreshes_left }} refreshes left today · Closing moves only</span>
       <button class="btn" type="submit" {% if refreshes_left == 0 %}disabled{% endif %}>Refresh now</button>
     </form>
     {% endif %}
   </div>
 </section>
-{% elif me.email and not s.global_listing %}
+{% elif can_refresh %}
 <section class="card row-between" style="align-items: center">
-  <span class="muted">No big move to explain. Notes appear when the stock moves 5% or more in a day.</span>
+  <span class="muted">Refresh searches for coverage of the latest stored closing move. {% if perf %}Price data through {{ perf.as_of|nice_date }}.{% endif %}</span>
   <form method="post" action="/stock/{{ s.ticker }}/refresh" style="display: flex; gap: 10px; align-items: center">
     <span class="note-small">{{ refreshes_left }} refreshes left today</span>
-    <button class="btn" type="submit" {% if refreshes_left == 0 %}disabled{% endif %}>Write a note now</button>
+    <button class="btn" type="submit" {% if refreshes_left == 0 %}disabled{% endif %}>Write a session note</button>
   </form>
 </section>
 {% endif %}
@@ -75,6 +75,7 @@
       {% else %}
         <p class="about muted">No profile yet. It is written when {{ s.name }} files its next annual or quarterly report.</p>
       {% endif %}
+      {% if s.logo_source %}<p class="note-small"><a href="{{ s.logo_source }}" target="_blank" rel="noopener">Logo source and license</a></p>{% endif %}
     </section>
 
     {% if m.tabs %}

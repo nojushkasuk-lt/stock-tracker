@@ -78,7 +78,7 @@ def test_demo_is_read_only(client):
     r = client.get("/portfolio")
     assert "Demo · read-only" in r.text and "Apple" in r.text and "Small Co" not in r.text
     page = client.get("/stock/AAPL").text
-    assert "Refresh now" not in page and "Find recent coverage" not in page and "Write a note now" not in page
+    assert "Refresh now" not in page and "Find recent coverage" not in page and "Write a session note" not in page
     assert client.get("/stock/ZZZ").status_code == 404           # not a demo stock
     assert client.post("/stock/AAPL/refresh").status_code == 403
     assert client.get("/settings", follow_redirects=False).status_code == 303
@@ -108,7 +108,7 @@ def test_sign_in_pick_stocks_and_outlets(client):
     assert "Small Co" in p and "2 of 15" in p
     s = client.get("/settings").text
     assert 'value="ZZZ" checked' in s and 'value="reuters.com" checked' in s
-    assert "Refresh now" in client.get("/stock/AAPL").text or "Write a note now" in client.get("/stock/AAPL").text
+    assert "Refresh now" in client.get("/stock/AAPL").text or "Write a session note" in client.get("/stock/AAPL").text
 
 
 def test_settings_rejects_more_than_15(client, monkeypatch):
@@ -332,11 +332,17 @@ def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
     with services.session_scope() as session:
         seed_global_listings(session)
         seed_global_listings(session)
+        for ticker, name, region in (("ASML", "ASML", "Europe"), ("TSM", "TSMC", "Asia"), ("TM", "Toyota", "Asia")):
+            session.add(Universe(ticker=ticker, cik="10", name=name, industry="Test", region=region,
+                                 active=True, is_demo=False, updated_at=datetime(2026, 1, 1)))
 
     monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "owner")
     client.get("/demo")
-    assert "Samsung Electronics" in client.get("/international").text
-    assert "KRX:005930" in {i["t"] for i in client.get("/search.json").json()}
+    directory = client.get("/international").text
+    assert all(name in directory for name in ("Samsung Electronics", "ASML", "TSMC", "Toyota"))
+    assert "upload.wikimedia.org/wikipedia/commons/" in directory
+    assert {"ASML", "TSM", "TM", "KRX:005930"} <= {i["t"] for i in client.get("/search.json").json()}
+    assert client.get("/stock/TSM").status_code == 200
     samsung = client.get("/stock/KRX:005930")
     assert samsung.status_code == 200
     assert "tradingview.com/symbols/KRX-005930/" in samsung.text
@@ -350,7 +356,9 @@ def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
     sign_in(client)
     assert services.save_watchlist("a@example.com", ["KRX:005930"]) is None
     assert "Samsung Electronics" in client.get("/portfolio").text
-    assert "Write a note now" not in client.get("/stock/KRX:005930").text
+    assert "Write a session note" not in client.get("/stock/KRX:005930").text
+    assert "Write a session note" not in client.get("/stock/AAPL").text
+    assert "Move notes are unavailable" in services.request_refresh("a@example.com", "AAPL")
 
 
 def test_open_mode_accepts_demo_and_new_google_account(client, monkeypatch):

@@ -15,6 +15,12 @@ def listings() -> dict[str, dict]:
     return {row["ticker"]: row for row in read_csv(CONFIG_DIR / "global_listings.csv")}
 
 
+@lru_cache(maxsize=1)
+def logo_files() -> dict[str, str]:
+    """Wikimedia Commons files used when there is no saved company logo."""
+    return {row["ticker"]: row["file"] for row in read_csv(CONFIG_DIR / "international_logos.csv")}
+
+
 def seed_global_listings(session) -> None:
     """Register listings for watchlists, including on existing databases. Safe on concurrent startup."""
     insert = postgres_insert if session.get_bind().dialect.name == "postgresql" else sqlite_insert

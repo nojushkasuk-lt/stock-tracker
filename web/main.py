@@ -111,11 +111,11 @@ def portfolio(request: Request):
 
 @app.get("/search.json")
 def search_index(request: Request):
-    """Everything the viewer can open, for the top-bar search (demo: the demo stocks only)."""
+    """Stocks and funds the viewer can open from the top-bar search."""
     from fastapi.responses import JSONResponse
 
     me = require_viewer(request)
-    stocks = (services.get_demo_stocks() + services.get_global_stocks()
+    stocks = (services.get_demo_stocks() + services.get_international_stocks()
               if me.demo else services.get_followable_stocks(me.email))
     items = [{"t": s.ticker, "n": s.name, "k": s.industry, "u": f"/stock/{s.ticker}"} for s in stocks]
     items += [{"t": f.ticker, "n": f.name, "k": f.group, "u": f"/etf/{f.ticker}"} for f in services.get_market_list()]
@@ -125,7 +125,7 @@ def search_index(request: Request):
 @app.get("/international", response_class=HTMLResponse)
 def international(request: Request):
     require_viewer(request)
-    return page(request, "international.html", stocks=services.get_global_stocks(), nav="international")
+    return page(request, "international.html", stocks=services.get_international_stocks(), nav="international")
 
 
 # ---- stock page -----------------------------------------------------------------------------------
@@ -134,8 +134,8 @@ def _stock_or_404(me: views.Viewer, ticker: str):
     stock = services.get_stock(ticker)
     if stock is None:
         raise HTTPException(404, "Unknown stock")
-    if me.demo and not stock.global_listing and stock.ticker not in {s.ticker for s in services.get_demo_stocks()}:
-        raise HTTPException(404, "The demo covers the 20 largest US companies. Sign in to see this stock.")
+    if me.demo and not stock.demo_visible:
+        raise HTTPException(404, "Sign in to see this stock.")
     return stock
 
 
@@ -156,6 +156,7 @@ def _stock_page(request: Request, ticker: str, coverage=None):
         if not chart and stock.quote_embeddable else None,
         quote_widget=tv.quote_html(stock.tv_symbol) if not chart and not perf and stock.quote_embeddable else None,
         quote_url=tv.symbol_url(stock.tv_symbol) if stock.global_listing else None,
+        can_refresh=bool(me.email and not stock.global_listing and services.price_data_visible(me.email)),
         refreshes_left=services.refreshes_left(me.email) if me.email else 0,
         coverage_on=services.coverage_enabled(me.email),
         searches_left=services.coverage_searches_left(me.email) if me.email else 0,

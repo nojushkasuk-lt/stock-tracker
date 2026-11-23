@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 
 from tracker.analysis.metrics import AnnualPoint, Metrics, annual_history, compute_metrics
-from tracker.data.global_listings import listings
+from tracker.data.global_listings import listings, logo_files
 from tracker.data.charts import get_chart_series
 from tracker.db import session_scope
 from tracker import config
@@ -30,7 +30,9 @@ class Stock:
     tv_symbol: str  # e.g. NASDAQ:AAPL
     logo: str | None = None  # small PNG thumbnail URL (Wikimedia Commons), None = show the initial
     country: str = "United States"
-    segment: str = "US"  # universe seats: US (top 100), Europe, Asia (SEC-registered foreign filers, mostly ADRs)
+    segment: str = "US"
+    demo_visible: bool = False
+    logo_source: str | None = None
 
     @property
     def global_listing(self) -> bool:
@@ -96,10 +98,19 @@ def _query():
 
 
 def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None, country: str | None = None) -> Stock:
-    from tracker.data.wikidata import logo_thumb
+    from tracker.data.wikidata import commons_logo, logo_thumb
 
-    return Stock(u.ticker, u.name, u.industry, u.market_cap_rank, u.ticker if u.ticker in listings() else tv_symbol(u.ticker, exchange),
-                 logo_thumb(logo_url, 128) if logo_url else None, u.country or country or "United States", u.region or "US")
+    segment = u.region or "US"
+    logo_file = logo_files().get(u.ticker) if not logo_url else None
+    curated_logo, logo_source = commons_logo(logo_file) if logo_file else (None, None)
+    return Stock(
+        u.ticker, u.name, u.industry, u.market_cap_rank,
+        u.ticker if u.ticker in listings() else tv_symbol(u.ticker, exchange),
+        logo_thumb(logo_url, 128) if logo_url else curated_logo,
+        u.country or country or "United States", segment,
+        demo_visible=u.active and (u.is_demo or segment in config.INTL_REGIONS),
+        logo_source=logo_source,
+    )
 
 
 def register_global_stocks() -> None:
@@ -113,9 +124,14 @@ def register_global_stocks() -> None:
         seed_global_listings(session)
 
 
-def get_global_stocks() -> list[Stock]:
-    return [Stock(t, row["name"], row["industry"], None, t, country=row["country"], segment=row["region"])
-            for t, row in listings().items()]
+def get_international_stocks() -> list[Stock]:
+    """All active European and Asian stocks, including US-listed shares and home-market listings."""
+    with session_scope() as s:
+        rows = s.execute(
+            _query().where(Universe.active, Universe.region.in_(config.INTL_REGIONS))
+            .order_by(Universe.market_cap_rank.is_(None), Universe.market_cap_rank, Universe.name)
+        ).all()
+        return [_to_stock(*row) for row in rows]
 
 
 def get_demo_stocks() -> list[Stock]:
@@ -364,8 +380,8 @@ def refreshes_left(email: str) -> int:
 
 def request_refresh(email: str, ticker: str) -> str:
     """Rate-limited "Refresh now" (rule 6). Returns a message for the user."""
-    if ticker.upper() in listings():
-        return "Move notes are unavailable for this listing."
+    if ticker.upper() in listings() or not price_data_visible(email):
+        return "Move notes are unavailable for this listing or account."
 
     from tracker.ai.notes import refresh_stock
     from tracker.data.edgar import EdgarClient
