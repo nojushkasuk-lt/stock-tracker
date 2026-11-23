@@ -18,3 +18,4 @@ def test_ranks_are_1_to_100_and_top_20_are_demo():
     assert {r["ticker"] for r in ROWS if r["is_demo"] == "true"} == {
         r["ticker"] for r in ROWS if int(r["rank"]) <= 20
     }
+

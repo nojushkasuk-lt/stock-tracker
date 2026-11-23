@@ -36,15 +36,21 @@ def ratio_pct(x: float | None, signed: bool = False) -> str:
     return pct(None if x is None else x * 100, signed=signed)
 
 
-def money(x: float | None) -> str:
+CURRENCY_PREFIX = {"USD": "$", "EUR": "€", "GBP": "£", "JPY": "¥", "CNY": "CN¥", "TWD": "NT$", "INR": "₹", "KRW": "₩",
+                   "HKD": "HK$", "CAD": "C$", "AUD": "A$"}
+
+
+def money(x: float | None, ccy: str = "USD") -> str:
+    """$1.2B, €32.7B, NT$3.8T; currencies without a common symbol get the code (DKK 309.1B)."""
     if x is None:
         return "—"
     sign = "−" if x < 0 else ""
+    pre = CURRENCY_PREFIX.get(ccy, ccy + " ")
     x = abs(x)
     for div, unit in ((1e12, "T"), (1e9, "B"), (1e6, "M")):
         if x >= div:
-            return f"{sign}${x / div:.1f}{unit}"
-    return f"{sign}${x:,.2f}"
+            return f"{sign}{pre}{x / div:.1f}{unit}"
+    return f"{sign}{pre}{x:,.2f}"
 
 
 def tone(x: float | None) -> str:
@@ -175,19 +181,25 @@ def stock_model(*, stock, perf, profile, financials, note, filings, coverage, fa
     m["facts_source"] = facts
 
     groups = []
-    val = valuation(financials.metrics if financials else None, chart.last_close if chart else None)
-    if val:
-        groups.append(val)
+    # A US listing of a foreign company is usually an ADR (one ADR = several or a fraction of a share) priced in
+    # dollars while the figures are per ordinary share in the home currency: no price-based ratios for those.
+    if not stock.foreign_filer:
+        val = valuation(financials.metrics if financials else None, chart.last_close if chart else None)
+        if val:
+            groups.append(val)
     if financials:
         x = financials.metrics
-        groups.append({"title": "Growth & profit", "note": "TTM · SEC filings", "metrics": [
-            ("Revenue", money(x.revenue_ttm), ""), ("Revenue growth", ratio_pct(x.revenue_growth_yoy, True), tone(x.revenue_growth_yoy)),
+        c = x.currency
+        foreign = stock.foreign_filer or c != "USD"
+        span = "TTM" if not foreign else "latest reported year or TTM"
+        groups.append({"title": "Growth & profit", "note": f"{span} · SEC filings" + (f" · in {c}" if c != "USD" else ""), "metrics": [
+            ("Revenue", money(x.revenue_ttm, c), ""), ("Revenue growth", ratio_pct(x.revenue_growth_yoy, True), tone(x.revenue_growth_yoy)),
             ("Operating margin", ratio_pct(x.operating_margin), ""), ("Net margin", ratio_pct(x.net_margin), ""),
-            ("EPS (diluted)", "—" if x.eps_diluted_ttm is None else f"${x.eps_diluted_ttm:.2f}", ""),
-            ("Net income", money(x.net_income_ttm), "")]})
+            ("EPS (diluted)" + (", per share" if foreign else ""), "—" if x.eps_diluted_ttm is None else money(x.eps_diluted_ttm, c), ""),
+            ("Net income", money(x.net_income_ttm, c), "")]})
         nd = x.net_debt_to_ebitda
         groups.append({"title": "Balance sheet", "note": "SEC filings", "metrics": [
-            ("Net debt", money(x.net_debt), ""),
+            ("Net debt", money(x.net_debt, c), ""),
             ("Net debt / EBITDA", "—" if nd is None else (f"{nd:.1f}x" + (" (net cash)" if nd < 0 else "")), "")]})
         m["financials_as_of"] = x.as_of.isoformat() if x.as_of else None
     if perf and perf.risk:

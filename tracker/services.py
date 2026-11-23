@@ -28,10 +28,15 @@ class Stock:
     tv_symbol: str  # e.g. NASDAQ:AAPL
     logo: str | None = None  # small PNG thumbnail URL (Wikimedia Commons), None = show the initial
     country: str = "United States"
+    segment: str = "US"  # universe seats: US (top 100), Europe, Asia (SEC-registered foreign filers, mostly ADRs)
 
     @property
     def region(self) -> str:
         return region_of(self.country)
+
+    @property
+    def foreign_filer(self) -> bool:
+        return self.segment != "US"
 
 
 REGIONS = {"United States": "North America", "Canada": "North America", "Mexico": "North America",
@@ -59,7 +64,7 @@ def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None, co
     from tracker.data.wikidata import logo_thumb
 
     return Stock(u.ticker, u.name, u.industry, u.market_cap_rank, tv_symbol(u.ticker, exchange),
-                 logo_thumb(logo_url, 128) if logo_url else None, country or "United States")
+                 logo_thumb(logo_url, 128) if logo_url else None, country or u.country or "United States", u.region or "US")
 
 
 def get_demo_stocks() -> list[Stock]:
@@ -124,7 +129,8 @@ class FilingLink:
     label: str
 
 
-_FORM_LABEL = {"10-K": "Annual report", "10-Q": "Quarterly report", "8-K": "Current report"}
+_FORM_LABEL = {"10-K": "Annual report", "10-Q": "Quarterly report", "8-K": "Current report",
+               "20-F": "Annual report", "6-K": "Interim report"}
 
 
 def get_recent_filings(ticker: str, limit: int = 6) -> list[FilingLink]:

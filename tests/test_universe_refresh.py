@@ -81,3 +81,38 @@ def test_ticker_without_market_cap_keeps_status(tmp_path):
         c = caps(["T1", "T2", "T3", "T4", "T5"])  # T6 missing
         res = refresh_universe(s, c, [], size=6, demo_size=2, exit_rank=6)
         assert res.no_market_cap == ["T6"] and s.get(Universe, "T6").active is True
+
+
+def test_regions_have_their_own_seats_and_one_shared_rank(tmp_path):
+    from sqlalchemy import select
+    with _db(tmp_path) as session:
+        _regions(session)
+
+
+def _regions(session):
+    from sqlalchemy import select
+    from tracker.data.universe import rerank_members
+    session.add(Universe(ticker="AAA", cik="1", name="A", industry="X", market_cap_rank=1, active=True, updated_at=datetime(2026, 1, 1)))
+    session.flush()
+    intl = [{"ticker": "TSM", "cik": "2", "name": "TSMC", "industry": "Semiconductors", "country": "Taiwan", "region": "Asia"},
+            {"ticker": "TM", "cik": "3", "name": "Toyota", "industry": "Autos", "country": "Japan", "region": "Asia"},
+            {"ticker": "ASML", "cik": "4", "name": "ASML", "industry": "Semiconductors", "country": "Netherlands", "region": "Europe"}]
+    caps = {"AAA": 100.0, "TSM": 150.0, "TM": 20.0, "ASML": 50.0}
+    res = refresh_universe(session, caps, intl, region="Asia", size=1)
+    assert res.entered == ["TSM"] and not res.demo_in  # one Asian seat; no demo outside the US
+    refresh_universe(session, caps, intl, region="Europe", size=1)
+    us = refresh_universe(session, caps, [], region="US", size=5)
+    assert not us.exited  # other regions' rows do not count against US seats
+    rerank_members(session, caps)
+    got = {u.ticker: (u.region, u.country, u.market_cap_rank) for u in session.scalars(select(Universe))}
+    assert got == {"AAA": ("US", None, 2), "TSM": ("Asia", "Taiwan", 1), "ASML": ("Europe", "Netherlands", 3)}
+
+
+def test_international_seed_is_valid():
+    import csv
+    from tracker.data.universe import INTERNATIONAL_PATH
+    rows = list(csv.DictReader(INTERNATIONAL_PATH.open()))
+    assert len(rows) >= 60 and len({r["ticker"] for r in rows}) == len(rows)
+    assert {r["region"] for r in rows} == {"Europe", "Asia"}
+    assert all(len(r["cik"]) == 10 and r["country"] and r["industry"] for r in rows)
+    assert {"TSM", "ASML", "BABA", "TM", "NVO"} <= {r["ticker"] for r in rows}

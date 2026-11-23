@@ -1,4 +1,7 @@
-"""Detect new 10-Q / 10-K / 8-K filings from EDGAR submissions.
+"""Detect new 10-Q / 10-K / 8-K filings (US companies) and 20-F / 6-K filings (foreign filers) from EDGAR submissions.
+
+A 6-K is kept only when it carries XBRL financial statements (half-year or quarterly results); the many other
+6-Ks (press releases, meeting notices) are skipped.
 
 The first check for a company records a baseline: older filings are stored as already processed so they never
 flood the profile queue. After that, a new 10-Q, 10-K or earnings 8-K (item 2.02) is queued (processed_at NULL)
@@ -13,8 +16,10 @@ from sqlalchemy.orm import Session
 from tracker.data.edgar import EdgarClient
 from tracker.models import Filing, Universe
 
-FORMS = {"10-Q", "10-K", "8-K"}
-PERIODIC = {"10-Q", "10-K"}
+FORMS = {"10-Q", "10-K", "8-K", "20-F", "6-K"}
+PERIODIC = {"10-Q", "10-K", "20-F", "6-K"}  # reports with financial statements
+ANNUAL = {"10-K", "20-F"}
+INTERIM = {"10-Q", "6-K"}
 BASELINE_DAYS = 400  # keep about a year of history on the first check
 ARCHIVE_URL = "https://www.sec.gov/Archives/edgar/data/{cik}/{acc}/{doc}"
 
@@ -33,11 +38,11 @@ def parse_submissions(cik: int, sub: dict) -> list[dict]:
     n = len(recent.get("accessionNumber", []))
     col = lambda k: recent.get(k) or [""] * n  # noqa: E731
     out = []
-    for acc, form, items, accepted, filed, report, doc in zip(
+    for acc, form, items, accepted, filed, report, doc, xbrl in zip(
         col("accessionNumber"), col("form"), col("items"), col("acceptanceDateTime"),
-        col("filingDate"), col("reportDate"), col("primaryDocument"),
+        col("filingDate"), col("reportDate"), col("primaryDocument"), col("isXBRL"),
     ):
-        if form not in FORMS:
+        if form not in FORMS or (form == "6-K" and not xbrl):
             continue
         if accepted:
             filed_at = datetime.fromisoformat(accepted.replace("Z", "+00:00")).astimezone(UTC).replace(tzinfo=None)

@@ -74,18 +74,20 @@ def validate(out: ProfileOut, sources: list[Source]) -> tuple[ProfileOut | None,
 
 # ---- sources --------------------------------------------------------------------------------------
 
-def _money(v: float) -> str:
+def _money(v: float, ccy: str = "USD") -> str:
+    """$58.7B for US dollars; other currencies by code (TWD 3800.0B), so the model never reads them as dollars."""
     sign = "-" if v < 0 else ""
+    pre = "$" if ccy == "USD" else f"{ccy} "
     v = abs(v)
     if v >= 1e9:
-        return f"{sign}${v / 1e9:.1f}B"
-    return f"{sign}${v / 1e6:.0f}M"
+        return f"{sign}{pre}{v / 1e9:.1f}B"
+    return f"{sign}{pre}{v / 1e6:.0f}M"
 
 
 def metrics_text(m: Metrics) -> str | None:
     parts = []
     if m.revenue_ttm is not None:
-        parts.append(f"revenue TTM {_money(m.revenue_ttm)}")
+        parts.append(f"revenue TTM {_money(m.revenue_ttm, m.currency)}")
     if m.revenue_growth_yoy is not None:
         parts.append(f"revenue growth YoY {m.revenue_growth_yoy * 100:.1f}%")
     if m.operating_margin is not None:
@@ -93,13 +95,15 @@ def metrics_text(m: Metrics) -> str | None:
     if m.net_margin is not None:
         parts.append(f"net margin {m.net_margin * 100:.1f}%")
     if m.eps_diluted_ttm is not None:
-        parts.append(f"diluted EPS TTM ${m.eps_diluted_ttm:.2f}")
+        parts.append(f"diluted EPS TTM ${m.eps_diluted_ttm:.2f}" if m.currency == "USD" else
+                     f"diluted EPS TTM {m.currency} {m.eps_diluted_ttm:.2f} per ordinary share")
     if m.net_debt_to_ebitda is not None:
         parts.append(f"net debt/EBITDA {m.net_debt_to_ebitda:.1f}x" + (" (net cash)" if m.net_debt_to_ebitda < 0 else ""))
     if not parts:
         return None
     as_of = f" (as of {m.as_of.isoformat()})" if m.as_of else ""
-    return "Computed from SEC filings" + as_of + ": " + "; ".join(parts) + "."
+    ccy = "" if m.currency == "USD" else f", amounts in {m.currency} as reported"
+    return "Computed from SEC filings" + as_of + ccy + ": " + "; ".join(parts) + "."
 
 
 def previous_text(row: AiOutput) -> str:
@@ -215,7 +219,10 @@ def process_queue(session: Session, fetcher: FilingFetcher, *, client=None, limi
 
 # ---- first profiles for every stock, through the Batch API ------------------------------------------------
 
-CONTEXT_CAPS = {"business": 20_000, "risk_factors": 15_000}  # 10-K context sent next to a newer 10-Q
+# Annual-report context sent next to a newer interim report (10-Q, or a foreign filer's 6-K).
+CONTEXT_CAPS = {"business": 20_000, "risk_factors": 15_000, "annual_report": 40_000}
+PERIODIC_FORMS = ("10-K", "10-Q", "20-F", "6-K")
+ANNUAL_FORMS = ("10-K", "20-F")
 
 
 def _latest(session: Session, ticker: str, forms: tuple[str, ...]) -> Filing | None:
@@ -224,14 +231,15 @@ def _latest(session: Session, ticker: str, forms: tuple[str, ...]) -> Filing | N
 
 
 def initial_sections(fetcher: FilingFetcher, latest: Filing, annual: Filing | None) -> list[Section]:
-    """The latest periodic report; when it is a 10-Q, also the last 10-K's Business and Risk Factors (shortened),
-    since a 10-Q has no business description."""
+    """The latest periodic report; when it is an interim one (10-Q, 6-K), also the last annual report's
+    Business and Risk Factors (shortened), since an interim report has no business description."""
     from tracker.data.filing_text import cap
 
+    interim = latest.form not in ANNUAL_FORMS
     secs = fetcher.sections(latest.form, latest.items, latest.url)
-    if not secs and latest.form == "10-Q" and annual is not None:
-        return fetcher.sections(annual.form, annual.items, annual.url)  # 10-Q layout we could not split: use the 10-K
-    if latest.form == "10-Q" and annual is not None:
+    if not secs and interim and annual is not None:
+        return fetcher.sections(annual.form, annual.items, annual.url)  # layout we could not split: use the annual
+    if interim and annual is not None:
         for sec in fetcher.sections(annual.form, annual.items, annual.url):
             if sec.key in CONTEXT_CAPS:
                 secs.append(Section(sec.key, sec.label + f" (filed {annual.filed_at.date().isoformat()})",
@@ -245,9 +253,13 @@ def needs_first_profile(session: Session, ticker: str) -> bool:
     return row is None or "about" not in row.content
 
 
-def model_for_rank(rank: int | None, sonnet_top: int) -> str:
+def model_for_rank(rank: int | None, sonnet_top: int, segment: str = "US") -> str:
+    """Profile model (Sonnet) for the largest US stocks and for every European and Asian company (owner decision
+    2026-11-23: their reports are longer and less uniform); the routine model (Haiku) for the rest."""
     from tracker import config
 
+    if segment != "US":
+        return config.MODEL_PROFILE
     return config.MODEL_PROFILE if rank is not None and rank <= sonnet_top else config.MODEL_ROUTINE
 
 
@@ -265,12 +277,12 @@ def submit_first_profiles(session: Session, fetcher: FilingFetcher, *, sonnet_to
     for u in session.scalars(q):
         if not force and not needs_first_profile(session, u.ticker):
             continue
-        latest = _latest(session, u.ticker, ("10-K", "10-Q"))
+        latest = _latest(session, u.ticker, PERIODIC_FORMS)
         if latest is None:
-            log(f"{u.ticker}: no 10-K or 10-Q on record, skipped")
+            log(f"{u.ticker}: no annual or interim report on record, skipped")
             continue
         try:
-            sections = initial_sections(fetcher, latest, _latest(session, u.ticker, ("10-K",)))
+            sections = initial_sections(fetcher, latest, _latest(session, u.ticker, ANNUAL_FORMS))
         except Exception as e:
             log(f"{u.ticker}: could not read the filing ({type(e).__name__}), skipped")
             continue
@@ -281,9 +293,9 @@ def submit_first_profiles(session: Session, fetcher: FilingFetcher, *, sonnet_to
         metrics = compute_metrics(rows, u.industry) if rows else None
         prev = outputs.latest(session, "profile", u.ticker) if force else None
         sources = build_sources(prev, metrics, sections, reference=_reference(session, u.ticker))
-        model = model_for_rank(u.market_cap_rank, sonnet_top)
-        if sections and sections[0].url != latest.url:  # fell back to the 10-K
-            latest = _latest(session, u.ticker, ("10-K",)) or latest
+        model = model_for_rank(u.market_cap_rank, sonnet_top, u.region or "US")
+        if sections and sections[0].url != latest.url and not sections[0].url.startswith(latest.url.rsplit("/", 1)[0]):
+            latest = _latest(session, u.ticker, ANNUAL_FORMS) or latest  # fell back to the annual report
         system, user = system_prompt(), user_prompt(u.name, u.ticker, filing_label(latest), sources)
         reqs.append(llm.BatchRequest(custom_id=u.ticker.replace(".", "_"), system=system, user=user, model=model))
         items[u.ticker.replace(".", "_")] = {"scope_key": u.ticker, "model": model, "filing": latest.accession,

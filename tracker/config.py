@@ -40,6 +40,10 @@ UNIVERSE_SIZE = _int("UNIVERSE_SIZE", 100)
 DEMO_SIZE = _int("DEMO_SIZE", 20)
 # A current member only drops out when it falls below this rank (stops flip-flopping at the boundary).
 UNIVERSE_EXIT_RANK = _int("UNIVERSE_EXIT_RANK", 110)
+# Europe and Asia: the largest SEC-registered foreign filers (20-F) from config/international.csv, per region.
+INTL_REGIONS = ("Europe", "Asia")
+INTL_SIZE = _int("INTL_SIZE", 25)  # seats per region
+INTL_EXIT_RANK = _int("INTL_EXIT_RANK", 30)
 
 # SEC EDGAR (rule 9: User-Agent with a name and contact email; stay under 10 requests per second)
 EDGAR_USER_AGENT_NAME = os.environ.get("EDGAR_USER_AGENT_NAME", "")

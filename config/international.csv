@@ -1,0 +1,77 @@
+ticker,cik,name,industry,country,region
+ASML,0000937966,ASML,Semiconductors,Netherlands,Europe
+NVO,0000353278,Novo Nordisk,Pharma & Biotech,Denmark,Europe
+SAP,0001000184,SAP,Software,Germany,Europe
+AZN,0000901832,AstraZeneca,Pharma & Biotech,United Kingdom,Europe
+SHEL,0001306965,Shell,Oil & Gas,United Kingdom,Europe
+HSBC,0001089113,HSBC,Banks,United Kingdom,Europe
+NVS,0001114448,Novartis,Pharma & Biotech,Switzerland,Europe
+UL,0000217410,Unilever,Consumer Staples,United Kingdom,Europe
+TTE,0000879764,TotalEnergies,Oil & Gas,France,Europe
+ARM,0001973239,Arm Holdings,Semiconductors,United Kingdom,Europe
+SNY,0001121404,Sanofi,Pharma & Biotech,France,Europe
+GSK,0001131399,GSK,Pharma & Biotech,United Kingdom,Europe
+BP,0000313807,BP,Oil & Gas,United Kingdom,Europe
+DEO,0000835403,Diageo,Consumer Staples,United Kingdom,Europe
+BUD,0001668717,Anheuser-Busch InBev,Consumer Staples,Belgium,Europe
+UBS,0001610520,UBS,Capital Markets,Switzerland,Europe
+SAN,0000891478,Banco Santander,Banks,Spain,Europe
+BBVA,0000842180,BBVA,Banks,Spain,Europe
+ING,0001039765,ING,Banks,Netherlands,Europe
+BCS,0000312069,Barclays,Banks,United Kingdom,Europe
+LYG,0001160106,Lloyds Banking Group,Banks,United Kingdom,Europe
+NWG,0000844150,NatWest Group,Banks,United Kingdom,Europe
+DB,0001159508,Deutsche Bank,Capital Markets,Germany,Europe
+RELX,0000929869,RELX,Internet & Media,United Kingdom,Europe
+BTI,0001303523,British American Tobacco,Consumer Staples,United Kingdom,Europe
+EQNR,0001140625,Equinor,Oil & Gas,Norway,Europe
+E,0001002242,Eni,Oil & Gas,Italy,Europe
+STLA,0001605484,Stellantis,Retail & Consumer,Netherlands,Europe
+RACE,0001648416,Ferrari,Retail & Consumer,Italy,Europe
+SPOT,0001639920,Spotify,Internet & Media,Sweden,Europe
+PHG,0000313216,Philips,Medical Devices & Tools,Netherlands,Europe
+NOK,0000924613,Nokia,Technology Hardware,Finland,Europe
+ERIC,0000717826,Ericsson,Technology Hardware,Sweden,Europe
+NGG,0001004315,National Grid,Utilities,United Kingdom,Europe
+RIO,0000863064,Rio Tinto,Metals & Mining,United Kingdom,Europe
+VOD,0000839923,Vodafone,Telecom,United Kingdom,Europe
+ALC,0001167379,Alcon,Medical Devices & Tools,Switzerland,Europe
+ARGX,0001697862,argenx,Pharma & Biotech,Netherlands,Europe
+PUK,0001116578,Prudential,Insurance,United Kingdom,Europe
+FER,0001468522,Ferrovial,Industrials,Spain,Europe
+TSM,0001046179,TSMC,Semiconductors,Taiwan,Asia
+TM,0001094517,Toyota,Retail & Consumer,Japan,Asia
+SONY,0000313838,Sony,Technology Hardware,Japan,Asia
+MUFG,0000067088,Mitsubishi UFJ Financial,Banks,Japan,Asia
+SMFG,0001022837,Sumitomo Mitsui Financial,Banks,Japan,Asia
+MFG,0001335730,Mizuho Financial,Banks,Japan,Asia
+HMC,0000715153,Honda,Retail & Consumer,Japan,Asia
+IX,0001070304,ORIX,Capital Markets,Japan,Asia
+BABA,0001577552,Alibaba,Internet & Media,China,Asia
+PDD,0001737806,PDD Holdings,Internet & Media,China,Asia
+JD,0001549802,JD.com,Internet & Media,China,Asia
+BIDU,0001329099,Baidu,Internet & Media,China,Asia
+NTES,0001110646,NetEase,Internet & Media,China,Asia
+TCOM,0001269238,Trip.com,Internet & Media,China,Asia
+BEKE,0001809587,KE Holdings,Real Estate,China,Asia
+LI,0001791706,Li Auto,Retail & Consumer,China,Asia
+NIO,0001736541,NIO,Retail & Consumer,China,Asia
+XPEV,0001810997,XPeng,Retail & Consumer,China,Asia
+TME,0001744676,Tencent Music,Internet & Media,China,Asia
+BILI,0001723690,Bilibili,Internet & Media,China,Asia
+ZTO,0001677250,ZTO Express,Industrials,China,Asia
+INFY,0001067491,Infosys,Software,India,Asia
+HDB,0001144967,HDFC Bank,Banks,India,Asia
+IBN,0001103838,ICICI Bank,Banks,India,Asia
+WIT,0001123799,Wipro,Software,India,Asia
+RDY,0001135951,Dr. Reddy's,Pharma & Biotech,India,Asia
+KB,0001445930,KB Financial,Banks,South Korea,Asia
+SHG,0001263043,Shinhan Financial,Banks,South Korea,Asia
+PKX,0000889132,POSCO Holdings,Metals & Mining,South Korea,Asia
+SKM,0001015650,SK Telecom,Telecom,South Korea,Asia
+KEP,0000887225,Korea Electric Power,Utilities,South Korea,Asia
+UMC,0001033767,United Microelectronics,Semiconductors,Taiwan,Asia
+ASX,0001122411,ASE Technology,Semiconductors,Taiwan,Asia
+CHT,0001132924,Chunghwa Telecom,Telecom,Taiwan,Asia
+SE,0001703399,Sea Limited,Internet & Media,Singapore,Asia
+GRAB,0001855612,Grab,Internet & Media,Singapore,Asia

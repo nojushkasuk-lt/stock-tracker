@@ -9,7 +9,8 @@ CREATE TABLE universe (
     name            TEXT NOT NULL,
     industry        TEXT NOT NULL,              -- own labels or EDGAR SIC-based (not GICS); peer group for shared notes
     sic_code        TEXT,
-    region          TEXT NOT NULL DEFAULT 'US', -- for later: ADRs and non-US stocks
+    region          TEXT NOT NULL DEFAULT 'US', -- US, Europe, Asia (separate seats, see config INTL_*)
+    country         TEXT,                       -- non-US listings: country of the company
     market_cap_rank INTEGER,
     is_demo         BOOLEAN NOT NULL DEFAULT FALSE,
     active          BOOLEAN NOT NULL DEFAULT TRUE,  -- FALSE = dropped out of the top 100: current followers keep it, nobody new can add it

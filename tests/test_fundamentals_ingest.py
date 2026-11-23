@@ -63,3 +63,31 @@ def test_predecessor_history_is_merged_and_latest_filing_wins():
     merged = {(r["period_end"]): r["value"] for r in merge_rows(old, new)}
     assert merged == {date(2020, 12, 31): 1.0, date(2024, 12, 31): 2.5}
     assert read_predecessors()["XOM"] == [34088]
+
+
+def test_ifrs_filer_keeps_reporting_currency_only_and_gets_metrics():
+    def f(end, val, start=None, form="20-F", filed="2026-04-15"):
+        return fact(end, val, start=start, filed=filed, form=form)
+    cf = {"facts": {"ifrs-full": {
+        "Revenue": {"units": {"TWD": [f("2025-12-31", 3800.0, "2025-01-01"), f("2024-12-31", 2900.0, "2024-01-01")],
+                              "USD": [f("2025-12-31", 120.0, "2025-01-01")]}},  # convenience translation: dropped
+        "ProfitLossFromOperatingActivities": {"units": {"TWD": [f("2025-12-31", 1900.0, "2025-01-01")]}},
+        "ProfitLossAttributableToOwnersOfParent": {"units": {"TWD": [f("2025-12-31", 1700.0, "2025-01-01")]}},
+        "DilutedEarningsLossPerShare": {"units": {"TWD/shares": [f("2025-12-31", 65.0, "2025-01-01")],
+                                                  "USD/shares": [f("2025-12-31", 2.0, "2025-01-01")]}},
+        "CashAndCashEquivalents": {"units": {"TWD": [f("2025-12-31", 2500.0)]}},
+        "Borrowings": {"units": {"TWD": [f("2025-12-31", 1000.0)]}},
+        "DepreciationAndAmortisationExpense": {"units": {"TWD": [f("2025-12-31", 600.0, "2025-01-01")]}},
+    }}}
+    rows = extract_rows("TSM", cf, today=date(2026, 11, 1))
+    assert {r["unit"] for r in rows} == {"TWD", "TWD/shares"} and all(r["metric"].startswith("ifrs:") for r in rows)
+
+    class Row:
+        def __init__(self, d):
+            self.__dict__.update(d)
+    m = compute_metrics([Row(r) for r in rows], "Semiconductors", today=date(2026, 11, 1))
+    assert m.currency == "TWD" and m.revenue_ttm == 3800.0 and m.eps_diluted_ttm == 65.0
+    assert round(m.operating_margin, 3) == 0.5 and round(m.revenue_growth_yoy, 3) == 0.31
+    assert m.net_debt == 1000.0 - 2500.0 and round(m.net_debt_to_ebitda, 3) == round(-1500 / 2500, 3)
+    old = compute_metrics([Row(r) for r in rows], "Semiconductors", today=date(2028, 6, 1))
+    assert old.revenue_ttm is None and "too old" in old.notes["revenue"]

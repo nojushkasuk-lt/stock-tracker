@@ -43,7 +43,8 @@ class Universe(Base):
     name: Mapped[str] = mapped_column(Text)
     industry: Mapped[str] = mapped_column(Text)
     sic_code: Mapped[str | None] = mapped_column(Text)
-    region: Mapped[str] = mapped_column(Text, default="US", server_default="US")
+    region: Mapped[str] = mapped_column(Text, default="US", server_default="US")  # US, Europe, Asia
+    country: Mapped[str | None] = mapped_column(Text)  # set for non-US listings (config/international.csv)
     market_cap_rank: Mapped[int | None] = mapped_column(Integer)
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())

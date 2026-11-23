@@ -1,4 +1,6 @@
-"""The universe: the 100 largest US companies. config/universe.csv seeds it; refresh_universe keeps it current."""
+"""The universe: the 100 largest US companies, plus the largest European and Asian companies that file with the SEC
+(config/international.csv, 25 per region). config/universe.csv seeds the US list; refresh_universe keeps each
+region current with its own seats."""
 
 import csv
 from dataclasses import dataclass, field
@@ -15,6 +17,7 @@ CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "config"
 CSV_PATH = CONFIG_DIR / "universe.csv"
 CANDIDATES_PATH = CONFIG_DIR / "candidates.csv"
 PINS_PATH = CONFIG_DIR / "pins.csv"
+INTERNATIONAL_PATH = CONFIG_DIR / "international.csv"
 UNCLASSIFIED = "Unclassified"
 
 
@@ -81,6 +84,7 @@ def refresh_universe(
     demo_size: int | None = None,
     exit_rank: int | None = None,
     pins: set[str] | None = None,
+    region: str = "US",
 ) -> RefreshResult:
     """Re-rank by market cap. Entries join at rank <= size; members only leave below exit_rank.
 
@@ -88,14 +92,20 @@ def refresh_universe(
     Tickers without a market cap this run keep their previous status.
     Pinned tickers (config/pins.csv) always stay in; they take seats within `size` and may enter from the
     candidate list even without a market cap.
+
+    Each region has its own seats: only that region's rows and candidates take part. Ranks are within the
+    region here; rerank_members then ranks all members together.
     """
-    size = size or config.UNIVERSE_SIZE
-    demo_size = demo_size or config.DEMO_SIZE
-    exit_rank = exit_rank or config.UNIVERSE_EXIT_RANK
+    us = region == "US"
+    size = size or (config.UNIVERSE_SIZE if us else config.INTL_SIZE)
+    demo_size = (demo_size or config.DEMO_SIZE) if us else (demo_size or 0)
+    exit_rank = exit_rank or (config.UNIVERSE_EXIT_RANK if us else config.INTL_EXIT_RANK)
 
     pins = set(pins or ())
-    rows = {u.ticker: u for u in session.scalars(select(Universe))}
-    cand = {c["ticker"]: c for c in candidates}
+    rows = {u.ticker: u for u in session.scalars(select(Universe).where(Universe.region == region))}
+    cand = {c["ticker"]: c for c in candidates if (c.get("region") or "US") == region and c["ticker"] not in
+            set(session.scalars(select(Universe.ticker).where(Universe.region != region)))}
+    pins &= set(rows) | set(cand)
     res = RefreshResult()
 
     pool = set(rows) | set(cand)
@@ -130,7 +140,7 @@ def refresh_universe(
             c = cand[t]
             u = Universe(
                 ticker=t, cik=c["cik"].zfill(10), name=c["name"], sic_code=c.get("sic_code") or None,
-                industry=c.get("industry") or UNCLASSIFIED, region="US",
+                industry=c.get("industry") or UNCLASSIFIED, region=region, country=c.get("country") or None,
                 market_cap_rank=rank, is_demo=demo, active=True, updated_at=now,
             )
             session.add(u)
@@ -156,6 +166,15 @@ def refresh_universe(
     for k in ("entered", "exited", "demo_in", "demo_out", "unclassified"):
         getattr(res, k).sort()
     return res
+
+
+def rerank_members(session: Session, market_caps: dict[str, float]) -> None:
+    """One rank across all regions for active members with a market cap (1 = largest), so mixed lists sort by
+    size. Members without a cap this run keep their rank."""
+    members = [u for u in session.scalars(select(Universe).where(Universe.active)) if market_caps.get(u.ticker)]
+    for i, u in enumerate(sorted(members, key=lambda u: -market_caps[u.ticker])):
+        u.market_cap_rank = i + 1
+    session.flush()
 
 
 def covered_tickers(session: Session) -> set[str]:

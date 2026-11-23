@@ -1,7 +1,9 @@
 """Readable sections of an EDGAR filing for the profile prompt (rule 5: send sections, not whole filings).
 
 10-K: Item 1 Business, Item 1A Risk Factors, Item 7 MD&A. 10-Q: Part I Item 2 MD&A. 8-K item 2.02: the earnings
-release exhibit (EX-99.x). Each section is capped in characters; a cut is marked in the text, never silent.
+release exhibit (EX-99.x). 20-F (foreign filers): Item 4 Information on the Company, Item 3 Key Information (holds
+3.D Risk Factors), Item 5 Operating and Financial Review; annual-report style 20-Fs without Item headings send
+their opening sections instead. 6-K with financial statements: the report or its EX-99 exhibit. Each section is capped in characters; a cut is marked in the text, never silent.
 Filing text goes to the model only and is never stored.
 """
 
@@ -18,7 +20,8 @@ SKIP_TAGS = {"script", "style", "head", "title"}
 HIDDEN = re.compile(r"display\s*:\s*none", re.I)  # inline XBRL keeps its header data in a hidden div
 
 # Characters per section (about 4 characters per token): keeps a 10-K prompt near 45k tokens.
-CAPS = {"business": 30_000, "risk_factors": 30_000, "mdna": 100_000, "earnings_release": 60_000}
+CAPS = {"business": 30_000, "risk_factors": 30_000, "mdna": 100_000, "earnings_release": 60_000,
+        "annual_report": 120_000}
 
 
 class _Text(HTMLParser):
@@ -103,6 +106,8 @@ def periodic_sections(text: str, form: str, url: str) -> list[Section]:
                  ("mdna", "10-K Item 7 MD&A", "7", ["7A", "8"])]
     elif form == "10-Q":
         specs = [("mdna", "10-Q Item 2 MD&A", "2", ["3", "4"])]
+    elif form == "20-F":
+        return annual_20f_sections(text, url)
     else:
         raise ValueError(f"not a periodic form: {form}")
     out = []
@@ -113,6 +118,27 @@ def periodic_sections(text: str, form: str, url: str) -> list[Section]:
     if not any(s.key == "mdna" for s in out):
         out += named_sections(text, form, url, have={s.key for s in out})
     return out
+
+
+def annual_20f_sections(text: str, url: str) -> list[Section]:
+    """20-F by Item headings (Item 3 is sent for its 3.D Risk Factors and capped); an annual-report style 20-F
+    (Shell, HSBC, ASML: Items only in a cross-reference index) sends its opening sections plus Risk Factors."""
+    specs = [("business", "20-F Item 4 Information on the Company", "4", ["4A", "5"]),
+             ("risk_factors", "20-F Item 3 Key Information and Risk Factors", "3", ["4"]),
+             ("mdna", "20-F Item 5 Operating and Financial Review", "5", ["6"])]
+    out = []
+    for key, label, start, ends in specs:
+        body = section(text, start, ends, min_len=10_000)
+        if body:
+            if key == "risk_factors":  # skip 3.A-3.C (selected data, capitalisation) when the 3.D heading is there
+                m = re.search(r"^\s*(?:D\.?\s*)?risk factors\s*$", body, re.I | re.M)
+                body = body[m.start():] if m else body
+            out.append(Section(key, label, cap(body, CAPS[key]), url))
+    if {s.key for s in out} >= {"business", "mdna"}:
+        return out
+    out = [Section("annual_report", "20-F annual report (opening sections)", cap(text, CAPS["annual_report"]), url)]
+    risks = named_sections(text, "10-K", url, have={"mdna"})  # Risk Factors by heading
+    return out + [Section(r.key, "20-F Risk Factors (found by heading)", r.text, r.url) for r in risks]
 
 
 # Some large filers (banks, Intel, GE) keep "Item" headings only in a cross-reference index and write the
@@ -139,6 +165,7 @@ def named_sections(text: str, form: str, url: str, have: set[str] = frozenset(),
     return out
 
 
+MIN_6K_CHARS = 5_000
 EXHIBIT_99 = re.compile(r"ex(hibit)?[-_]?99", re.I)
 
 
@@ -166,8 +193,15 @@ class FilingFetcher:
         return f"{base}/{names[0]}" if names else None
 
     def sections(self, form: str, items: str | None, url: str) -> list[Section]:
-        if form in ("10-K", "10-Q"):
+        if form in ("10-K", "10-Q", "20-F"):
             return periodic_sections(self.text(url), form, url)
+        if form == "6-K":  # kept only when it has financial statements (filings.parse_submissions)
+            ex = self.earnings_release_url(url)
+            body = self.text(ex or url)
+            if len(body) < MIN_6K_CHARS:  # a cover page; the report itself is only in the XBRL data
+                return []
+            return [Section("earnings_release", "6-K interim report" + (" (EX-99)" if ex else ""),
+                            cap(body, CAPS["earnings_release"]), ex or url)]
         if form == "8-K" and "2.02" in (items or ""):
             ex = self.earnings_release_url(url)
             if ex:

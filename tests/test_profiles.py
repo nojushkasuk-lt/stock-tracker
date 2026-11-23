@@ -224,3 +224,23 @@ def test_mdna_found_by_heading_when_items_are_only_an_index():
             "MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION\n" + body + "\nFINANCIAL STATEMENTS\nBalance sheet.")
     [sec] = ft.periodic_sections(text, "10-Q", "u")
     assert sec.key == "mdna" and "found by heading" in sec.label and "Revenue grew 4%" in sec.text
+
+
+def test_20f_items_and_annual_report_style_fallback():
+    filler = "The company designs and sells chips to customers worldwide. " * 250
+    items = ("ITEM 3. KEY INFORMATION\nA. Selected data\n" + filler + "\nD. Risk Factors\n" + "Demand may fall. " * 800
+             + "\nITEM 4. INFORMATION ON THE COMPANY\n" + filler + "\nITEM 4A. UNRESOLVED STAFF COMMENTS\nNone.\n"
+             + "ITEM 5. OPERATING AND FINANCIAL REVIEW AND PROSPECTS\n" + filler + "\nITEM 6. DIRECTORS\nBoard.")
+    secs = {s.key: s for s in ft.periodic_sections(items, "20-F", "u")}
+    assert set(secs) == {"business", "risk_factors", "mdna"}
+    assert secs["risk_factors"].text.startswith("D. Risk Factors")  # 3.A-3.C skipped
+    report = "Strategic report\n" + filler + "\nRisk factors\n" + "Oil prices may fall. " * 600 + "\nFinancial statements\n"
+    secs = ft.periodic_sections(report, "20-F", "u")
+    assert [s.key for s in secs] == ["annual_report", "risk_factors"] and secs[1].label.startswith("20-F")
+
+
+def test_metrics_text_names_a_foreign_currency():
+    from datetime import date
+    m = Metrics(as_of=date(2025, 12, 31), revenue_ttm=3.8e12, eps_diluted_ttm=65.0, currency="TWD")
+    t = profiles.metrics_text(m)
+    assert "TWD 3800.0B" in t and "TWD 65.00 per ordinary share" in t and "amounts in TWD" in t and "$" not in t

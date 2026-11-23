@@ -77,3 +77,13 @@ def test_old_filings_outside_the_window_are_never_queued_on_later_checks(db):
     record_filings(db, "AAPL", parse_submissions(320193, sub(Q, OLD)), now=datetime(2026, 8, 10))  # baseline
     new = record_filings(db, "AAPL", parse_submissions(320193, sub(Q, OLD, NEW_10K)), now=datetime(2026, 11, 1))
     assert [f.accession for f in new] == [NEW_10K[0]]  # the 2024 10-K stays ignored
+
+
+def test_foreign_filers_keep_20f_and_only_6ks_with_financial_statements():
+    keys = ["accessionNumber", "form", "items", "acceptanceDateTime", "filingDate", "reportDate", "primaryDocument", "isXBRL"]
+    rows = [("a1", "20-F", "", "2026-04-15T10:00:00.000Z", "2026-04-15", "2025-12-31", "tsm-20f.htm", 1),
+            ("a2", "6-K", "", "2026-07-17T10:00:00.000Z", "2026-07-17", "2026-06-30", "q2.htm", 1),
+            ("a3", "6-K", "", "2026-07-20T10:00:00.000Z", "2026-07-20", "", "board-meeting.htm", 0)]
+    s = {"filings": {"recent": {k: [r[i] for r in rows] for i, k in enumerate(keys)}}}
+    assert [r["form"] for r in parse_submissions(1046179, s)] == ["20-F", "6-K"]
+    assert is_profile_trigger("20-F", None) and is_profile_trigger("6-K", None)

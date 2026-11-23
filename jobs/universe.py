@@ -5,8 +5,9 @@ from sqlalchemy import select
 from tracker.data.edgar import EdgarClient
 from tracker.data.listings import discover_new_listings, discovered_candidates
 from tracker.data.prices import get_provider
+from tracker import config
 from tracker.data.universe import (
-    CANDIDATES_PATH, load_universe, read_csv, read_pins, refresh_universe,
+    CANDIDATES_PATH, INTERNATIONAL_PATH, load_universe, read_csv, read_pins, refresh_universe, rerank_members,
 )
 from tracker.db import create_tables, session_scope
 from tracker.models import Universe
@@ -22,12 +23,15 @@ def main() -> None:
         print(f"new US listings flagged as candidates: {new}")
         pool = {c["ticker"]: c for c in csv_cands}
         pool.update({c["ticker"]: c for c in discovered_candidates(s)})
-        tickers = sorted(known | set(pool))
+        intl = read_csv(INTERNATIONAL_PATH)
+        tickers = sorted(known | set(pool) | {c["ticker"] for c in intl})
         caps = get_provider().market_caps(tickers)
         print(f"market caps for {len(caps)}/{len(tickers)} tickers")
-        res = refresh_universe(s, caps, list(pool.values()), pins=read_pins())
-        for k, v in vars(res).items():
-            print(f"{k}: {v}")
+        pins = read_pins()
+        for region, cands in [("US", list(pool.values())), *[(r, intl) for r in config.INTL_REGIONS]]:
+            res = refresh_universe(s, caps, cands, pins=pins, region=region)
+            print(f"[{region}]", {k: v for k, v in vars(res).items() if v})
+        rerank_members(s, caps)
 
 
 if __name__ == "__main__":

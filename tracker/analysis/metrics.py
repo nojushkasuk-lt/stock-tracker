@@ -8,35 +8,44 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Iterable
 
-# Ordered by priority: the first tag that has a value for a period wins.
+# Ordered by priority: the first tag that has a value for a period wins. US GAAP tags are plain; IFRS tags (foreign
+# filers' 20-F / 6-K) carry the "ifrs:" prefix they are stored with. GAAP comes first: a company that moved from
+# US GAAP to IFRS (Toyota, Sony) keeps one series either way.
 CONCEPTS: dict[str, list[str]] = {
     "revenue": [
         "Revenues",
         "RevenueFromContractWithCustomerExcludingAssessedTax",
         "RevenueFromContractWithCustomerIncludingAssessedTax",
         "SalesRevenueNet",
+        "ifrs:Revenue", "ifrs:RevenueFromContractsWithCustomers", "ifrs:RevenueFromSaleOfGoods",
     ],
-    "operating_income": ["OperatingIncomeLoss"],
-    "net_income": ["NetIncomeLoss", "ProfitLoss"],
-    "eps_diluted": ["EarningsPerShareDiluted", "IncomeLossFromContinuingOperationsPerDilutedShare"],
-    "da": ["DepreciationDepletionAndAmortization", "DepreciationAndAmortization", "DepreciationAmortizationAndAccretionNet"],
+    "operating_income": ["OperatingIncomeLoss", "ifrs:ProfitLossFromOperatingActivities"],
+    "net_income": ["NetIncomeLoss", "ProfitLoss", "ifrs:ProfitLossAttributableToOwnersOfParent", "ifrs:ProfitLoss"],
+    "eps_diluted": ["EarningsPerShareDiluted", "IncomeLossFromContinuingOperationsPerDilutedShare",
+                    "ifrs:DilutedEarningsLossPerShare"],
+    "da": ["DepreciationDepletionAndAmortization", "DepreciationAndAmortization", "DepreciationAmortizationAndAccretionNet",
+           "ifrs:DepreciationAndAmortisationExpense", "ifrs:AdjustmentsForDepreciationAndAmortisationExpense"],
     # Fallback when there is no single D&A total: depreciation plus amortization of intangibles (both required).
-    "depreciation": ["Depreciation"],
-    "amortization_intangibles": ["AmortizationOfIntangibleAssets"],
-    "cash": ["CashAndCashEquivalentsAtCarryingValue"],
-    "short_term_investments": ["MarketableSecuritiesCurrent", "ShortTermInvestments"],
+    "depreciation": ["Depreciation", "ifrs:DepreciationExpense"],
+    "amortization_intangibles": ["AmortizationOfIntangibleAssets", "ifrs:AmortisationExpense"],
+    "cash": ["CashAndCashEquivalentsAtCarryingValue", "ifrs:CashAndCashEquivalents"],
+    "short_term_investments": ["MarketableSecuritiesCurrent", "ShortTermInvestments", "ifrs:CurrentInvestments"],
     "debt_total": ["LongTermDebt", "LongTermDebtAndCapitalLeaseObligationsIncludingCurrentMaturities"],
     "debt_noncurrent": ["LongTermDebtNoncurrent", "LongTermDebtAndCapitalLeaseObligations"],
     "debt_current": ["LongTermDebtCurrent", "LongTermDebtAndCapitalLeaseObligationsCurrent", "DebtCurrent"],
     "short_borrowings": ["ShortTermBorrowings", "CommercialPaper"],
+    # IFRS "Borrowings" is all borrowings, short-term ones included: net debt = borrowings - cash - investments.
+    "borrowings_all": ["ifrs:Borrowings"],
 }
 ALL_TAGS = sorted({t for tags in CONCEPTS.values() for t in tags})
+IFRS = "ifrs:"
 
 # Industries where operating income / net debt are not comparable (see AGENTS.md universe labels).
 NET_DEBT_NOT_APPLICABLE = {"Banks", "Capital Markets", "Insurance", "Payments"}
 NET_DEBT_NA_NOTE = "Not meaningful for banks, insurers, brokers and payment networks."
 
 ANNUAL = (350, 380)  # days
+MAX_AGE_DAYS = 730  # figures older than two years are not shown (a company that stopped tagging a concept)
 TOL_END = 10  # days: 52/53-week fiscal years shift period ends
 
 
@@ -122,11 +131,13 @@ class Metrics:
     net_debt: float | None = None
     net_debt_to_ebitda: float | None = None
     ebitda_basis: str | None = None  # "reported" or "approx" (depreciation + intangible amortization)
+    currency: str = "USD"  # reporting currency of the money figures (EPS is per ordinary share in it)
     notes: dict[str, str] = field(default_factory=dict)  # metric -> why it is not available
 
 
-def net_debt_at(series_by_concept: dict[str, list[Fact]]) -> float | None:
-    """Total debt (incl. commercial paper / short borrowings) minus cash and short-term investments."""
+def net_debt_at(series_by_concept: dict[str, list[Fact]], ifrs: bool = False) -> float | None:
+    """Total debt (incl. commercial paper / short borrowings) minus cash and short-term investments.
+    IFRS filers: total borrowings minus cash; without a borrowings total there is no honest number (None)."""
     cash_s = series_by_concept.get("cash", [])
     b = latest_instant_end(cash_s)
     if b is None:
@@ -135,6 +146,9 @@ def net_debt_at(series_by_concept: dict[str, list[Fact]]) -> float | None:
     if cash is None:
         return None
     cash += instant_at(series_by_concept.get("short_term_investments", []), b) or 0.0
+    if ifrs:
+        total = instant_at(series_by_concept.get("borrowings_all", []), b)
+        return None if total is None else total - cash
     short = instant_at(series_by_concept.get("short_borrowings", []), b) or 0.0
     total = instant_at(series_by_concept.get("debt_total", []), b)
     if total is None:
@@ -147,14 +161,32 @@ def net_debt_at(series_by_concept: dict[str, list[Fact]]) -> float | None:
     return total + short - cash
 
 
-def compute_metrics(rows: list, industry: str | None = None) -> Metrics:
+def reporting_currency(rows: list) -> str:
+    """Stored figures are in one currency (data/fundamentals.py keeps only the reporting currency)."""
+    for r in rows:
+        head = (getattr(r, "unit", None) or "").split("/")[0]
+        if len(head) == 3 and head.isupper():
+            return head
+    return "USD"
+
+
+def compute_metrics(rows: list, industry: str | None = None, today: date | None = None) -> Metrics:
     rows = list(rows)
     s = {c: build_series(rows, c) for c in CONCEPTS}
-    m = Metrics()
+    m = Metrics(currency=reporting_currency(rows))
+    # Balance sheet basis: the taxonomy of the latest cash figure (Toyota and Sony moved from US GAAP to IFRS).
+    cash_rows = [r for r in rows if r.metric in CONCEPTS["cash"]]
+    ifrs = bool(cash_rows) and max(cash_rows, key=lambda r: r.period_end).metric.startswith(IFRS)
 
     rev = ttm(s["revenue"])
+    if rev is None:  # the newest period is an interim one without a matching prior year (some 6-Ks): use the last full year
+        annual_ends = [f.end for f in s["revenue"] if _is_annual(f)]
+        rev = ttm(s["revenue"], max(annual_ends)) if annual_ends else None
     if rev is None:
         m.notes["revenue"] = "Not enough reported history yet (needs a full fiscal year and the matching quarters)."
+        return m
+    if rev[1] < (today or date.today()) - timedelta(days=MAX_AGE_DAYS):
+        m.notes["revenue"] = f"The newest revenue figure the SEC has in data form is for {rev[1].year}: too old to show."
         return m
     m.revenue_ttm, m.as_of = rev
 
@@ -166,6 +198,8 @@ def compute_metrics(rows: list, industry: str | None = None) -> Metrics:
     m.operating_income_ttm = flow("operating_income")
     m.net_income_ttm = flow("net_income")
     m.eps_diluted_ttm = flow("eps_diluted")
+    if ifrs and industry in NET_DEBT_NOT_APPLICABLE:
+        m.operating_income_ttm = None  # IFRS banks' "operating profit" is not comparable to a company's
     if m.revenue_ttm:
         if m.operating_income_ttm is not None:
             m.operating_margin = m.operating_income_ttm / m.revenue_ttm
@@ -189,13 +223,14 @@ def compute_metrics(rows: list, industry: str | None = None) -> Metrics:
         dep, amort = flow("depreciation"), flow("amortization_intangibles")
         if dep is not None and amort is not None:
             da, m.ebitda_basis = dep + amort, "approx"
-    m.net_debt = net_debt_at(s)
+    m.net_debt = net_debt_at(s, ifrs=ifrs)
     if m.operating_income_ttm is not None and da is not None:
         m.ebitda_ttm = m.operating_income_ttm + da
     if m.operating_income_ttm is None:
         m.ebitda_basis = None
     if m.net_debt is None:
-        m.notes["net_debt_to_ebitda"] = "Debt or cash figures are not available in a comparable form."
+        m.notes["net_debt_to_ebitda"] = ("Total borrowings are not reported as one figure." if ifrs else
+                                         "Debt or cash figures are not available in a comparable form.")
     elif m.ebitda_ttm is None:
         m.notes["net_debt_to_ebitda"] = "Depreciation and amortization are not reported under a standard tag."
     elif m.ebitda_ttm <= 0:

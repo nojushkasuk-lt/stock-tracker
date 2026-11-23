@@ -1,4 +1,7 @@
-"""EDGAR XBRL companyfacts -> fundamentals table (only the tags in analysis.metrics.CONCEPTS)."""
+"""EDGAR XBRL companyfacts -> fundamentals table (only the tags in analysis.metrics.CONCEPTS).
+
+US companies report in US GAAP (10-K / 10-Q). Foreign filers report in US GAAP or IFRS (20-F / 6-K), often in their
+own currency: only facts in the reporting currency are kept (TSMC also tags US dollar convenience translations)."""
 
 import csv
 from datetime import date, timedelta
@@ -7,12 +10,13 @@ from pathlib import Path
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from tracker.analysis.metrics import ALL_TAGS
+from tracker.analysis.metrics import ALL_TAGS, IFRS
 from tracker.data.edgar import EdgarClient
 from tracker.models import Fundamental, Universe
 
 PREDECESSORS_PATH = Path(__file__).resolve().parent.parent.parent / "config" / "predecessors.csv"
-FORMS = {"10-K", "10-Q"}
+FORMS = {"10-K", "10-Q", "20-F", "6-K"}
+TAXONOMIES = {"us-gaap": "", "ifrs-full": IFRS}  # taxonomy -> prefix of the stored metric name
 KEEP_YEARS = 10  # enough for 8 fiscal years of history plus the prior-year comparisons
 
 
@@ -20,27 +24,52 @@ def extract_rows(ticker: str, companyfacts: dict, today: date | None = None) -> 
     """Rows for the tags we use. One row per (tag, period end, duration); the latest filing wins."""
     today = today or date.today()
     cutoff = today - timedelta(days=365 * KEEP_YEARS)
-    gaap = companyfacts.get("facts", {}).get("us-gaap", {})
+    facts_by_tax = companyfacts.get("facts", {})
+    found = []
+    for tax, prefix in TAXONOMIES.items():
+        tags = facts_by_tax.get(tax, {})
+        for name in ALL_TAGS:
+            if name.startswith(IFRS) != bool(prefix):
+                continue
+            for unit, facts in tags.get(name.removeprefix(IFRS), {}).get("units", {}).items():
+                found.append((name, unit, facts))
+    ccy = _reporting_currency(found)
     best: dict[tuple, dict] = {}
-    for tag in ALL_TAGS:
-        for unit, facts in gaap.get(tag, {}).get("units", {}).items():
-            for f in facts:
-                if f.get("form") not in FORMS or "end" not in f or "val" not in f:
-                    continue
-                end = date.fromisoformat(f["end"])
-                if end < cutoff:
-                    continue
-                duration = (end - date.fromisoformat(f["start"])).days if f.get("start") else 0
-                filed = date.fromisoformat(f["filed"])
-                key = (tag, end, duration)
-                if key in best and best[key]["filed_at"] >= filed:
-                    continue
-                best[key] = {
-                    "ticker": ticker, "metric": tag, "period_end": end, "duration_days": duration,
-                    "fiscal_period": f.get("fp") or "", "form": f["form"], "value": float(f["val"]),
-                    "unit": unit, "accession": f.get("accn", ""), "filed_at": filed,
-                }
+    for tag, unit, facts in found:
+        if _currency(unit) not in (None, ccy):
+            continue  # another currency (convenience translation)
+        for f in facts:
+            if f.get("form") not in FORMS or "end" not in f or "val" not in f:
+                continue
+            end = date.fromisoformat(f["end"])
+            if end < cutoff:
+                continue
+            duration = (end - date.fromisoformat(f["start"])).days if f.get("start") else 0
+            filed = date.fromisoformat(f["filed"])
+            key = (tag, end, duration)
+            if key in best and best[key]["filed_at"] >= filed:
+                continue
+            best[key] = {
+                "ticker": ticker, "metric": tag, "period_end": end, "duration_days": duration,
+                "fiscal_period": f.get("fp") or "", "form": f["form"], "value": float(f["val"]),
+                "unit": unit, "accession": f.get("accn", ""), "filed_at": filed,
+            }
     return list(best.values())
+
+
+def _currency(unit: str) -> str | None:
+    """'TWD' or 'TWD/shares' -> 'TWD'; 'shares' or 'pure' -> None."""
+    head = unit.split("/")[0]
+    return head if len(head) == 3 and head.isupper() else None
+
+
+def _reporting_currency(found: list[tuple]) -> str:
+    """Currency of most annual-report money facts."""
+    counts: dict[str, int] = {}
+    for _, unit, facts in found:
+        if (ccy := _currency(unit)) is not None:
+            counts[ccy] = counts.get(ccy, 0) + sum(1 for f in facts if f.get("form") in ("10-K", "20-F"))
+    return max(counts, key=lambda c: (counts[c], c == "USD")) if counts else "USD"
 
 
 def read_predecessors(path: Path = PREDECESSORS_PATH) -> dict[str, list[int]]:
@@ -87,11 +116,24 @@ def refresh_fundamentals(session: Session, edgar: EdgarClient, tickers: list[str
     for ticker, cik in session.execute(q).all():
         if ticker in have:
             continue
-        sets = [extract_rows(ticker, edgar.companyfacts(c)) for c in predecessors.get(ticker, [])]
-        sets.append(extract_rows(ticker, edgar.companyfacts(int(cik))))
+        sets = [extract_rows(ticker, _facts(edgar, c)) for c in predecessors.get(ticker, [])]
+        sets.append(extract_rows(ticker, _facts(edgar, int(cik))))
         rows = merge_rows(*sets)
         out[ticker] = store_rows(session, ticker, rows)
     return out
+
+
+def _facts(edgar: EdgarClient, cik: int) -> dict:
+    """companyfacts, or {} when the SEC has no XBRL figures for the company (404: e.g. a foreign filer that
+    files its financial statements without XBRL)."""
+    import httpx
+
+    try:
+        return edgar.companyfacts(cik)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            return {}
+        raise
 
 
 def last_updated(session: Session, ticker: str) -> date | None:
