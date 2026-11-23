@@ -22,7 +22,7 @@ daily percent changes (stocks and SPY), stored in `daily_returns`.
   other activities that are private and individual in nature" (2a.i). Showing data to other people (employers) is not
   private and individual, so we need their written agreement. Contact for this: premium@alphavantage.co (ToS 2).
 - Free key: 25 requests per day, "and unlimited API requests for verified open-source or educational projects"
-  (support page). Our repo is public, so we ask to be verified as open source. 25/day is not enough for ~133 symbols.
+  (support page). Our repo is public, so we ask to be verified as open source. 25/day is not enough for ~183 symbols.
 - Cheapest premium plan $49.99/month (75 requests/minute); the pages do not say premium plans allow display to others.
 - No attribution requirement stated; no wording on derived data (percent changes).
 
@@ -37,7 +37,7 @@ daily percent changes (stocks and SPY), stored in `daily_returns`.
   use case, website link, and whether a start-up (<5 employees) or enterprise. Attribution required: "Tiingo must be
   clearly attributed as the data source."
 
-**What we show in prod** (to describe accurately in the requests): daily percent changes of ~133 symbols (100 stocks,
+**What we show in prod** (to describe accurately in the requests): daily percent changes of ~183 US-listed symbols (100 US stocks, 50 European and Asian companies' US listings,
 32 index funds/ETFs, SPY), returns over fixed ranges (1D to 5Y), volatility, beta, largest drop, best and worst day,
 and alerts on big moves. No prices, OHLC, or charts from the provider (prices and charts are TradingView widgets).
 We store only daily percent changes. Access is private (shared links), noindex, no ads, no payments.

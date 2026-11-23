@@ -64,7 +64,7 @@ def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None, co
     from tracker.data.wikidata import logo_thumb
 
     return Stock(u.ticker, u.name, u.industry, u.market_cap_rank, tv_symbol(u.ticker, exchange),
-                 logo_thumb(logo_url, 128) if logo_url else None, country or u.country or "United States", u.region or "US")
+                 logo_thumb(logo_url, 128) if logo_url else None, u.country or country or "United States", u.region or "US")
 
 
 def get_demo_stocks() -> list[Stock]:

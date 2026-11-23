@@ -4,7 +4,7 @@ Instructions for any coding agent (Claude Code, Codex) working in this repo. Rea
 
 ## What this is
 
-A public website for following US stocks. Anyone can open a read-only demo of the 20 largest US companies. Signed-in users (Google) pick up to 15 stocks from the 100 largest US companies and get:
+A website for following US-listed stocks, meant to become public. **Until the data-licensing gate (rule 13) is ticked it runs link-only** (`ACCESS_MODE=link`): only the owner and holders of a shared link get in, and it is not indexed. Anyone with access can open a read-only demo of the 20 largest US companies. Signed-in users (Google) pick up to 15 stocks from the 100 largest US companies and the largest European and Asian companies listed in the US, and get:
 
 - a live-style price chart and quote for each stock (TradingView widgets, delayed data)
 - fundamentals and ratios computed from SEC filings (EDGAR)
@@ -81,6 +81,7 @@ jobs/
 config/
   universe.csv          # seed for the universe table: ticker, cik, name, industry, rank, is_demo (after the first load jobs/universe.py owns rank, demo and active)
   candidates.csv        # next ~100 companies the weekly job may promote into the top 100
+  international.csv     # European and Asian SEC foreign filers (20-F): ticker, cik, name, industry, country, region
   predecessors.csv      # tickers that moved to a new SEC registrant: old CIK whose history to merge
   pins.csv              # tickers that always stay in the universe (starts empty; escape hatch for mega-IPOs or edge cases)
   outlets.toml          # outlets users can choose from: name, domain, paywall (TOML: read by the standard library, no extra dependency)
@@ -94,7 +95,7 @@ tests/
 
 ## Universe definition
 
-The universe is the 100 largest US-listed companies by market cap **as reported by the price provider** (weekly job). It is not float-adjusted and may differ from other ranking sites, especially for companies with several share classes. New US domestic filers are picked up from the SEC ticker file within a week. Foreign issuers (20-F filers) are excluded in v1.
+The universe is the 100 largest US companies by market cap **as reported by the price provider** (weekly job), plus 25 European and 25 Asian companies: the largest SEC-registered foreign filers (20-F / 6-K, mostly ADRs) from `config/international.csv`, each region with its own seats. Ranks are shared across regions. It is not float-adjusted and may differ from other ranking sites, especially for companies with several share classes. New US domestic filers are picked up from the SEC ticker file within a week. Foreign companies that do not file with the SEC (Tencent, Samsung, Nestlé, LVMH, Roche) are not covered yet. Foreign filers' figures are in their reporting currency (US GAAP or IFRS); the SEC's XBRL data for some lags a year behind their latest 20-F, and figures older than two years are not shown. No price-based valuation for foreign listings (ADR ratios). Their profiles always use the profile model (Sonnet).
 
 ## Rules
 

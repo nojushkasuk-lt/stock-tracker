@@ -126,7 +126,7 @@ def key_facts(stock, facts) -> list[tuple[str, str, str | None]]:
             rows.append(("Employees", f"{facts.employees:,}", None))
     rows.append(("Sector", stock.industry, None))
     rows.append(("Exchange", _exchange(stock.tv_symbol) or "—", None))
-    rows.append(("Country", (facts.country if facts and facts.country else "United States"), None))
+    rows.append(("Country", stock.country, None))
     if facts and facts.website:
         host = facts.website.split("//", 1)[-1].split("/", 1)[0].removeprefix("www.")
         rows.append(("Website", host, "https://" + host))
@@ -177,7 +177,7 @@ def stock_model(*, stock, perf, profile, financials, note, filings, coverage, fa
 
     m["facts"] = key_facts(stock, facts)
     m["exchange"] = _exchange(stock.tv_symbol)
-    m["country"] = facts.country if facts and facts.country else "United States"
+    m["country"] = stock.country
     m["facts_source"] = facts
 
     groups = []
