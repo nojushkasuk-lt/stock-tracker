@@ -157,11 +157,13 @@
 - [x] Settings in sections; first sign-in setup (3+ stocks, markets, outlets, alerts); 36 outlets in groups
 - [x] Alerts (bell, inbox, per-user threshold) and email alerts via the site's Gmail account (test email sent)
 - [x] News page; private access by shared links (`ACCESS_MODE=link`, `/admin/links`)
-- [ ] Profiles for all covered stocks via the Batch API (~$5.50; owner to confirm)
+- [x] First profiles for 99 of 100 stocks via the Batch API: top 30 Sonnet, rest Haiku ($1.80); followed Haiku stocks upgrade to Sonnet nightly (ANT: no filing yet)
 - [ ] Portfolio since-start performance and card sparklines; ⌘K search
-- [ ] Day 6 hosting: Render Starter (~$7/month, always on) + Neon; owner agreed
+- [ ] Day 6 hosting: Google Cloud Run (free tier) + Neon; container, copy script and Actions workflows ready. Blocked by the data-licensing gate
 - [ ] Retire the Streamlit app once the new site covers the revenue/margin chart
 - 2026-11-23, Claude Code: redesign decided (Midnight, FastAPI, Google only, Wikipedia for history); first slice of the new site built on the existing services, with range performance and risk stats from daily returns. 203 tests.
 - Next: owner adds the new redirect URI; then start dates and since-start performance, About from Wikipedia/Wikidata, logos, ETFs, international.
 - 2026-11-23 (2), Claude Code: deeper profiles, markets and fund pages, sectioned settings, setup steps, alerts with email, news page, shared-link access. 235 tests. Desktop is iCloud-offloaded: venv now at ~/.venvs/stock-tracker.
 - Next: owner confirms Batch profile run; since-start portfolio; then Day 6 deploy on Render Starter.
+- 2026-11-23 (3), Claude Code: Batch API profiles for every stock, top-bar search and the hidden-element fix, Cloud Run container, Neon support, Actions workflows (not pushed). 244 tests.
+- Next: owner decides the price-data licensing route (Day 6 gate); owner creates Neon + Google Cloud billing; then deploy.
