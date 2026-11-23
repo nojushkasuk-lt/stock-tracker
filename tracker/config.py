@@ -54,3 +54,12 @@ CHART_CACHE_SECONDS = _int("CHART_CACHE_SECONDS", 1800)  # in-memory only, under
 BRAVE_SEARCH_API_KEY = os.environ.get("BRAVE_SEARCH_API_KEY", "")
 NEWS_CACHE_SECONDS = _int("NEWS_CACHE_SECONDS", 1800)  # must stay under 1 hour
 COVERAGE_RESULTS = _int("COVERAGE_RESULTS", 10)
+
+# Anthropic (every model call goes through tracker/ai/llm.py: AGENTS.md rule 2)
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+MODEL_ROUTINE = os.environ.get("MODEL_ROUTINE") or "claude-haiku-5-5"  # notes, link ranking, summaries
+MODEL_PROFILE = os.environ.get("MODEL_PROFILE") or "claude-sonnet-5-5"  # filing-based profile updates
+EFFORT_ROUTINE = os.environ.get("EFFORT_ROUTINE") or "medium"
+EFFORT_PROFILE = os.environ.get("EFFORT_PROFILE") or "medium"
+# Haiku's price rises fivefold above 100k prompt tokens (rule 5); we refuse prompts above this.
+MAX_PROMPT_TOKENS = _int("MAX_PROMPT_TOKENS", 100_000)
