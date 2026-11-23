@@ -15,7 +15,7 @@
 
 ## Day 0 — Setup (evening)
 
-- [ ] Accounts: GitHub, Anthropic Console (prepaid credit, auto top-up off), Brave Search API (card needed; keep spending cap), Google Cloud (OAuth client). No Finnhub.
+- [x] Accounts: GitHub, Anthropic Console (prepaid credit, auto top-up off), Brave Search API (card needed; keep spending cap), Google Cloud (OAuth client). No Finnhub.
 - [ ] Email Alpha Vantage (premium@alphavantage.co) asking for written permission to use their API for a non-commercial public portfolio site (public GitHub repo, 100 US stocks, daily percent changes only, charts via TradingView). Optional: the same to Tiingo sales. Save replies in `docs/data-licensing.md`.
 - [x] Install Python 3.12, Git, VS Code, Claude Code, Codex
 - [x] Repo with AGENTS.md, PLAN.md, schema.sql, `.gitignore` (including `.env`, `.venv`, `*.db`), `.env.example`, `requirements.txt`, `docs/data-licensing.md`
@@ -62,7 +62,7 @@
 
 ## Day 5 — Users, moves and the ladder
 
-- [ ] Google sign-in (`st.login`), `users`, `user_watchlist`, `user_outlets`; setup page to pick stocks (max 15) and outlets. Built and tested with the local dev sign-in; Google itself waits for the owner's OAuth client (`.streamlit/secrets.toml.example`).
+- [x] Google sign-in (`st.login`), `users`, `user_watchlist`, `user_outlets`; setup page to pick stocks (max 15) and outlets. Owner verified Google sign-in locally 2026-11-23 (OAuth client in Testing mode; `.streamlit/secrets.toml`, gitignored).
 - [x] Demo mode: read-only, no AI calls, no searches
 - [x] `moves.py`: detection and the market → industry → stock ladder, with tests for each branch (including a day when 40 stocks fall together: one market note, no per-stock searches)
 - [x] Market alert page and note (at most one refresh per 3 hours)
@@ -135,4 +135,5 @@
 - 2026-11-23, Claude Code: Profile tab on the stock page (services.get_profile, source links per point, Markdown/$ escaped). Apple profile generated for the demo ($0.06). Day 4 done. 143 tests; live spend about $0.25.
 - Next: Day 5 (sign-in, watchlist, moves.py ladder, market page note, caps). Profiles are not scheduled yet (Day 6 Actions); run `python -m jobs.profiles` by hand.
 - 2026-11-23, Claude Code: Day 5 built: moves.py ladder (tests for every branch and the 40-stock day), daily job writes market / industry / stock notes with earnings releases filed before the close, rechecks (`jobs.daily --recheck`), market note at most every 3 hours; accounts.py (watchlist max 15, outlets, 3 refreshes/day, 300/month, 6-hour shared refresh, 10 coverage searches/day); page: sign-in (Google or local dev box), watchlist and outlet settings, move-note card, Refresh now, market alert with the shared note. Live: Nov 20 sell-off, 10 demo moves -> 7 notes. All timestamps now UTC. 190 tests; spend about $0.25.
-- Next: owner creates the Google OAuth client and .streamlit/secrets.toml to test real sign-in; then the UI design pass (owner's list of changes), then Day 6.
+- 2026-11-23: owner verified Google sign-in locally. Day 5 complete.
+- Next: UI design pass with the owner's list of design and content changes, then Day 6.
