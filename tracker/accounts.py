@@ -6,6 +6,8 @@ refresh_requests with its outcome, and the caps are counted from that table.
 
 from __future__ import annotations
 
+import logging
+
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from typing import Callable, Literal
@@ -163,6 +165,7 @@ def request_refresh(session: Session, email: str, ticker: str, do_refresh: Calla
     try:
         ok = do_refresh()
     except Exception:
+        logging.getLogger(__name__).exception("refresh of %s failed", ticker)  # shows in the server log
         ok = False
     _log(session, email, ticker, "refresh", "done" if ok else "failed", now)
     return RefreshOutcome("done", "Refreshed.") if ok else RefreshOutcome("failed", "Refresh failed. Try again later.")

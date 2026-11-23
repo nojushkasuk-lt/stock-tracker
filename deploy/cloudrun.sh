@@ -38,6 +38,7 @@ put_secret() {  # name, value from stdin. Adds a version only when the value cha
   echo "secret $1: updated"
 }
 [ -n "$(envval NEON_DATABASE_URL)" ] || { echo "add NEON_DATABASE_URL=... to .env first"; exit 1; }
+[ -n "$(envval EDGAR_USER_AGENT_EMAIL)" ] || { echo "add EDGAR_USER_AGENT_NAME and EDGAR_USER_AGENT_EMAIL to .env (the SEC requires them)"; exit 1; }
 envval NEON_DATABASE_URL | put_secret DATABASE_URL
 for k in ANTHROPIC_API_KEY BRAVE_SEARCH_API_KEY GOOGLE_CLIENT_SECRET SMTP_APP_PASSWORD; do
   [ -n "$(envval $k)" ] && envval $k | put_secret $k
@@ -50,7 +51,7 @@ URL="https://$SERVICE-$(gcloud projects describe "$PROJECT" --format='value(proj
 SECRETS="DATABASE_URL=DATABASE_URL:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,SESSION_SECRET=SESSION_SECRET:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest"
 [ -n "$(envval BRAVE_SEARCH_API_KEY)" ] && SECRETS="$SECRETS,BRAVE_SEARCH_API_KEY=BRAVE_SEARCH_API_KEY:latest"
 [ -n "$(envval SMTP_APP_PASSWORD)" ] && SECRETS="$SECRETS,SMTP_APP_PASSWORD=SMTP_APP_PASSWORD:latest"
-VARS="^|^APP_ENV=prod|ACCESS_MODE=link|GOOGLE_CLIENT_ID=$(envval GOOGLE_CLIENT_ID)|OWNER_EMAIL=$(envval OWNER_EMAIL)|SMTP_USER=$(envval SMTP_USER)|BASE_URL=$URL"
+VARS="^|^APP_ENV=prod|ACCESS_MODE=link|GOOGLE_CLIENT_ID=$(envval GOOGLE_CLIENT_ID)|OWNER_EMAIL=$(envval OWNER_EMAIL)|SMTP_USER=$(envval SMTP_USER)|EDGAR_USER_AGENT_NAME=$(envval EDGAR_USER_AGENT_NAME)|EDGAR_USER_AGENT_EMAIL=$(envval EDGAR_USER_AGENT_EMAIL)|BASE_URL=$URL"
 
 gcloud run deploy $SERVICE --source . --region $REGION --allow-unauthenticated \
   --min-instances 0 --max-instances 2 --memory 512Mi --cpu 1 --concurrency 40 --timeout 60 \
