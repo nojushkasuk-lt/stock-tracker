@@ -51,25 +51,71 @@
   document.querySelectorAll('sup.ref a').forEach(function (a) {
     a.addEventListener("click", function () { var d = document.getElementById("sources"); if (d) d.open = true; });
   });
+})();
 
-  // Settings: search filter and selected count.
-  document.querySelectorAll("[data-filter]").forEach(function (input) {
-    input.addEventListener("input", function () {
-      var q = input.value.trim().toLowerCase();
-      document.querySelectorAll(input.dataset.filter).forEach(function (el) {
-        if (el.dataset.text) el.hidden = q && el.dataset.text.indexOf(q) === -1;
+// Settings and setup: stock filters, selected list, outlet presets, copy link, unsaved marker.
+(function () {
+  var pick = document.querySelector("[data-pick]");
+  if (pick) {
+    var q = document.querySelector("[data-stock-q]"), sector = document.querySelector("[data-stock-sector]");
+    var region = document.querySelector("[data-stock-region]"), onlyMine = document.querySelector("[data-stock-mine]");
+    var none = document.querySelector("[data-none]");
+    var apply = function () {
+      var text = (q && q.value.trim().toLowerCase()) || "", sec = sector ? sector.value : "", reg = region ? region.value : "";
+      var shown = 0;
+      pick.querySelectorAll("label").forEach(function (l) {
+        var box = l.querySelector("input");
+        var ok = (!text || l.dataset.text.indexOf(text) !== -1) && (!sec || l.dataset.sector === sec) &&
+                 (!reg || l.dataset.region === reg) && (!onlyMine || !onlyMine.checked || box.checked);
+        l.hidden = !ok; if (ok) shown++;
+      });
+      if (none) none.hidden = shown > 0;
+    };
+    [q, sector, region, onlyMine].forEach(function (el) { if (el) el.addEventListener(el.tagName === "INPUT" && el.type === "search" ? "input" : "change", apply); });
+    document.querySelectorAll("[data-unpick]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var box = pick.querySelector('input[value="' + b.dataset.unpick + '"]');
+        if (box) { box.checked = false; box.dispatchEvent(new Event("change", { bubbles: true })); }
+        var row = b.closest("[data-sel]"); if (row) row.remove();
       });
     });
-  });
-  var count = document.querySelector("[data-count]");
-  if (count) {
-    var boxes = document.querySelectorAll('input[name="ticker"]'), max = +count.dataset.max;
+    var count = document.querySelector("[data-count]"), short = document.querySelector("[data-count-short]");
+    var need = document.querySelector("[data-need-min]");
     var update = function () {
-      var n = Array.prototype.filter.call(boxes, function (b) { return b.checked; }).length;
-      count.textContent = n + " of " + max + " selected";
+      var boxes = pick.querySelectorAll('input[name="ticker"]'), n = 0;
+      boxes.forEach(function (b) { if (b.checked) n++; });
+      var max = count ? +count.dataset.max : 15, min = count ? +(count.dataset.min || 0) : 0;
+      if (count) count.textContent = n + " of " + max + " selected" + (min && n < min ? " · pick " + (min - n) + " more" : "");
+      if (short) short.textContent = n;
       boxes.forEach(function (b) { b.disabled = !b.checked && n >= max; });
+      if (need) need.disabled = n < min;
     };
-    boxes.forEach(function (b) { b.addEventListener("change", update); });
-    update();
+    pick.addEventListener("change", update); update();
   }
+
+  document.querySelectorAll("[data-outlets]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var mode = b.dataset.outlets;
+      document.querySelectorAll('input[name="outlet"]').forEach(function (box) {
+        var l = box.closest("label");
+        box.checked = mode === "free" ? l.dataset.paywall === "0" : mode === "wires" ? l.dataset.group === "Wires & markets" : false;
+      });
+      var c = document.querySelector("[data-outlet-count]"), n = document.querySelectorAll('input[name="outlet"]:checked').length;
+      if (c) c.textContent = (n || "All") + " selected";
+      var d = document.querySelector("[data-dirty]"); if (d) d.hidden = false;
+    });
+  });
+
+  var form = document.querySelector("form.settings"), dirty = document.querySelector("[data-dirty]");
+  if (form && dirty) form.addEventListener("change", function () { dirty.hidden = false; });
+
+  document.querySelectorAll("[data-copy]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var src = document.querySelector("[data-copy-src]");
+      if (!src) return;
+      src.select();
+      (navigator.clipboard ? navigator.clipboard.writeText(src.value) : Promise.reject()).then(
+        function () { b.textContent = "Copied"; }, function () { document.execCommand("copy"); b.textContent = "Copied"; });
+    });
+  });
 })();

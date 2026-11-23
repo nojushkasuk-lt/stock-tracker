@@ -152,7 +152,16 @@
 - [ ] Portfolio "since your start date" (start date per stock; local only until a display-licensed price source)
 - [x] Wikidata key facts (CEO, HQ, founded, employees, website) and Commons logos: 102 of 103 companies, 99 logos (`jobs.facts`; schedule weekly on Day 6)
 - [x] Owner feedback fixed: one chart (1D–MAX locally; TradingView chart restyled in prod), own valuation card instead of the TradingView widget, demo visitors can sign in
-- [ ] About paragraph from Wikipedia (history) + filings (selling points)
+- [x] About paragraph from Wikipedia (history) + filings (selling points); profile v2 with titled points, latest report, what to watch (AAPL, NVDA generated)
+- [x] Markets: 32 funds (US, international, bonds, commodities, sectors), fund pages, followed markets
+- [x] Settings in sections; first sign-in setup (3+ stocks, markets, outlets, alerts); 36 outlets in groups
+- [x] Alerts (bell, inbox, per-user threshold) and email alerts via the site's Gmail account (test email sent)
+- [x] News page; private access by shared links (`ACCESS_MODE=link`, `/admin/links`)
+- [ ] Profiles for all covered stocks via the Batch API (~$5.50; owner to confirm)
+- [ ] Portfolio since-start performance and card sparklines; ⌘K search
+- [ ] Day 6 hosting: Render Starter (~$7/month, always on) + Neon; owner agreed
 - [ ] Retire the Streamlit app once the new site covers the revenue/margin chart
 - 2026-11-23, Claude Code: redesign decided (Midnight, FastAPI, Google only, Wikipedia for history); first slice of the new site built on the existing services, with range performance and risk stats from daily returns. 203 tests.
 - Next: owner adds the new redirect URI; then start dates and since-start performance, About from Wikipedia/Wikidata, logos, ETFs, international.
+- 2026-11-23 (2), Claude Code: deeper profiles, markets and fund pages, sectioned settings, setup steps, alerts with email, news page, shared-link access. 235 tests. Desktop is iCloud-offloaded: venv now at ~/.venvs/stock-tracker.
+- Next: owner confirms Batch profile run; since-start portfolio; then Day 6 deploy on Render Starter.

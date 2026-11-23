@@ -34,6 +34,7 @@ The app does not republish articles. It shows headlines, outlets, links and its 
 web/
   main.py               # routes; display only (rule 1): data from tracker/services.py, widgets from ui/
   auth.py               # Google sign-in (Authlib), signed session cookie; local dev sign-in only without Google keys
+  access.py             # private access: ACCESS_MODE=link lets in only shared-link holders and signed-in users; noindex
   views.py              # shapes service results for templates (formatting, source numbering)
   templates/, static/   # Jinja pages (autoescaped) and style.css / app.js
 app.py                  # old Streamlit UI, being replaced by web/
@@ -45,7 +46,9 @@ tracker/
   db.py                 # engine, session
   models.py             # SQLAlchemy models (mirror schema.sql)
   services.py           # the ONLY tracker module app.py imports
-  accounts.py           # users, watchlists (max 15), outlet choices, refresh / coverage caps (rule 6)
+  accounts.py           # users, watchlists (max 15), markets, prefs, alerts, share links, outlet choices, caps (rule 6)
+  alerts.py             # follower alerts from the daily job; alert emails (one per user per run)
+  emailer.py            # Gmail SMTP sender (app password from config), escaped HTML
   data/
     prices.py           # PriceProvider interface: daily returns only (see rule 13)
     charts.py           # chart data for the custom chart: in-memory cache, off in prod (see rule 13)
@@ -141,7 +144,8 @@ The universe is the 100 largest US-listed companies by market cap **as reported 
 ## Commands
 
 ```
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv ~/.venvs/stock-tracker && source ~/.venvs/stock-tracker/bin/activate   # outside the iCloud-synced Desktop
+# (Windows: python -m venv .venv && .venv\Scripts\activate)
 pip install -r requirements.txt
 uvicorn web.main:app --reload    # then open http://localhost:8000
 pytest
