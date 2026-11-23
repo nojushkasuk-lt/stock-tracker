@@ -49,6 +49,17 @@ class Stock:
         return row is None or row["embed"] == "1"
 
     @property
+    def chart_symbol(self) -> str | None:
+        if self.quote_embeddable:
+            return self.tv_symbol
+        return listings()[self.ticker]["alternate_symbol"] or None
+
+    @property
+    def alternate_chart_label(self) -> str | None:
+        row = listings().get(self.ticker)
+        return (row["alternate_label"] or None) if row else None
+
+    @property
     def region(self) -> str:
         return region_of(self.country)
 

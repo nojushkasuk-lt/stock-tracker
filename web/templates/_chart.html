@@ -28,14 +28,14 @@
     <div class="chart-tip" data-tip hidden></div>
     <div class="row-between note-small" style="margin-top: 8px">
       <span data-chart-range>{{ c.ranges[0].series[0][0] }} – {{ c.ranges[0].series[-1][0] }}</span>
-      <span>Local development data. On the public site this chart comes from TradingView.</span>
+      <a href="{{ chart_url }}" target="_blank" rel="noopener">Open chart on TradingView</a>
     </div>
   </div>
 </section>
-{% elif quote_url and not chart_widget %}
+{% elif not chart_widget %}
 <section class="card">
   <div class="eyebrow">Price and daily change</div>
-  <p><a class="btn" href="{{ quote_url }}" target="_blank" rel="noopener">View exchange quote on TradingView</a></p>
+  <p><a class="btn" href="{{ chart_url }}" target="_blank" rel="noopener">Open primary-market chart on TradingView</a></p>
 </section>
 {% else %}
 <section class="card">
@@ -52,10 +52,13 @@
   </div>
   {% elif quote_widget %}
   <div class="tv-quote">{{ quote_widget|safe }}</div>
+  {% elif alternate_chart_label %}
+  <div class="eyebrow">{{ chart_symbol }} · {{ alternate_chart_label }}</div>
   {% else %}
   <div class="eyebrow">Price</div>
   {% endif %}
   <div class="tv">{{ chart_widget|safe }}</div>
+  <a class="note-small" href="{{ chart_url }}" target="_blank" rel="noopener">{% if alternate_chart_label %}Open primary-market chart on TradingView{% else %}Open chart on TradingView{% endif %}</a>
 </section>
 {% endif %}
 

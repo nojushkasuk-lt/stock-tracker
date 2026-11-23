@@ -6,12 +6,12 @@ DIA,SPDR Dow Jones Industrial Average ETF,US indexes,Dow Jones Industrial Averag
 IWM,iShares Russell 2000 ETF,US indexes,Russell 2000: US small companies,BlackRock iShares,AMEX:IWM
 VTI,Vanguard Total Stock Market ETF,US indexes,CRSP US Total Market: the whole US stock market,Vanguard,AMEX:VTI
 VGK,Vanguard FTSE Europe ETF,International,FTSE Developed Europe: large and mid-size European companies,Vanguard,AMEX:VGK
-EZU,iShares MSCI Eurozone ETF,International,MSCI EMU: companies in euro-area countries,BlackRock iShares,EZU
+EZU,iShares MSCI Eurozone ETF,International,MSCI EMU: companies in euro-area countries,BlackRock iShares,CBOE:EZU
 EWJ,iShares MSCI Japan ETF,International,MSCI Japan: large and mid-size Japanese companies,BlackRock iShares,AMEX:EWJ
 EWY,iShares MSCI South Korea ETF,International,MSCI Korea 25/50: South Korean companies,BlackRock iShares,AMEX:EWY
 EWT,iShares MSCI Taiwan ETF,International,MSCI Taiwan 25/50: Taiwanese companies,BlackRock iShares,AMEX:EWT
 MCHI,iShares MSCI China ETF,International,MSCI China: Chinese companies listed in China and abroad,BlackRock iShares,NASDAQ:MCHI
-INDA,iShares MSCI India ETF,International,MSCI India: large and mid-size Indian companies,BlackRock iShares,INDA
+INDA,iShares MSCI India ETF,International,MSCI India: large and mid-size Indian companies,BlackRock iShares,CBOE:INDA
 EEM,iShares MSCI Emerging Markets ETF,International,MSCI Emerging Markets,BlackRock iShares,AMEX:EEM
 VXUS,Vanguard Total International Stock ETF,International,FTSE Global All Cap ex US: stocks outside the US,Vanguard,NASDAQ:VXUS
 BND,Vanguard Total Bond Market ETF,Bonds,US investment-grade bonds,Vanguard,NASDAQ:BND
@@ -23,7 +23,7 @@ GLD,SPDR Gold Shares,Commodities,Gold bullion,State Street,AMEX:GLD
 SLV,iShares Silver Trust,Commodities,Silver bullion,BlackRock iShares,AMEX:SLV
 CPER,United States Copper Index Fund,Commodities,Copper futures,USCF,AMEX:CPER
 USO,United States Oil Fund,Commodities,WTI crude oil futures,USCF,AMEX:USO
-PICK,iShares MSCI Global Metals & Mining Producers ETF,Commodities,"Metals and mining producers (iron ore, copper and other metals miners)",BlackRock iShares,PICK
+PICK,iShares MSCI Global Metals & Mining Producers ETF,Commodities,"Metals and mining producers (iron ore, copper and other metals miners)",BlackRock iShares,CBOE:PICK
 DBC,Invesco DB Commodity Index Tracking Fund,Commodities,"A basket of commodity futures (energy, metals, farm goods)",Invesco,AMEX:DBC
 XLK,Technology Select Sector SPDR Fund,Sectors,S&P 500 technology companies,State Street,AMEX:XLK
 SMH,VanEck Semiconductor ETF,Sectors,Large chip makers and chip-equipment companies,VanEck,NASDAQ:SMH

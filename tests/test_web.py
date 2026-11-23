@@ -347,6 +347,12 @@ def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
     assert samsung.status_code == 200
     assert "tradingview.com/symbols/KRX-005930/" in samsung.text
     assert "embed-widget-single-quote" not in samsung.text
+    assert '"symbol": "FWB:SSU"' in samsung.text
+    assert "Frankfurt depositary receipt" in samsung.text
+    assert "symbol=KRX%3A005930" in samsung.text
+    kia = client.get("/stock/KRX:000270")
+    assert kia.status_code == 200 and "symbol=KRX%3A000270" in kia.text
+    assert "embed-widget-advanced-chart" not in kia.text
     bmw = client.get("/stock/XETR:BMW")
     assert bmw.status_code == 200
     assert "embed-widget-single-quote" in bmw.text and '"symbol": "XETR:BMW"' in bmw.text
@@ -381,3 +387,14 @@ def test_open_mode_accepts_demo_and_new_google_account(client, monkeypatch):
     assert services.known_user("new@example.com")
     assert client.get("/stock/ZZZ").status_code == 200
     assert client.get("/admin/links").status_code == 404
+
+
+def test_every_fund_has_an_exchange_qualified_chart(client, monkeypatch):
+    monkeypatch.setattr(services, "get_price_chart", lambda ticker: None)
+    client.get("/demo")
+    for fund in services.get_market_list():
+        page = client.get(f"/etf/{fund.ticker}")
+        assert page.status_code == 200, fund.ticker
+        assert ":" in fund.tv_symbol
+        assert f'"symbol": "{fund.tv_symbol}"' in page.text
+        assert "tradingview.com/chart/" in page.text

@@ -150,12 +150,15 @@ def _stock_page(request: Request, ticker: str, coverage=None):
         financials=services.get_financials(stock.ticker), note=services.get_move_note(stock.ticker, me.email),
         filings=services.get_recent_filings(stock.ticker), coverage=coverage,
         facts=services.get_key_facts(stock.ticker), chart=chart)
+    chart_symbol = stock.chart_symbol
     return page(
         request, "stock.html", s=stock, m=model, following=following, nav="stocks",
-        chart_widget=tv.chart_widget_html(stock.tv_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID)
-        if not chart and stock.quote_embeddable else None,
+        chart_widget=tv.chart_widget_html(chart_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID)
+        if not chart and chart_symbol else None,
         quote_widget=tv.quote_html(stock.tv_symbol) if not chart and not perf and stock.quote_embeddable else None,
         quote_url=tv.symbol_url(stock.tv_symbol) if stock.global_listing else None,
+        chart_url=tv.chart_url(stock.tv_symbol), alternate_chart_label=stock.alternate_chart_label,
+        chart_symbol=chart_symbol,
         can_refresh=bool(me.email and not stock.global_listing and services.price_data_visible(me.email)),
         refreshes_left=services.refreshes_left(me.email) if me.email else 0,
         coverage_on=services.coverage_enabled(me.email),
@@ -204,6 +207,7 @@ def fund(request: Request, ticker: str):
     if f is None:
         raise HTTPException(404, "Unknown fund")
     return page(request, "fund.html", f=f, chart=f.chart, nav="market",
+                chart_url=tv.chart_url(f.tv_symbol),
                 chart_widget=None if f.chart else tv.chart_widget_html(f.tv_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID),
                 quote_widget=None if f.chart or f.perf else tv.quote_html(f.tv_symbol))
 

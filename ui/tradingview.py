@@ -6,6 +6,7 @@ Pure HTML builders, no I/O. Each widget keeps its TradingView link (required by 
 import json
 import re
 from html import escape
+from urllib.parse import urlencode
 
 _EXCHANGE = {"nasdaq": "NASDAQ", "nyse": "NYSE", "cboe": "CBOE", "amex": "AMEX"}
 _TICKER_RE = re.compile(r"^[A-Z][A-Z0-9.\-]{0,9}$")
@@ -28,6 +29,10 @@ def tv_symbol(ticker: str, exchange: str | None) -> str:
 
 def symbol_url(symbol: str) -> str:
     return "https://www.tradingview.com/symbols/" + symbol.replace(":", "-") + "/"
+
+
+def chart_url(symbol: str) -> str:
+    return "https://www.tradingview.com/chart/?" + urlencode({"symbol": symbol})
 
 
 def _widget(name: str, config: dict, link_text: str, symbol: str | None, height: int, link: str | None = None) -> str:

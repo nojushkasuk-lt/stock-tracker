@@ -180,3 +180,6 @@
 
 - [x] Include all active international stocks in the directory and demo search, restore saved logo display, and add Commons logo fallbacks.
 - Codex: audited the active and reserve lists and clarified that move-note refreshes use stored closing returns. Cloud Run deployment remains pending.
+
+- [x] Audit the chart markup across all active stocks and funds. Add alternate-market embeds where available and direct primary-market chart links on every page.
+- Codex: verified 189 stock embeds, 11 primary-market chart links, and all 32 fund embeds locally. Live rendering still needs a Cloud Run deployment check.
