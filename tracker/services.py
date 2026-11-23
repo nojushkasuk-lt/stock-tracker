@@ -13,6 +13,7 @@ from tracker.data.charts import get_chart_series
 from tracker.db import session_scope
 from tracker import config
 from tracker.data import news
+from tracker.ai import outputs
 from tracker.models import Filing, Fundamental, ListingSeen, Universe
 from ui.tradingview import tv_symbol
 
@@ -149,3 +150,63 @@ def get_coverage(ticker: str, domains: set[str] | None = None) -> Coverage:
         return Coverage([], "News search is unavailable right now.")
     links = news.coverage_links(results, news.load_outlets(), domains)
     return Coverage(links, None if links else "No recent coverage from the chosen outlets.")
+
+
+# ---- AI profile (read-only: written by jobs/profiles.py) ------------------------------------------
+
+@dataclass(frozen=True)
+class SourceLink:
+    label: str
+    url: str | None
+
+
+@dataclass(frozen=True)
+class ProfilePoint:
+    text: str
+    sources: list[SourceLink]
+
+
+@dataclass(frozen=True)
+class Profile:
+    sections: list[tuple[str, list[ProfilePoint]]]  # (title, points)
+    what_changed: str
+    updated: str  # YYYY-MM-DD
+
+
+PROFILE_TITLES = {"overview": "Overview and sector", "strategy_and_trajectory": "Strategy and trajectory",
+                  "bull_case": "Bull case", "bear_case": "Bear case"}
+
+
+def _source_link(src: dict | None) -> SourceLink | None:
+    if src is None:
+        return None
+    if src["id"].startswith("M"):
+        return SourceLink("our figures from SEC filings", None)
+    if src["id"].startswith("P"):
+        return None  # carried over from our previous profile; its own sources were shown then
+    return SourceLink(src.get("outlet") or "source", src.get("url"))
+
+
+def get_profile(ticker: str) -> Profile | None:
+    """The latest validated AI profile, or None. Never generates one (no model calls from the UI)."""
+    try:
+        with session_scope() as s:
+            row = outputs.latest(s, "profile", ticker.upper())
+            if row is None:
+                return None
+            by_id = {src["id"]: src for src in row.sources}
+            sections = []
+            for key, title in PROFILE_TITLES.items():
+                points = []
+                for claim in row.content.get(key, []):
+                    links = [_source_link(by_id.get(i)) for i in claim["source_ids"]]
+                    seen, uniq = set(), []
+                    for l in links:
+                        if l and (l.label, l.url) not in seen:
+                            seen.add((l.label, l.url))
+                            uniq.append(l)
+                    points.append(ProfilePoint(claim["text"], uniq))
+                sections.append((title, points))
+            return Profile(sections, row.content.get("what_changed", ""), row.created_at.date().isoformat())
+    except OperationalError:
+        return None

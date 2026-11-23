@@ -34,6 +34,7 @@ The app does not republish articles. It shows headlines, outlets, links and its 
 app.py                  # UI only
 ui/
   tradingview.py        # builds TradingView widget HTML (chart, symbol info, heatmap, calendar)
+  text.py               # md(): escape model text before st.markdown (no links, no $ math)
 tracker/
   config.py             # settings from env / st.secrets: thresholds, caps, model names
   db.py                 # engine, session

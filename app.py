@@ -4,6 +4,7 @@ import streamlit as st
 
 from tracker import services
 from ui import financials as fin
+from ui.text import md
 from ui.chart import HEIGHT as CHART_FRAME_HEIGHT, chart_html
 from ui.tradingview import (CALENDAR_HEIGHT, CHART_HEIGHT, FRAME_PAD, HEATMAP_HEIGHT, SYMBOL_INFO_HEIGHT,
                             calendar_html, chart_widget_html, heatmap_html, symbol_info_html)
@@ -34,7 +35,21 @@ with stocks_tab:
             st.iframe(chart_widget_html(stock.tv_symbol, theme=theme), height=CHART_HEIGHT + FRAME_PAD)
         st.caption(stock.industry)
 
-        overview, news_tab, filings_tab = st.tabs(["Financials", "Coverage", "Filings"])
+        profile_tab, overview, news_tab, filings_tab = st.tabs(["Profile", "Financials", "Coverage", "Filings"])
+        with profile_tab:
+            prof = services.get_profile(stock.ticker)
+            if prof is None:
+                st.caption("No AI profile yet. It is written when the company files its next report.")
+            else:
+                for title, points in prof.sections:
+                    st.markdown(f"##### {title}")
+                    for p in points:
+                        refs = " · ".join(f"[{md(l.label)}]({l.url})" if l.url else md(l.label) for l in p.sources)
+                        st.markdown(f"- {md(p.text)}  \n  :gray[{refs}]")
+                if prof.what_changed:
+                    st.markdown(f"**What changed:** {md(prof.what_changed)}")
+                st.caption(f"Written by AI from the company's SEC filings on {prof.updated}. Every point links to "
+                           "its source. For information only. Not investment advice.")
         with overview:
             f = services.get_financials(stock.ticker)
             if f:

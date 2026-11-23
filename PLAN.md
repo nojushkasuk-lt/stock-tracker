@@ -58,7 +58,7 @@
 - [x] Profile update from a filing (Sonnet); short stock / industry / market notes and link ranking (Haiku)
 - [x] Cache outputs by input hash
 - [x] Dev-only model test (not deployed): 20 recent real moves through Haiku (owner decision 2026-11-23: Haiku only, no DeepSeek / GLM). Record: relevant links ranked first yes/no, any unsupported claim, any claim stated as certain when only a headline was seen. Results in docs/model-test.md.
-- [ ] Done when: a profile shows only claims with valid sources and a note never states a cause as fact from headlines alone
+- [x] Done when: a profile shows only claims with valid sources and a note never states a cause as fact from headlines alone
 
 ## Day 5 — Users, moves and the ladder
 
@@ -132,4 +132,5 @@
 - 2026-11-23, Claude Code: first live calls OK (key in .env). Built ai_outputs store with input-hash cache, move-note generation (shared market/industry keys, ranked links stored as id/url/outlet), filing section extraction (10-K Items 1/1A/7, 10-Q MD&A, 8-K EX-99), profile generation and queue (`python -m jobs.profiles`: covered stocks only, newest filing per company, stops at budget). Real Costco 10-K profile: $0.07, nothing dropped. 138 tests. Live spend so far about $0.15.
 - Next: Day 4 model test (20 real moves; DeepSeek / GLM need accounts) and "done when" check; notes are wired to moves on Day 5. Profiles not yet in the UI or scheduled.
 - 2026-11-23, Claude Code: Day 4 model test done (docs/model-test.md): 20 real moves, no unsupported claims, no causes stated as fact from headlines, relevant links first. Fixed: earnings exhibit lookup by EX-99 type (TJX), news-after-the-move rule, no talk about inputs, 60-word summaries. 140 tests; live spend about $0.19, about 47 Brave searches.
-- Next: show the profile on the stock page (closes Day 4 "done when"), then Day 5.
+- 2026-11-23, Claude Code: Profile tab on the stock page (services.get_profile, source links per point, Markdown/$ escaped). Apple profile generated for the demo ($0.06). Day 4 done. 143 tests; live spend about $0.25.
+- Next: Day 5 (sign-in, watchlist, moves.py ladder, market page note, caps). Profiles are not scheduled yet (Day 6 Actions); run `python -m jobs.profiles` by hand.
