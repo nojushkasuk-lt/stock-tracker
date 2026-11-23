@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Shared links · Stock Tracker{% endblock %}
+{% block content %}
+<h1 style="font-size: 28px; font-weight: 800">Shared links</h1>
+<p class="muted" style="margin: -10px 0 0">Access mode: <strong>{{ mode }}</strong>. {% if mode == "link" %}Visitors need one of these links (or an earlier sign-in) to get past the start page.{% else %}The site is open to anyone with the address; links still work and are counted.{% endif %}</p>
+{% if new %}
+<section class="card hl">
+  <div class="eyebrow">New link</div>
+  <div class="copy-row"><input class="mono" readonly value="{{ base }}/s/{{ new }}" data-copy-src aria-label="Shared link"><button class="btn primary" type="button" data-copy>Copy</button></div>
+  <p class="note-small" style="margin: 8px 0 0">Anyone who opens this link can view the demo and sign in with Google. Revoke it any time.</p>
+</section>
+{% endif %}
+<form method="post" action="/admin/links" class="card copy-row">
+  <label style="flex: 1"><span class="sr-only">Who is this link for?</span><input name="label" placeholder="Who is it for? e.g. Acme recruiting" maxlength="80" class="input"></label>
+  <button class="btn primary" type="submit">Create link</button>
+</form>
+{% if links %}
+<section class="card"><div class="table-wrap"><table class="table">
+  <thead><tr><th>For</th><th>Created</th><th>Last opened</th><th class="num">Opens</th><th></th></tr></thead>
+  <tbody>{% for l in links %}<tr>
+    <td>{{ l.label }}{% if l.revoked %} <span class="chip">revoked</span>{% endif %}</td><td class="mono">{{ l.created }}</td>
+    <td class="mono">{{ l.last_used or "—" }}</td><td class="num mono">{{ l.uses }}</td>
+    <td class="num">{% if not l.revoked %}<form method="post" action="/admin/links/{{ l.token }}/revoke"><button class="btn sm" type="submit">Revoke</button></form>{% endif %}</td>
+  </tr>{% endfor %}</tbody>
+</table></div></section>
+{% endif %}
+{% endblock %}

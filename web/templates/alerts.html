@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Alerts · Stock Tracker{% endblock %}
+{% block content %}
+<div class="row-between"><h1 style="font-size: 28px; font-weight: 800">Alerts</h1><a href="/settings#alerts" style="font-size: 13px; font-weight: 700">Alert settings</a></div>
+{% if items %}
+<ul class="inbox">
+  {% for a in items %}
+  <li class="{{ 'unread' if a.unread }}">
+    <a href="{{ a.url }}">
+      <span class="ico {{ a.kind }}" aria-hidden="true">{{ "%" if a.kind == "market" else "↕" }}</span>
+      <span class="inbox-body"><span class="row-between"><strong>{{ a.title }}</strong><span class="note-small mono">{{ a.created }} UTC</span></span>
+        <span class="muted">{{ a.body }}</span></span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<section class="card"><p style="margin: 0">No alerts yet.</p>
+  <p class="muted" style="margin: 8px 0 0">You'll get one when a stock you follow moves past your threshold, or when the S&amp;P 500 moves 2% or more. The check runs after each US market close.</p></section>
+{% endif %}
+{% endblock %}

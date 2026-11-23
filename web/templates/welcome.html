@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% from "_macros.html" import logo %}
+{% block title %}Set up · Stock Tracker{% endblock %}
+{% block content %}
+<div class="wizard">
+  <ol class="steps" aria-label="Setup steps">
+    {% for st in steps %}<li class="{{ 'done' if loop.index0 < index else ('now' if loop.index0 == index) }}" {% if loop.index0 == index %}aria-current="step"{% endif %}>
+      <span class="n mono">{{ loop.index }}</span>{{ {"stocks": "Stocks", "markets": "Markets", "news": "News sources", "alerts": "Alerts"}[st] }}</li>{% endfor %}
+  </ol>
+  {% if error %}<div class="alert alert-major" role="alert">{{ error }}</div>{% endif %}
+
+  <form method="post" action="/welcome" class="card wizard-card">
+    <input type="hidden" name="step" value="{{ step }}">
+    {% if step == "stocks" %}
+      <div class="row-between"><h1 class="h1">Pick the stocks you want to follow</h1><span class="note-small" data-count data-max="{{ max_stocks }}" data-min="3">{{ mine|length }} of {{ max_stocks }} selected</span></div>
+      <p class="muted sect-intro">At least 3, up to {{ max_stocks }}, from the 100 largest US companies. Each gets a company profile, move notes and alerts.</p>
+      <div class="finder">
+        <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+          <span class="sr-only">Search stocks</span><input type="search" placeholder="Search by name or ticker" data-stock-q autofocus></label>
+        <label><span class="sr-only">Sector</span><select data-stock-sector><option value="">All sectors</option>{% for i in industries %}<option>{{ i }}</option>{% endfor %}</select></label>
+      </div>
+      <div class="pick" data-pick>
+        {% for st in stocks %}
+        <label data-text="{{ st.name|lower }} {{ st.ticker|lower }}" data-sector="{{ st.industry }}" data-region="{{ st.region }}">
+          <input type="checkbox" name="ticker" value="{{ st.ticker }}" {% if st.ticker in mine %}checked{% endif %}>
+          {{ logo(st, "sm") }}
+          <span style="min-width: 0"><span class="nm">{{ st.name }}</span><span class="sub">{{ st.ticker }} · {{ st.industry }}</span></span>
+        </label>
+        {% endfor %}
+      </div>
+      <div class="wizard-foot"><span></span><button class="btn primary" type="submit" data-need-min>Continue</button></div>
+
+    {% elif step == "markets" %}
+      <h1 class="h1">Which markets do you want to watch?</h1>
+      <p class="muted sect-intro">Funds that track indexes, bonds and commodities. They appear at the top of the Markets page. We've started you with three.</p>
+      {% for g in market_groups %}
+      <div class="group-h">{{ g }}</div>
+      <div class="pick compact">
+        {% for f in market_list if f.group == g %}
+        <label><input type="checkbox" name="market" value="{{ f.ticker }}" {% if f.ticker in my_markets or (not my_markets and f.ticker in ["SPY", "QQQ", "VGK"]) %}checked{% endif %}>
+          <span style="min-width: 0"><span class="nm"><span class="mono">{{ f.ticker }}</span> · {{ f.tracks.split(":")[0] }}</span><span class="sub">{{ f.name }}</span></span></label>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      <div class="wizard-foot"><a href="/welcome?step=stocks" class="btn ghost">Back</a>
+        <span style="display: flex; gap: 10px"><button class="btn" type="submit" name="skip" value="1">Skip</button><button class="btn primary" type="submit">Continue</button></span></div>
+
+    {% elif step == "news" %}
+      <h1 class="h1">Where should your news come from?</h1>
+      <p class="muted sect-intro">Coverage links and notes use only these outlets. Skip to use all {{ outlets|length }}, which gives the widest coverage.</p>
+      <div class="quick">
+        <button type="button" class="btn sm" data-outlets="free">Free to read only</button>
+        <button type="button" class="btn sm" data-outlets="wires">Wires &amp; markets</button>
+        <button type="button" class="btn sm" data-outlets="all">Clear</button>
+      </div>
+      {% for g in outlet_groups %}
+      <div class="group-h">{{ g }}</div>
+      <div class="pick compact">
+        {% for o in outlets if o.group == g %}
+        <label data-paywall="{{ 1 if o.paywall else 0 }}" data-group="{{ o.group }}"><input type="checkbox" name="outlet" value="{{ o.domain }}" {% if o.domain in my_outlets %}checked{% endif %}>
+          <span style="min-width: 0"><span class="nm">{{ o.name }}</span><span class="sub">{{ o.domain }}{% if o.paywall %} · <span class="pw">subscription</span>{% endif %}</span></span></label>
+        {% endfor %}
+      </div>
+      {% endfor %}
+      <div class="wizard-foot"><a href="/welcome?step=markets" class="btn ghost">Back</a>
+        <span style="display: flex; gap: 10px"><button class="btn" type="submit" name="skip" value="1">Use all outlets</button><button class="btn primary" type="submit">Continue</button></span></div>
+
+    {% else %}
+      <h1 class="h1">When should we alert you?</h1>
+      <p class="muted sect-intro">Alerts appear under the bell at the top of the page, each with a short note on what coverage points to.</p>
+      <div class="form-rows">
+        <label class="switch-row"><span><span class="nm">Big moves in my stocks</span><span class="sub">A stock you follow moves more than the threshold in a day</span></span>
+          <input type="checkbox" name="stock_alerts" value="1" {% if prefs.stock_alerts %}checked{% endif %} class="switch"></label>
+        <label class="field-row"><span><span class="nm">Threshold</span><span class="sub">5% is typical; 3% gives more alerts</span></span>
+          <select name="alert_threshold_pct">{% for t in thresholds %}<option value="{{ t }}" {% if t == prefs.alert_threshold_pct %}selected{% endif %}>{{ "%g"|format(t) }}% or more</option>{% endfor %}</select></label>
+        <label class="switch-row"><span><span class="nm">Sharp market moves</span><span class="sub">The S&amp;P 500 moves 2% or more</span></span>
+          <input type="checkbox" name="market_alerts" value="1" {% if prefs.market_alerts %}checked{% endif %} class="switch"></label>
+        <label class="field-row"><span><span class="nm">Market summary</span><span class="sub">A short summary of the market and your stocks</span></span>
+          <select name="digest">{% for v, l in [("off", "Off"), ("weekly", "Weekly (Monday)"), ("daily", "Every trading day")] %}<option value="{{ v }}" {% if v == prefs.digest %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+        <label class="switch-row"><span><span class="nm">Also send by email</span><span class="sub">{% if email_ready %}To {{ me.email }}{% else %}Coming later: email sending is not set up yet{% endif %}</span></span>
+          <input type="checkbox" name="email_alerts" value="1" {% if prefs.email_alerts %}checked{% endif %} {% if not email_ready %}disabled{% endif %} class="switch"></label>
+      </div>
+      <div class="wizard-foot"><a href="/welcome?step=news" class="btn ghost">Back</a><button class="btn primary" type="submit">Finish</button></div>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}

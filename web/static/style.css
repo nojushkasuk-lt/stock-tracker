@@ -203,3 +203,25 @@ details.sources ol { margin: 0; padding: 0 24px 22px 48px; display: flex; flex-d
   .news .outlet { flex-basis: 80px; }
   .footer .credit { margin-left: 0; }
 }
+
+/* ---- markets ---- */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 12px; }
+.tile { display: flex; flex-direction: column; gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; color: var(--text); transition: border-color .15s, transform .15s; }
+.tile:hover { border-color: var(--line-3); transform: translateY(-1px); }
+.tile-nm { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile-foot { display: flex; justify-content: space-between; font-size: 12px; color: var(--faint); }
+.tk { font-weight: 500; color: var(--text); }
+.spark { display: block; width: 100%; height: 36px; color: var(--accent); }
+.spark.up { color: var(--up); } .spark.down { color: var(--down); }
+.spark-cell { width: 120px; } .spark-cell .spark { height: 28px; }
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th { text-align: left; font-size: 12px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; padding: 8px 10px; border-bottom: 1px solid var(--line-2); }
+.table td { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.table tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover { background: var(--raised); }
+.table .num { text-align: right; white-space: nowrap; }
+.fund-link { display: flex; flex-direction: column; color: var(--text); }
+.fund-nm { font-size: 12.5px; color: var(--muted); }
+.fund-mark { background: var(--raised); color: var(--accent); border: 1px solid var(--line-2); font-size: 15px; }
+@media (max-width: 640px) { .hide-sm { display: none; } }

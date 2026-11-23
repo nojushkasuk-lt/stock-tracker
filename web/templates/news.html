@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "_macros.html" import logo %}
+{% block title %}News · Stock Tracker{% endblock %}
+{% block content %}
+<div class="row-between">
+  <h1 style="font-size: 28px; font-weight: 800">News</h1>
+  <span class="note-small">Sources: {{ outlets }}{% if me.email %} · <a href="/settings#news">change</a>{% endif %}</span>
+</div>
+
+<div class="cols">
+  <div class="col-main">
+    <section class="card">
+      <div class="row-between" style="align-items: center">
+        <div class="eyebrow">Market today</div>
+        {% if market %}<span class="mono {{ market.index_return_pct|tone }}">S&amp;P 500 {{ market.index_return_pct|pct }} · {{ market.date|short_date }}</span>{% endif %}
+      </div>
+      {% if market and market.note %}
+        <p class="lead-note">{{ market.note.summary }}</p>
+        {% if market.note.points %}<ul class="points" style="margin-top: 10px">{% for p in market.note.points %}<li><span class="dot"></span><span>{{ p.text }}{% for l in p.sources %} <a href="{{ l.url }}" rel="noopener nofollow" target="_blank" class="faint" style="font-size: 12.5px">{{ l.label }}</a>{% endfor %}</span></li>{% endfor %}</ul>{% endif %}
+        <div class="note-small" style="margin-top: 10px">AI note, written {{ market.note.written }}. Based on headlines; causes are not confirmed.</div>
+      {% elif market %}
+        <p class="muted" style="margin: 10px 0 0">A quiet day: no market note (one is written when the S&amp;P 500 moves 2% or more).</p>
+      {% endif %}
+
+      {% if live %}
+        <h3 class="h3">Latest market headlines</h3>
+        {% if live.links %}
+        <ul class="news">{% for l in live.links %}<li><span class="outlet">{{ l.outlet }}{% if l.paywall %} · subscription{% endif %}</span>
+          <a href="{{ l.url }}" rel="noopener nofollow" target="_blank">{{ l.title }}</a>{% if l.published %}<span class="note-small"> · {{ l.published.strftime("%b %-d, %H:%M") }}</span>{% endif %}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if live.message %}<p class="muted">{{ live.message }}</p>{% endif %}
+      {% elif me.email %}
+        <form method="post" action="/news/search" style="margin-top: 16px">
+          <button class="btn" type="submit" {% if not searches_left %}disabled{% endif %}>Load latest market headlines</button>
+          <span class="note-small">&nbsp;Uses 1 of your {{ searches_left }} searches left today</span>
+        </form>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2 style="font-size: 20px">Moves in {% if me.demo %}demo stocks{% else %}your stocks{% endif %} <span class="faint" style="font-weight: 500; font-size: 14px">· past 30 days</span></h2>
+      {% for st, n in moves %}
+      <article class="card news-item">
+        <div class="news-head">
+          {{ logo(st, "sm") }}
+          <a href="/stock/{{ st.ticker }}" class="nm">{{ st.name }}</a>
+          <span class="mono {{ n.return_pct|tone }}">{{ n.return_pct|pct }}</span>
+          <span class="chip">{{ n.scope_label }}</span>
+          <span class="faint" style="font-size: 12.5px; margin-left: auto">{{ n.date|nice_date }}</span>
+        </div>
+        <p>{{ n.summary }}</p>
+        {% if n.links %}<div class="link-row">{% for l in n.links[:4] %}<a href="{{ l.url }}" rel="noopener nofollow" target="_blank" class="chip">{{ l.label }} ↗</a>{% endfor %}</div>{% endif %}
+      </article>
+      {% else %}
+      <div class="card"><p class="muted" style="margin: 0">No big moves in the past 30 days. Notes are written when a stock moves 5% or more in a day.</p></div>
+      {% endfor %}
+    </section>
+  </div>
+  <div class="col-side">
+    <section class="card">
+      <div class="eyebrow">How this page works</div>
+      <p class="muted" style="margin: 10px 0 0; font-size: 14px; line-height: 1.6">Notes are our own short summaries, written when a stock or the market moves sharply, with links to the coverage they draw on. Headlines open on the outlet's site; we don't copy articles.</p>
+    </section>
+    <section class="card">
+      <div class="eyebrow">Coming up</div>
+      <p class="muted" style="margin: 10px 0 0; font-size: 14px">Economic releases and central bank meetings are on the <a href="/market">Markets page</a> calendar.</p>
+    </section>
+  </div>
+</div>
+{% endblock %}

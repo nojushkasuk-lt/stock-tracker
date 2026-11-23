@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Stock Tracker{% endblock %}
+{% block body %}
+<main class="closed">
+  <div class="start-box" style="text-align: center; align-items: center">
+    <a class="brand" href="/">{% include "_mark.html" %}Stock Tracker</a>
+    <h1 style="font-size: 24px; margin: 8px 0 0">This site is private</h1>
+    <p class="muted" style="margin: 0">It opens through a link from its owner. If you were sent one, open that link. Already have an account?</p>
+    {% if google %}<a class="btn primary" href="/login">Sign in with Google</a>{% endif %}
+  </div>
+</main>
+{% include "_footer.html" %}
+{% endblock %}

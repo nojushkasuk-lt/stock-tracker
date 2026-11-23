@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ f.name }} ({{ f.ticker }}) · Stock Tracker{% endblock %}
+{% block content %}
+{% set perf = f.perf %}
+<section class="stock-head">
+  <div class="ident">
+    <span class="logo fund-mark" aria-hidden="true"><span class="logo-letter mono">{{ f.ticker[:3] }}</span></span>
+    <div style="min-width: 0">
+      <h1 class="stock-name">{{ f.name }}</h1>
+      <div class="meta"><span class="mono" style="color: var(--text)">{{ f.ticker }}</span><span>·</span><span>{{ f.issuer }}</span><span class="chip">{{ f.group }}</span></div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+    {% if perf %}<div class="last"><div class="mono faint" style="font-size: 13px">Last session · {{ perf.as_of|short_date }}</div>
+      <div class="big {{ perf.ranges[0].pct|tone }}">{{ perf.ranges[0].pct|pct }}</div></div>{% endif %}
+    {% if me.email %}
+    <form method="post" action="/etf/{{ f.ticker }}/follow"><button class="btn {{ 'primary' if f.followed }}" type="submit" aria-pressed="{{ 'true' if f.followed else 'false' }}">{{ "Following" if f.followed else "Follow" }}</button></form>
+    {% endif %}
+  </div>
+</section>
+
+{% include "_chart.html" %}
+
+<div class="cols">
+  <div class="col-main">
+    {% if perf %}
+    <section class="card">
+      <div class="eyebrow">Returns</div>
+      <div class="metrics" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr))">
+        {% for r in perf.ranges %}<div class="metric"><div class="l">{{ r.label }}</div><div class="v {{ r.pct|tone }}">{{ r.pct|pct }}</div></div>{% endfor %}
+      </div>
+      <p class="note-small" style="margin: 12px 0 0">Price change from daily closes; dividends not included.</p>
+    </section>
+    {% endif %}
+  </div>
+  <div class="col-side">
+    <section class="card">
+      <div class="eyebrow">About the fund</div>
+      <dl class="facts">
+        <dt>Tracks</dt><dd>{{ f.tracks }}</dd>
+        <dt>Issuer</dt><dd>{{ f.issuer }}</dd>
+        <dt>Type</dt><dd>{{ f.group }}</dd>
+        <dt>Listing</dt><dd class="mono">{{ f.tv_symbol }}</dd>
+      </dl>
+    </section>
+    {% if perf and perf.risk %}
+    {% set r = perf.risk %}
+    <section class="card">
+      <div class="eyebrow">Risk · last 12 months</div>
+      <div class="metrics">
+        <div class="metric"><div class="l">Volatility</div><div class="v">{{ r.volatility_pct|pct(signed=False) }}</div></div>
+        <div class="metric"><div class="l">Beta vs S&amp;P 500</div><div class="v">{{ "—" if r.beta is none else "%.2f"|format(r.beta) }}</div></div>
+        <div class="metric"><div class="l">Largest drop</div><div class="v down">{{ r.max_drawdown_pct|pct }}</div></div>
+        <div class="metric"><div class="l">Worst day</div><div class="v down">{{ r.worst_day_pct|pct }}</div></div>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

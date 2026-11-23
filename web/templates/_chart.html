@@ -1,0 +1,41 @@
+{# needs: chart (PriceChart or None), chart_widget (TradingView HTML) #}
+{% if chart %}
+{% set c = chart %}
+<section class="card" data-perf>
+  <div class="row-between" style="align-items: center; margin-bottom: 12px">
+    <div>
+      <div class="eyebrow">Performance</div>
+      <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 2px">
+        <span class="perf-num {{ c.ranges[0].pct|tone }}" data-perf-num>{{ c.ranges[0].pct|pct }}</span>
+        <span class="muted" style="font-size: 13px" data-perf-caption>{{ c.ranges[0].caption }}</span>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Time range">
+      {% for r in c.ranges %}
+      <button type="button" aria-pressed="{{ 'true' if loop.first else 'false' }}" data-range="{{ r.label }}" data-pct="{{ r.pct|pct }}"
+              data-tone="{{ r.pct|tone }}" data-caption="{{ r.caption }}" data-points="{{ r.points }}" data-series="{{ r.series|tojson|forceescape }}">{{ r.label }}</button>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="chart" data-chart>
+    <svg viewBox="0 0 1000 250" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="fillA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7DB2FF" stop-opacity="0.22"></stop><stop offset="1" stop-color="#7DB2FF" stop-opacity="0"></stop></linearGradient></defs>
+      <line x1="0" y1="62" x2="1000" y2="62" stroke="#1C2A44"></line><line x1="0" y1="125" x2="1000" y2="125" stroke="#1C2A44"></line><line x1="0" y1="188" x2="1000" y2="188" stroke="#1C2A44"></line>
+      <polygon fill="url(#fillA)" points="0,250 {{ c.ranges[0].points }} 1000,250" data-area></polygon>
+      <polyline fill="none" stroke="#7DB2FF" stroke-width="2" vector-effect="non-scaling-stroke" points="{{ c.ranges[0].points }}" data-line></polyline>
+      <line x1="0" y1="0" x2="0" y2="250" stroke="#9AABC4" stroke-width="1" vector-effect="non-scaling-stroke" stroke-dasharray="3 3" data-cursor visibility="hidden"></line>
+    </svg>
+    <div class="chart-tip" data-tip hidden></div>
+    <div class="row-between note-small" style="margin-top: 8px">
+      <span data-chart-range>{{ c.ranges[0].series[0][0] }} – {{ c.ranges[0].series[-1][0] }}</span>
+      <span>Local development data. On the public site this chart comes from TradingView.</span>
+    </div>
+  </div>
+</section>
+{% else %}
+<section class="card">
+  <div class="eyebrow" style="margin-bottom: 12px">Price</div>
+  <div class="tv">{{ chart_widget|safe }}</div>
+</section>
+{% endif %}
+

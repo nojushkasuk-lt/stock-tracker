@@ -7,3 +7,25 @@
 {%- if stock.logo %}<img src="{{ stock.logo }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">{% endif -%}
 </span>
 {%- endmacro %}
+
+{% macro spark(points, tone="") -%}
+{%- if points %}<svg class="spark {{ tone }}" viewBox="0 0 120 36" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="currentColor" stroke-width="1.6" vector-effect="non-scaling-stroke" points="{{ points }}"></polyline></svg>{% endif -%}
+{%- endmacro %}
+
+{% macro fund_rows(tiles) -%}
+<div class="table-wrap"><table class="table">
+  <thead><tr><th scope="col">Fund</th><th scope="col" class="hide-sm">Tracks</th><th scope="col" class="num">Day</th><th scope="col" class="num">1M</th><th scope="col" class="num">1Y</th><th scope="col" class="hide-sm"><span class="sr-only">Trend</span></th></tr></thead>
+  <tbody>
+  {% for t in tiles %}
+    <tr>
+      <td><a href="/etf/{{ t.ticker }}" class="fund-link"><span class="mono tk">{{ t.ticker }}</span><span class="fund-nm">{{ t.name }}</span></a></td>
+      <td class="hide-sm muted">{{ t.tracks }}</td>
+      <td class="num mono {{ t.day|tone }}">{{ t.day|pct }}</td>
+      <td class="num mono {{ t.month|tone }}">{{ t.month|pct }}</td>
+      <td class="num mono {{ t.year|tone }}">{{ t.year|pct }}</td>
+      <td class="hide-sm spark-cell">{{ spark(t.spark, t.year|tone) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{%- endmacro %}

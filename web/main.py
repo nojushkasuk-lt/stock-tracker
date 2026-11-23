@@ -16,11 +16,18 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from tracker import config, services
 from ui import tradingview as tv
-from web import auth, views
+from web import access, auth, views
 
 HERE = Path(__file__).resolve().parent
 
 app = FastAPI(title="Stock Tracker", docs_url=None, redoc_url=None, openapi_url=None)
+
+
+def _closed(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "closed.html", {"me": viewer(request), "google": auth.configured()}, status_code=403)
+
+
+access.install(app, _closed)  # before the session middleware, so the gate runs inside it
 app.add_middleware(SessionMiddleware, secret_key=config.SESSION_SECRET or "dev-only-not-secret",
                    same_site="lax", https_only=config.APP_ENV == "prod", max_age=60 * 60 * 24 * 30)
 app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
@@ -36,8 +43,10 @@ def viewer(request: Request) -> views.Viewer:
 
 
 def page(request: Request, name: str, **ctx) -> HTMLResponse:
+    me = viewer(request)
     ctx.setdefault("flash", request.session.pop("flash", None))
-    return templates.TemplateResponse(request, name, {"me": viewer(request), **ctx})
+    ctx.setdefault("unread", services.unread_alerts(me.email) if me.email else 0)
+    return templates.TemplateResponse(request, name, {"me": me, **ctx})
 
 
 def require_viewer(request: Request) -> views.Viewer:
@@ -58,15 +67,18 @@ async def _go_start(request: Request, exc: views.GoStart):
 def start(request: Request):
     me = viewer(request)
     if me.email:
-        return RedirectResponse("/portfolio", status_code=303)
+        return RedirectResponse(services.home_path(me.email), status_code=303)
     # Demo visitors see the start page too, so they can sign in from the demo.
     return page(request, "start.html", google=auth.configured(), dev_login=auth.dev_login_allowed())
 
 
 @app.get("/demo")
 def demo(request: Request):
+    access_token = request.session.get("access")  # keep a shared-link pass when entering the demo
     request.session.clear()
     request.session["demo"] = True
+    if access_token:
+        request.session["access"] = access_token
     return RedirectResponse("/portfolio", status_code=303)
 
 
@@ -146,20 +158,76 @@ def stock_refresh(request: Request, ticker: str):
 def market(request: Request):
     me = require_viewer(request)
     return page(request, "market.html", market=services.get_market_status(me.email), nav="market",
+                groups=services.get_markets(me.email), followed=services.get_followed_markets(me.email),
                 heatmap=tv.heatmap_html("dark"), calendar=tv.calendar_html("dark"))
 
 
+@app.get("/etf/{ticker}", response_class=HTMLResponse)
+def fund(request: Request, ticker: str):
+    me = require_viewer(request)
+    f = services.get_fund(ticker, me.email)
+    if f is None:
+        raise HTTPException(404, "Unknown fund")
+    return page(request, "fund.html", f=f, chart=f.chart, nav="market",
+                chart_widget=None if f.chart else tv.chart_widget_html(f.tv_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID))
+
+
+@app.post("/etf/{ticker}/follow")
+def fund_follow(request: Request, ticker: str):
+    me = require_viewer(request)
+    if not me.email:
+        raise HTTPException(403, "Sign in to follow markets.")
+    f = services.get_fund(ticker, me.email)
+    if f is None:
+        raise HTTPException(404, "Unknown fund")
+    mine = services.get_followed_market_tickers(me.email)
+    err = services.save_markets(me.email, [t for t in mine if t != f.ticker] if f.followed else mine + [f.ticker])
+    request.session["flash"] = err or (f"Stopped following {f.ticker}." if f.followed else f"Following {f.ticker}.")
+    return RedirectResponse(f"/etf/{f.ticker}", status_code=303)
+
+
 # ---- settings (signed in only) ---------------------------------------------------------------------
+
+def _settings_ctx(me: views.Viewer) -> dict:
+    from datetime import date
+
+    from tracker.accounts import MARKETS_MAX, THRESHOLDS
+    from tracker.data import markets
+
+    stocks = services.get_followable_stocks(me.email)
+    mine = {s.ticker for s in services.get_watchlist(me.email)}
+    outlets = services.get_outlets()
+    return dict(stocks=stocks, mine=mine, starts=services.get_start_dates(me.email), today=date.today().isoformat(),
+                industries=sorted({s.industry for s in stocks}), regions=sorted({s.region for s in stocks}),
+                market_list=services.get_market_list(), market_groups=markets.GROUPS, markets_max=MARKETS_MAX,
+                my_markets=set(services.get_followed_market_tickers(me.email)),
+                outlets=outlets, outlet_groups=list(dict.fromkeys(o.group for o in outlets)),
+                my_outlets=services.get_outlet_choice(me.email), prefs=services.get_prefs(me.email), thresholds=THRESHOLDS,
+                email_ready=config.email_ready(), max_stocks=services.watchlist_max(),
+                refreshes_left=services.refreshes_left(me.email), searches_left=services.coverage_searches_left(me.email),
+                is_owner=bool(config.OWNER_EMAIL) and me.email == config.OWNER_EMAIL)
+
 
 @app.get("/settings", response_class=HTMLResponse)
 def settings(request: Request, error: str | None = None):
     me = require_viewer(request)
     if not me.email:
         return RedirectResponse("/", status_code=303)
-    mine = [s.ticker for s in services.get_watchlist(me.email)]
-    return page(request, "settings.html", nav="settings", stocks=services.get_followable_stocks(me.email),
-                mine=set(mine), outlets=services.get_outlets(), my_outlets=services.get_outlet_choice(me.email),
-                max_stocks=services.watchlist_max(), error=error)
+    return page(request, "settings.html", nav="settings", error=error, **_settings_ctx(me))
+
+
+def _start_dates(form, tickers: list[str]) -> dict:
+    from datetime import date
+
+    out = {}
+    for t in tickers:
+        raw = str(form.get(f"start_{t}") or "").strip()
+        if raw:
+            try:
+                out[t] = date.fromisoformat(raw)
+            except ValueError:
+                pass
+    return out
 
 
 @app.post("/settings")
@@ -168,9 +236,123 @@ async def settings_save(request: Request):
     if not me.email:
         return RedirectResponse("/", status_code=303)
     form = await request.form()
-    err = services.save_watchlist(me.email, list(form.getlist("ticker")))
+    tickers = list(form.getlist("ticker"))
+    err = (services.save_watchlist(me.email, tickers) or services.save_markets(me.email, list(form.getlist("market")))
+           or services.save_prefs(me.email, **views.prefs_from_form(form, email_ready=config.email_ready())))
     if err:
         return settings(request, error=err)
+    current = services.get_start_dates(me.email)
+    for t, d in _start_dates(form, tickers).items():
+        if current.get(t) != d.isoformat():
+            err = services.set_start_date(me.email, t, d)
+            if err:
+                return settings(request, error=f"{t}: {err}")
     services.save_outlet_choice(me.email, list(form.getlist("outlet")))
-    request.session["flash"] = "Saved."
-    return RedirectResponse("/portfolio", status_code=303)
+    request.session["flash"] = "Settings saved."
+    return RedirectResponse("/settings", status_code=303)
+
+
+# ---- first sign-in setup ------------------------------------------------------------------------------
+
+WELCOME_STEPS = ("stocks", "markets", "news", "alerts")
+
+
+@app.get("/welcome", response_class=HTMLResponse)
+def welcome(request: Request, step: str = "stocks", error: str | None = None):
+    me = require_viewer(request)
+    if not me.email:
+        return RedirectResponse("/", status_code=303)
+    if step not in WELCOME_STEPS:
+        step = "stocks"
+    return page(request, "welcome.html", step=step, steps=WELCOME_STEPS, index=WELCOME_STEPS.index(step), error=error,
+                bare=True, **_settings_ctx(me))
+
+
+@app.post("/welcome")
+async def welcome_save(request: Request):
+    me = require_viewer(request)
+    if not me.email:
+        return RedirectResponse("/", status_code=303)
+    form = await request.form()
+    step = str(form.get("step") or "stocks")
+    skip = form.get("skip") == "1"
+    err = None
+    if step == "stocks":
+        tickers = list(form.getlist("ticker"))
+        err = (f"Pick at least {views.MIN_START_STOCKS} stocks to start." if len(set(tickers)) < views.MIN_START_STOCKS
+               else services.save_watchlist(me.email, tickers))
+    elif step == "markets" and not skip:
+        err = services.save_markets(me.email, list(form.getlist("market")))
+    elif step == "news":
+        services.save_outlet_choice(me.email, [] if skip else list(form.getlist("outlet")))
+    elif step == "alerts":
+        err = services.save_prefs(me.email, **views.prefs_from_form(form, email_ready=config.email_ready(), alerts_only=True))
+        if not err:
+            services.finish_onboarding(me.email)
+            request.session["flash"] = "You're set up. You can change any of this in Settings."
+            return RedirectResponse("/portfolio", status_code=303)
+    if err:
+        return welcome(request, step=step, error=err)
+    nxt = WELCOME_STEPS[min(WELCOME_STEPS.index(step) + 1, len(WELCOME_STEPS) - 1)] if step in WELCOME_STEPS else "stocks"
+    return RedirectResponse(f"/welcome?step={nxt}", status_code=303)
+
+
+# ---- alerts --------------------------------------------------------------------------------------------
+
+@app.get("/alerts", response_class=HTMLResponse)
+def alerts(request: Request):
+    me = require_viewer(request)
+    if not me.email:
+        return RedirectResponse("/", status_code=303)
+    items = services.get_alerts(me.email)
+    resp = page(request, "alerts.html", items=items, nav="alerts")
+    services.mark_alerts_read(me.email)  # after rendering, so new ones are highlighted this once
+    return resp
+
+
+# ---- news ----------------------------------------------------------------------------------------------
+
+@app.get("/news", response_class=HTMLResponse)
+def news(request: Request):
+    me = require_viewer(request)
+    return page(request, "news.html", nav="news", **views.news_model(services.get_news_page(me.email)))
+
+
+@app.post("/news/search", response_class=HTMLResponse)
+def news_search(request: Request):
+    me = require_viewer(request)
+    if not me.email:
+        raise HTTPException(403, "Live coverage is for signed-in users.")
+    return page(request, "news.html", nav="news", **views.news_model(services.get_news_page(me.email, live=True)))
+
+
+# ---- shared links (owner only) ---------------------------------------------------------------------------
+
+def _owner(request: Request) -> views.Viewer:
+    me = viewer(request)
+    if not (config.OWNER_EMAIL and me.email == config.OWNER_EMAIL):
+        raise HTTPException(404)
+    return me
+
+
+@app.get("/admin/links", response_class=HTMLResponse)
+def admin_links(request: Request):
+    _owner(request)
+    return page(request, "links.html", links=services.get_share_links(), base=config.BASE_URL, mode=config.ACCESS_MODE,
+                new=request.session.pop("new_link", None))
+
+
+@app.post("/admin/links")
+async def admin_links_create(request: Request):
+    _owner(request)
+    form = await request.form()
+    request.session["new_link"] = services.create_share_link(str(form.get("label") or ""))
+    return RedirectResponse("/admin/links", status_code=303)
+
+
+@app.post("/admin/links/{token}/revoke")
+def admin_links_revoke(request: Request, token: str):
+    _owner(request)
+    services.revoke_share_link(token)
+    request.session["flash"] = "Link revoked. Visitors who used it lose access now, unless they signed in."
+    return RedirectResponse("/admin/links", status_code=303)

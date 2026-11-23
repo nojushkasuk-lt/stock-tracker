@@ -1,7 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Market · Stock Tracker{% endblock %}
+{% from "_macros.html" import fund_rows, spark %}
+{% block title %}Markets · Stock Tracker{% endblock %}
 {% block content %}
-<h1 style="font-size: 28px; font-weight: 800">Market</h1>
+<div class="row-between">
+  <h1 style="font-size: 28px; font-weight: 800">Markets</h1>
+  {% if market %}<span class="note-small">Last session {{ market.date|nice_date }} · daily closes</span>{% endif %}
+</div>
+
 {% if market and market.level != "none" %}
   <div class="alert alert-{{ market.level }}" role="status">Market alert: the S&amp;P 500 {{ "fell" if market.index_return_pct < 0 else "rose" }}
     {{ market.index_return_pct|pct(signed=False)|replace("−", "") }} on {{ market.date|nice_date }}.</div>
@@ -13,20 +18,41 @@
       <p>{{ n.summary }}</p>
       {% if n.points %}<ul>{% for p in n.points %}<li>{{ p.text }}{% for l in p.sources %} <a href="{{ l.url }}" rel="noopener nofollow" target="_blank" class="faint" style="font-size: 12.5px">{{ l.label }}</a>{% endfor %}</li>{% endfor %}</ul>{% endif %}
     </div>
-    {% if n.links %}
-    <details class="sources" style="margin-top: 14px">
-      <summary style="padding: 8px 0"><span>Coverage <span class="muted" style="font-weight: 500">· {{ n.links|length }}</span></span><span class="toggle"></span></summary>
-      <ul class="news">{% for l in n.links %}<li><span class="outlet">{{ l.label }}</span><a href="{{ l.url }}" rel="noopener nofollow" target="_blank">Article cited in the note</a></li>{% endfor %}</ul>
-    </details>
-    {% endif %}
-    <div class="note-small" style="margin-top: 12px">AI note, written {{ n.written }}. Based on headlines; causes are not confirmed.</div>
+    <div class="note-small" style="margin-top: 12px">AI note, written {{ n.written }}. Based on headlines; causes are not confirmed. <a href="/news">More on the News page</a></div>
   </section>
   {% endif %}
-{% elif market %}
-  <section class="card"><span class="muted">S&amp;P 500</span> <span class="mono {{ market.index_return_pct|tone }}">{{ market.index_return_pct|pct }}</span>
-    <span class="muted">on {{ market.date|nice_date }}. No market alert (alerts start at a 2% move).</span></section>
 {% endif %}
-<section class="card"><div class="eyebrow" style="margin-bottom: 12px">S&amp;P 500 today</div>{{ heatmap|safe }}</section>
+
+{% if followed %}
+<section>
+  <div class="row-between"><h2 style="font-size: 20px">{% if me.email %}Markets you follow{% else %}Key markets{% endif %}</h2>
+    {% if me.email %}<a href="/settings#markets" style="font-size: 13px; font-weight: 700">Edit</a>{% endif %}</div>
+  <div class="tiles">
+    {% for t in followed %}
+    <a class="tile" href="/etf/{{ t.ticker }}">
+      <span class="row-between"><span class="mono tk">{{ t.ticker }}</span><span class="mono {{ t.day|tone }}">{{ t.day|pct }}</span></span>
+      <span class="tile-nm">{{ t.tracks.split(":")[0] }}</span>
+      {{ spark(t.spark, t.year|tone) }}
+      <span class="tile-foot"><span>1M <span class="mono {{ t.month|tone }}">{{ t.month|pct }}</span></span><span>1Y <span class="mono {{ t.year|tone }}">{{ t.year|pct }}</span></span></span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="card">
+  <div class="tabs" role="tablist" data-tabs>
+    {% for g, tiles in groups %}
+    <button type="button" role="tab" id="tab-g{{ loop.index }}" aria-controls="g{{ loop.index }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ g }}</button>
+    {% endfor %}
+  </div>
+  {% for g, tiles in groups %}
+  <div id="g{{ loop.index }}" role="tabpanel" aria-labelledby="tab-g{{ loop.index }}" {% if not loop.first %}hidden{% endif %}>{{ fund_rows(tiles) }}</div>
+  {% endfor %}
+  <p class="note-small" style="margin: 14px 0 0">Funds that track each market, since an index itself can't be bought. Changes are compounded daily closes. Iron ore has no US-listed fund, so Commodities shows metals miners (PICK) and copper (CPER).</p>
+</section>
+
+<section class="card"><div class="eyebrow" style="margin-bottom: 12px">S&amp;P 500 heatmap</div>{{ heatmap|safe }}</section>
 <section class="card"><div class="eyebrow" style="margin-bottom: 12px">Economic calendar</div>{{ calendar|safe }}</section>
 <section class="card">
   <div class="eyebrow" style="margin-bottom: 8px">Official sources</div>

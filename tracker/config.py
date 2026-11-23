@@ -88,3 +88,20 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET") or ""
 SESSION_SECRET = os.environ.get("SESSION_SECRET") or ""
 BASE_URL = (os.environ.get("BASE_URL") or "http://localhost:8000").rstrip("/")
 OWNER_CREDIT = "Designed and built by Nojus Šukaitis"
+
+# Private access (see web/access.py). ACCESS_MODE=open: anyone with the URL (local default);
+# ACCESS_MODE=link: only visitors who opened a shared link (or signed in before) get past the gate.
+ACCESS_MODE = (os.environ.get("ACCESS_MODE") or ("link" if APP_ENV == "prod" else "open")).lower()
+OWNER_EMAIL = (os.environ.get("OWNER_EMAIL") or "").strip().lower()  # can create and revoke shared links
+# Email alerts: off until a sending service is chosen and configured.
+EMAIL_PROVIDER = (os.environ.get("EMAIL_PROVIDER") or "none").lower()
+SMTP_HOST = os.environ.get("SMTP_HOST") or "smtp.gmail.com"
+SMTP_PORT = _int("SMTP_PORT", 465)
+SMTP_USER = (os.environ.get("SMTP_USER") or "").strip()
+SMTP_APP_PASSWORD = (os.environ.get("SMTP_APP_PASSWORD") or "").replace(" ", "")
+EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME") or "Stock Tracker"
+EMAIL_MAX_ITEMS = _int("EMAIL_MAX_ITEMS", 10)   # alerts per email; the rest are on the Alerts page
+
+
+def email_ready() -> bool:
+    return EMAIL_PROVIDER == "gmail" and bool(SMTP_USER and SMTP_APP_PASSWORD)

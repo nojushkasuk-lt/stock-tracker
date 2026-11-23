@@ -2,37 +2,134 @@
 {% from "_macros.html" import logo %}
 {% block title %}Settings · Stock Tracker{% endblock %}
 {% block content %}
-<form method="post" action="/settings">
-  <div style="display: flex; flex-direction: column; gap: 24px">
-    <h1 style="font-size: 28px; font-weight: 800">Settings</h1>
-    {% if error %}<div class="alert alert-major" role="alert">{{ error }}</div>{% endif %}
+<h1 style="font-size: 28px; font-weight: 800">Settings</h1>
+{% if error %}<div class="alert alert-major" role="alert">{{ error }}</div>{% endif %}
+<form method="post" action="/settings" class="settings">
+  <nav class="side-nav" aria-label="Settings sections">
+    <a href="#stocks">Stocks <span class="faint mono" data-count-short>{{ mine|length }}</span></a>
+    <a href="#markets">Markets</a>
+    <a href="#news">News sources</a>
+    <a href="#alerts">Alerts</a>
+    <a href="#display">Display</a>
+    <a href="#account">Account</a>
+  </nav>
+  <div class="settings-body">
 
-    <section>
-      <div class="row-between"><h2 style="font-size: 20px">Your stocks</h2><span class="note-small" data-count data-max="{{ max_stocks }}">{{ mine|length }} of {{ max_stocks }} selected</span></div>
-      <label class="search" style="margin-top: 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
-        <span class="sr-only">Search stocks</span><input type="search" placeholder="Search by name or ticker" data-filter=".pick label"></label>
-      <div class="pick">
+    <section class="card" id="stocks">
+      <div class="row-between"><h2 class="h2">Stocks</h2><span class="note-small" data-count data-max="{{ max_stocks }}">{{ mine|length }} of {{ max_stocks }} selected</span></div>
+      <p class="muted sect-intro">Follow up to {{ max_stocks }} of the 100 largest US companies. Profiles, move notes and alerts cover the stocks you follow.</p>
+
+      <div class="selected" data-selected aria-live="polite">
+        {% for st in stocks if st.ticker in mine %}
+        <div class="sel-row" data-sel="{{ st.ticker }}">
+          {{ logo(st, "sm") }}
+          <span class="sel-nm"><span class="nm">{{ st.name }}</span><span class="sub">{{ st.ticker }}</span></span>
+          <label class="start-date"><span class="note-small">Track from</span>
+            <input type="date" name="start_{{ st.ticker }}" value="{{ starts.get(st.ticker, '') }}" min="1990-01-01" max="{{ today }}"></label>
+          <button type="button" class="x" data-unpick="{{ st.ticker }}" aria-label="Remove {{ st.name }}">×</button>
+        </div>
+        {% else %}
+        <p class="muted" style="margin: 0" data-empty>No stocks selected yet.</p>
+        {% endfor %}
+      </div>
+
+      <div class="finder">
+        <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+          <span class="sr-only">Search stocks</span><input type="search" placeholder="Search by name or ticker" data-stock-q></label>
+        <label><span class="sr-only">Sector</span><select data-stock-sector><option value="">All sectors</option>{% for i in industries %}<option>{{ i }}</option>{% endfor %}</select></label>
+        <label><span class="sr-only">Region</span><select data-stock-region><option value="">All regions</option>{% for r in regions %}<option>{{ r }}</option>{% endfor %}</select></label>
+        <label class="check-inline"><input type="checkbox" data-stock-mine> Selected only</label>
+      </div>
+      <div class="pick" data-pick>
         {% for st in stocks %}
-        <label data-text="{{ st.name|lower }} {{ st.ticker|lower }}">
+        <label data-text="{{ st.name|lower }} {{ st.ticker|lower }}" data-sector="{{ st.industry }}" data-region="{{ st.region }}">
           <input type="checkbox" name="ticker" value="{{ st.ticker }}" {% if st.ticker in mine %}checked{% endif %}>
           {{ logo(st, "sm") }}
           <span style="min-width: 0"><span class="nm">{{ st.name }}</span><span class="sub">{{ st.ticker }} · {{ st.industry }}</span></span>
+          <span class="rank mono faint">#{{ st.rank or "–" }}</span>
         </label>
         {% endfor %}
       </div>
+      <p class="note-small" data-none hidden style="margin: 12px 0 0">No stocks match these filters.</p>
+      <p class="note-small" style="margin: 12px 0 0">Region uses each company's home country. European and Asian companies are planned.</p>
     </section>
 
-    <section>
-      <h2 style="font-size: 20px">News outlets</h2>
-      <p class="muted" style="margin: 4px 0 0">Coverage and note links come only from the outlets you pick. None picked means all of them.</p>
-      <div class="pick">
-        {% for o in outlets %}
-        <label><input type="checkbox" name="outlet" value="{{ o.domain }}" {% if o.domain in my_outlets %}checked{% endif %}>
-          <span><span class="nm">{{ o.name }}</span><span class="sub">{{ o.domain }}{% if o.paywall %} · subscription{% endif %}</span></span></label>
+    <section class="card" id="markets">
+      <div class="row-between"><h2 class="h2">Markets</h2><span class="note-small">up to {{ markets_max }}</span></div>
+      <p class="muted sect-intro">Index funds and ETFs shown at the top of the Markets page. Market alerts use the S&amp;P 500.</p>
+      {% for g in market_groups %}
+      <div class="group-h">{{ g }}</div>
+      <div class="pick compact">
+        {% for f in market_list if f.group == g %}
+        <label><input type="checkbox" name="market" value="{{ f.ticker }}" {% if f.ticker in my_markets %}checked{% endif %}>
+          <span style="min-width: 0"><span class="nm"><span class="mono">{{ f.ticker }}</span> · {{ f.tracks.split(":")[0] }}</span><span class="sub">{{ f.name }}</span></span></label>
         {% endfor %}
+      </div>
+      {% endfor %}
+    </section>
+
+    <section class="card" id="news">
+      <div class="row-between"><h2 class="h2">News sources</h2><span class="note-small" data-outlet-count>{{ my_outlets|length or "All" }} selected</span></div>
+      <p class="muted sect-intro">Coverage links, move notes and the News page use only the outlets you pick. Pick none to use all {{ outlets|length }}.
+        Paywalled outlets are marked; we only show their headline and link.</p>
+      <div class="quick">
+        <button type="button" class="btn sm" data-outlets="all">Clear (use all)</button>
+        <button type="button" class="btn sm" data-outlets="free">Free to read only</button>
+        <button type="button" class="btn sm" data-outlets="wires">Wires &amp; markets</button>
+      </div>
+      {% for g in outlet_groups %}
+      <div class="group-h">{{ g }}</div>
+      <div class="pick compact">
+        {% for o in outlets if o.group == g %}
+        <label data-paywall="{{ 1 if o.paywall else 0 }}" data-group="{{ o.group }}"><input type="checkbox" name="outlet" value="{{ o.domain }}" {% if o.domain in my_outlets %}checked{% endif %}>
+          <span style="min-width: 0"><span class="nm">{{ o.name }}</span><span class="sub">{{ o.domain }}{% if o.paywall %} · <span class="pw">subscription</span>{% endif %}</span></span></label>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </section>
+
+    <section class="card" id="alerts">
+      <h2 class="h2">Alerts</h2>
+      <p class="muted sect-intro">Alerts appear under the bell at the top of every page, with a short note and coverage links.</p>
+      <div class="form-rows">
+        <label class="switch-row"><span><span class="nm">Big moves in my stocks</span><span class="sub">When a stock you follow moves more than the threshold in a day</span></span>
+          <input type="checkbox" name="stock_alerts" value="1" {% if prefs.stock_alerts %}checked{% endif %} class="switch"></label>
+        <label class="field-row"><span><span class="nm">Threshold</span><span class="sub">Daily move that raises a stock alert</span></span>
+          <select name="alert_threshold_pct">{% for t in thresholds %}<option value="{{ t }}" {% if t == prefs.alert_threshold_pct %}selected{% endif %}>{{ "%g"|format(t) }}% or more</option>{% endfor %}</select></label>
+        <label class="switch-row"><span><span class="nm">Sharp market moves</span><span class="sub">When the S&amp;P 500 moves 2% or more, with the market note</span></span>
+          <input type="checkbox" name="market_alerts" value="1" {% if prefs.market_alerts %}checked{% endif %} class="switch"></label>
+        <label class="field-row"><span><span class="nm">Market summary</span><span class="sub">A short summary of the market and your stocks</span></span>
+          <select name="digest">{% for v, l in [("off", "Off"), ("weekly", "Weekly (Monday)"), ("daily", "Every trading day")] %}<option value="{{ v }}" {% if v == prefs.digest %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+        <label class="switch-row"><span><span class="nm">Also send by email</span><span class="sub">{% if email_ready %}To {{ me.email }}{% else %}Not available yet: email sending is not set up on this site{% endif %}</span></span>
+          <input type="checkbox" name="email_alerts" value="1" {% if prefs.email_alerts %}checked{% endif %} {% if not email_ready %}disabled{% endif %} class="switch"></label>
+      </div>
+    </section>
+
+    <section class="card" id="display">
+      <h2 class="h2">Display</h2>
+      <div class="form-rows">
+        <label class="field-row"><span><span class="nm">Start page</span><span class="sub">What opens after you sign in</span></span>
+          <select name="home">{% for v, l in [("portfolio", "Portfolio"), ("market", "Markets"), ("news", "News")] %}<option value="{{ v }}" {% if v == prefs.home %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+        <label class="field-row"><span><span class="nm">Portfolio performance</span><span class="sub">The number shown on each stock card</span></span>
+          <select name="perf_basis">{% for v, l in [("start", "Since I started tracking"), ("1D", "Last session"), ("1M", "Past month"), ("1Y", "Past year")] %}<option value="{{ v }}" {% if v == prefs.perf_basis %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+      </div>
+    </section>
+
+    <section class="card" id="account">
+      <h2 class="h2">Account</h2>
+      <dl class="facts" style="max-width: 520px">
+        <dt>Signed in as</dt><dd>{{ me.email }}</dd>
+        <dt>Sign-in</dt><dd>Google</dd>
+        <dt>Refreshes left today</dt><dd class="mono">{{ refreshes_left }}</dd>
+        <dt>Coverage searches left today</dt><dd class="mono">{{ searches_left }}</dd>
+      </dl>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px">
+        <a class="btn" href="/welcome">Run setup again</a>
+        {% if is_owner %}<a class="btn" href="/admin/links">Shared links</a>{% endif %}
+        <a class="btn" href="/logout">Sign out</a>
       </div>
     </section>
   </div>
-  <div class="savebar"><span class="note-small">Changes apply to your portfolio, coverage and notes.</span><button class="btn primary" type="submit">Save</button></div>
+  <div class="savebar"><span class="note-small" data-dirty hidden>Unsaved changes</span><button class="btn primary" type="submit">Save changes</button></div>
 </form>
 {% endblock %}

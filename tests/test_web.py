@@ -100,7 +100,7 @@ def test_stock_page_shows_performance_profile_sources_and_escapes_model_text(cli
 
 
 def test_sign_in_pick_stocks_and_outlets(client):
-    assert sign_in(client).headers["location"] == "/portfolio"
+    assert sign_in(client).headers["location"] == "/welcome"  # first sign-in: setup steps
     assert "Pick up to 15 stocks" in client.get("/portfolio").text
     r = client.post("/settings", data={"ticker": ["AAPL", "ZZZ"], "outlet": ["reuters.com"]}, follow_redirects=False)
     assert r.status_code == 303
@@ -144,7 +144,7 @@ def test_demo_visitors_can_get_to_sign_in(client):
     client.get("/demo")
     r = client.get("/")
     assert r.status_code == 200 and "Sign in locally" in r.text and "Back to the demo" in r.text
-    assert sign_in(client).headers["location"] == "/portfolio"
+    assert sign_in(client).headers["location"] == "/welcome"
     assert "Demo · read-only" not in client.get("/portfolio").text
 
 
@@ -167,3 +167,94 @@ def test_valuation_from_latest_close_and_filings():
     v = dict((label, value) for label, value, _ in valuation(m, 200.0)["metrics"])
     assert v["Market value"] == "$2.0T" and v["P/E"] == "25.0x" and v["Price / sales"] == "5.0x" and v["EV / EBITDA"] == "16.8x"
     assert valuation(m, None) is None
+
+
+
+def test_setup_needs_three_stocks_then_markets_news_alerts(client):
+    sign_in(client)
+    r = client.post("/welcome", data={"step": "stocks", "ticker": ["AAPL", "MSFT"]})
+    assert r.status_code == 200 and "at least 3" in r.text
+    r = client.post("/welcome", data={"step": "stocks", "ticker": ["AAPL", "MSFT", "ZZZ"]}, follow_redirects=False)
+    assert r.headers["location"] == "/welcome?step=markets"
+    assert client.post("/welcome", data={"step": "markets", "market": ["VOO", "GLD"]}, follow_redirects=False).headers["location"] == "/welcome?step=news"
+    assert client.post("/welcome", data={"step": "news", "skip": "1"}, follow_redirects=False).headers["location"] == "/welcome?step=alerts"
+    r = client.post("/welcome", data={"step": "alerts", "stock_alerts": "1", "alert_threshold_pct": "3.0", "digest": "off"}, follow_redirects=False)
+    assert r.headers["location"] == "/portfolio"
+    assert services.get_prefs("a@example.com").alert_threshold_pct == 3.0 and not services.get_prefs("a@example.com").market_alerts
+    assert services.get_followed_market_tickers("a@example.com") == ["GLD", "VOO"] or set(services.get_followed_market_tickers("a@example.com")) == {"GLD", "VOO"}
+    client.get("/logout")
+    assert sign_in(client).headers["location"] == "/portfolio"  # setup done: straight to the start page
+
+
+def test_settings_sections_and_prefs_save(client):
+    sign_in(client)
+    s = client.get("/settings").text
+    for section in ('id="stocks"', 'id="markets"', 'id="news"', 'id="alerts"', 'id="display"', 'id="account"'):
+        assert section in s
+    r = client.post("/settings", data={"ticker": ["AAPL"], "start_AAPL": "2025-01-02", "market": ["QQQ"], "outlet": [],
+                                       "alert_threshold_pct": "7.5", "digest": "daily", "home": "news", "perf_basis": "1Y"},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    p = services.get_prefs("a@example.com")
+    assert (p.alert_threshold_pct, p.digest, p.home, p.stock_alerts) == (7.5, "daily", "news", False)
+    assert services.get_start_dates("a@example.com") == {"AAPL": "2025-01-02"}
+    assert 'value="2025-01-02"' in client.get("/settings").text
+
+
+def test_markets_page_and_fund_page(client):
+    client.get("/demo")
+    m = client.get("/market").text
+    for g in ("US indexes", "International", "Bonds", "Commodities", "Sectors"):
+        assert g in m
+    assert "/etf/VOO" in m
+    f = client.get("/etf/VOO")
+    assert f.status_code == 200 and "Vanguard" in f.text
+    assert client.get("/etf/NOPE").status_code == 404
+
+
+def test_alerts_page_and_bell(client):
+    from tracker import accounts
+    sign_in(client)
+    with services.session_scope() as s:  # the test database the app uses
+        accounts.notify(s, "a@example.com", kind="stock", ticker="AAPL", title="AAPL fell 6.0%", body="Coverage points to ...",
+                        url="/stock/AAPL", dedupe_key="move:AAPL:x")
+    assert "1 unread" in client.get("/portfolio").text
+    assert "AAPL fell 6.0%" in client.get("/alerts").text
+    assert "unread" not in client.get("/portfolio").text.split("Alerts", 1)[1][:30]
+
+
+def test_news_page_shows_without_searching(client):
+    client.get("/demo")
+    r = client.get("/news")
+    assert r.status_code == 200 and "Market today" in r.text and "Load latest" not in r.text
+
+
+def test_link_mode_closes_the_site_except_for_shared_links(client, monkeypatch):
+    monkeypatch.setattr(config, "ACCESS_MODE", "link")
+    r = client.get("/", follow_redirects=False)
+    assert r.status_code == 403 and "This site is private" in r.text and r.headers["X-Robots-Tag"].startswith("noindex")
+    assert client.get("/demo", follow_redirects=False).status_code == 403
+    assert client.get("/s/made-up").status_code == 403
+    token = services.create_share_link("Recruiter")
+    assert client.get(f"/s/{token}", follow_redirects=False).headers["location"] == "/"
+    assert client.get("/demo").status_code == 200
+    services.revoke_share_link(token)
+    assert client.get("/market", follow_redirects=False).status_code == 403  # revoked: access ends at once
+
+
+def test_link_mode_lets_known_users_sign_in_and_refuses_strangers(client, monkeypatch):
+    monkeypatch.setattr(config, "ACCESS_MODE", "link")
+    monkeypatch.setattr(config, "OWNER_EMAIL", "owner@example.com")
+    assert sign_in(client, "stranger@example.com").headers["location"] == "/"
+    assert not services.known_user("stranger@example.com")
+    assert sign_in(client, "owner@example.com").headers["location"] == "/welcome"
+
+
+def test_shared_links_admin_is_owner_only(client, monkeypatch):
+    monkeypatch.setattr(config, "OWNER_EMAIL", "owner@example.com")
+    sign_in(client)
+    assert client.get("/admin/links").status_code == 404
+    client.get("/logout")
+    sign_in(client, "owner@example.com")
+    r = client.post("/admin/links", data={"label": "Acme"})
+    assert r.status_code == 200 and "/s/" in r.text and "Acme" in r.text

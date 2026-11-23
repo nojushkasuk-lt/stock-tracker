@@ -20,11 +20,20 @@ def dev_login_allowed() -> bool:
 
 
 def _signed_in(request: Request, email: str, name: str | None):
+    from web.access import may_sign_in
+
+    if not may_sign_in(request, email.strip().lower()):
+        request.session.pop("email", None)
+        request.session["flash"] = "This site is private. Open the link you were sent, then sign in."
+        return RedirectResponse("/", status_code=303)
+    access_token = request.session.get("access")
     request.session.clear()
+    if access_token:
+        request.session["access"] = access_token
     request.session["email"] = email.strip().lower()
     request.session["name"] = name or email.split("@")[0]
     services.sign_in(request.session["email"])
-    return RedirectResponse("/portfolio", status_code=303)
+    return RedirectResponse(services.home_path(request.session["email"]), status_code=303)
 
 
 def register(app: FastAPI) -> None:
@@ -62,5 +71,8 @@ def register(app: FastAPI) -> None:
 
     @app.get("/logout")
     def logout(request: Request):
+        access_token = request.session.get("access")
         request.session.clear()
+        if access_token:  # signing out does not undo the shared link
+            request.session["access"] = access_token
         return RedirectResponse("/", status_code=303)

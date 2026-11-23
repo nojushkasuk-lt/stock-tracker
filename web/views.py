@@ -230,3 +230,27 @@ def latest_note(pairs):
 def outlet_names(domains: set[str], outlets) -> str:
     names = [o.name for o in outlets if o.domain in domains]
     return ", ".join(names) if names else "all outlets"
+
+
+# ---- settings, setup, news ------------------------------------------------------------------------------
+
+MIN_START_STOCKS = 3
+
+
+def prefs_from_form(form, *, email_ready: bool, alerts_only: bool = False) -> dict:
+    """Checkboxes are absent when off. Display settings are left alone on the setup page's alerts step."""
+    out = {"stock_alerts": form.get("stock_alerts") == "1", "market_alerts": form.get("market_alerts") == "1",
+           "email_alerts": email_ready and form.get("email_alerts") == "1"}
+    try:
+        out["alert_threshold_pct"] = float(form.get("alert_threshold_pct") or 5.0)
+    except ValueError:
+        out["alert_threshold_pct"] = 5.0
+    out["digest"] = str(form.get("digest") or "weekly")
+    if not alerts_only:
+        out["home"] = str(form.get("home") or "portfolio")
+        out["perf_basis"] = str(form.get("perf_basis") or "start")
+    return out
+
+
+def news_model(p) -> dict:
+    return {"market": p.market, "moves": p.moves, "live": p.live, "searches_left": p.searches_left, "outlets": p.outlets}

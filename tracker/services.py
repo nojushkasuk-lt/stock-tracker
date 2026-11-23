@@ -27,19 +27,39 @@ class Stock:
     rank: int | None
     tv_symbol: str  # e.g. NASDAQ:AAPL
     logo: str | None = None  # small PNG thumbnail URL (Wikimedia Commons), None = show the initial
+    country: str = "United States"
+
+    @property
+    def region(self) -> str:
+        return region_of(self.country)
+
+
+REGIONS = {"United States": "North America", "Canada": "North America", "Mexico": "North America",
+           "Japan": "Asia", "South Korea": "Asia", "Taiwan": "Asia", "China": "Asia", "India": "Asia", "Hong Kong": "Asia",
+           "Singapore": "Asia", "Australia": "Asia-Pacific"}
+
+
+def region_of(country: str | None) -> str:
+    if not country:
+        return "North America"
+    return REGIONS.get(country, "Europe" if country in EUROPE else "Other")
+
+
+EUROPE = {"United Kingdom", "Ireland", "Netherlands", "Germany", "France", "Switzerland", "Denmark", "Sweden", "Norway",
+          "Finland", "Spain", "Italy", "Belgium", "Luxembourg", "Austria", "Portugal"}
 
 
 def _query():
-    return (select(Universe, ListingSeen.exchange, CompanyFacts.logo_url)
+    return (select(Universe, ListingSeen.exchange, CompanyFacts.logo_url, CompanyFacts.country)
             .join(ListingSeen, ListingSeen.ticker == Universe.ticker, isouter=True)
             .join(CompanyFacts, CompanyFacts.ticker == Universe.ticker, isouter=True))
 
 
-def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None) -> Stock:
+def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None, country: str | None = None) -> Stock:
     from tracker.data.wikidata import logo_thumb
 
     return Stock(u.ticker, u.name, u.industry, u.market_cap_rank, tv_symbol(u.ticker, exchange),
-                 logo_thumb(logo_url, 128) if logo_url else None)
+                 logo_thumb(logo_url, 128) if logo_url else None, country or "United States")
 
 
 def get_demo_stocks() -> list[Stock]:
@@ -626,7 +646,7 @@ def get_followed_markets(email: str | None) -> list[MarketTile]:
     by = markets.by_ticker()
     try:
         with session_scope() as s:
-            mine = accounts.followed_markets(s, email) if email else list(markets.DEFAULT_FOLLOWED)
+            mine = (accounts.followed_markets(s, email) if email else []) or list(markets.DEFAULT_FOLLOWED)
             data = {t: [r for _, r in _returns(s, t, 260)] for t in mine if t in by}
     except OperationalError:
         return []
@@ -801,3 +821,126 @@ def share_link_valid(token: str | None) -> bool:
 def use_share_link(token: str) -> bool:
     with session_scope() as s:
         return accounts.use_share_link(s, token)
+
+
+def get_start_dates(email: str) -> dict[str, str]:
+    with session_scope() as s:
+        return {t: d.isoformat() for t, d in accounts.start_dates(s, email).items()}
+
+
+def get_followed_market_tickers(email: str) -> list[str]:
+    with session_scope() as s:
+        return accounts.followed_markets(s, email)
+
+
+def get_market_list():
+    from tracker.data import markets
+
+    return markets.load()
+
+
+# ---- news page ------------------------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class NewsPage:
+    market: MarketStatus | None
+    moves: list[tuple[Stock, MoveNote]]   # notes on recent big moves in the viewer's stocks, newest first
+    live: Coverage | None                 # market headlines from a live search (signed in, on request)
+    searches_left: int
+    outlets: str
+
+
+def get_news_page(email: str | None, live: bool = False, days: int = 30) -> NewsPage:
+    """Stored notes (ours) for the market and the viewer's stocks; live headlines only when asked for, within
+    the user's daily coverage cap (results are kept in memory only, rule 13)."""
+    from datetime import date as _date, timedelta
+
+    from tracker.models import Move
+
+    stocks = get_watchlist(email) if email else get_demo_stocks()
+    by = {s.ticker: s for s in stocks}
+    moves: list[tuple[Stock, MoveNote]] = []
+    domains: set[str] = set()
+    try:
+        with session_scope() as s:
+            domains = accounts.outlets(s, email) if email else set()
+            since = _date.today() - timedelta(days=days)
+            rows = s.scalars(select(Move).where(Move.ticker.in_(list(by)), Move.note_id.is_not(None), Move.date >= since)
+                             .order_by(Move.date.desc(), Move.ticker)).all()
+            for m in rows:
+                note = s.get(AiOutput, m.note_id)
+                if note is not None:
+                    moves.append((by[m.ticker], _note_view(note, float(m.return_pct), domains or None)))
+    except OperationalError:
+        pass
+    coverage = None
+    if live:
+        coverage = _market_coverage(email, domains or None)
+    names = [o.name for o in news.load_outlets() if o.domain in domains]
+    return NewsPage(get_market_status(email), moves, coverage,
+                    coverage_searches_left(email) if email else 0, ", ".join(names) if names else "all outlets")
+
+
+def _market_coverage(email: str | None, domains: set[str] | None) -> Coverage:
+    if not coverage_enabled(email):
+        return Coverage([], "Live coverage search is available to signed-in users.")
+    try:
+        with session_scope() as s:
+            if not accounts.use_coverage_search(s, email, "MARKET"):
+                return Coverage([], f"You've used your {config.COVERAGE_SEARCHES_PER_USER_PER_DAY} coverage searches "
+                                    "for today. They reset at midnight UTC.")
+            results = news.cached_search(s, news.BraveNews(), news.market_query(domains), freshness="pd")
+    except news.SearchCapReached:
+        return Coverage([], "The monthly search limit has been reached. Coverage will be back next month.")
+    except Exception:
+        return Coverage([], "News search is unavailable right now.")
+    links = news.coverage_links(results, news.load_outlets(), domains)
+    return Coverage(links, None if links else "No market coverage from the chosen outlets in the past day.")
+
+
+# ---- shared links (owner) -----------------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class SharedLink:
+    token: str
+    label: str
+    created: str
+    last_used: str | None
+    uses: int
+    revoked: bool
+
+
+def get_share_links() -> list[SharedLink]:
+    with session_scope() as s:
+        return [SharedLink(l.token, l.label, f"{l.created_at:%Y-%m-%d}", f"{l.last_used_at:%Y-%m-%d %H:%M}" if l.last_used_at else None,
+                           l.uses or 0, l.revoked_at is not None) for l in accounts.share_links(s)]
+
+
+def create_share_link(label: str) -> str:
+    with session_scope() as s:
+        return accounts.create_share_link(s, label).token
+
+
+def revoke_share_link(token: str) -> None:
+    with session_scope() as s:
+        accounts.revoke_share_link(s, token)
+
+
+def known_user(email: str) -> bool:
+    from tracker.models import User
+
+    try:
+        with session_scope() as s:
+            return s.get(User, accounts.normalize_email(email)) is not None
+    except OperationalError:
+        return False
+
+
+def home_path(email: str) -> str:
+    """Where a signed-in user lands: the setup steps the first time, then their chosen start page."""
+    try:
+        if needs_onboarding(email):
+            return "/welcome"
+        return {"market": "/market", "news": "/news"}.get(get_prefs(email).home, "/portfolio")
+    except OperationalError:
+        return "/portfolio"
