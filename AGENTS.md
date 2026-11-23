@@ -4,7 +4,7 @@ Instructions for any coding agent (Claude Code, Codex) working in this repo. Rea
 
 ## What this is
 
-A website for following US-listed stocks, meant to become public. **Until the data-licensing gate (rule 13) is ticked it runs link-only** (`ACCESS_MODE=link`): only the owner and holders of a shared link get in, and it is not indexed. Anyone with access can open a read-only demo of the 20 largest US companies. Signed-in users (Google) pick up to 15 stocks from the 100 largest US companies and the largest European and Asian companies listed in the US, and get:
+A small, non-commercial website for following US-listed stocks. **It is private by design** (owner decision 2026-11-23): `ACCESS_MODE=link`, so only the owner and holders of a shared link (e.g. potential employers) get in; it is not indexed, has no ads and no payments. Anyone with access can open a read-only demo of the 20 largest US companies. Signed-in users (Google) pick up to 15 stocks from the 100 largest US companies and the largest European and Asian companies listed in the US, and get:
 
 - a live-style price chart and quote for each stock (TradingView widgets, delayed data)
 - fundamentals and ratios computed from SEC filings (EDGAR)

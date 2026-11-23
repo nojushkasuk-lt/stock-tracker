@@ -2,7 +2,7 @@
 
 ## Decisions
 
-- Site meant to be public; runs link-only (private, shared links, noindex) until the Day 6 data-licensing gate is ticked (owner decision 2026-11-23). Google sign-in for users; "View demo" skips sign-in and shows the 20 largest US companies, read-only.
+- Private, non-commercial site: link-only access (shared links, noindex), no ads, no payments (owner decision 2026-11-23). Shared links with provider data only after the Day 6 data-licensing gate is ticked. Google sign-in for users; "View demo" skips sign-in and shows the 20 largest US companies, read-only.
 - Users pick up to 15 stocks from the 100 largest US companies plus 25 European and 25 Asian SEC-registered foreign filers (`universe` table, `region` column; owner decision 2026-11-23). Non-SEC companies (ESEF, DART, EDINET) later.
 - Display: TradingView free widgets for charts, quotes, heatmap and economic calendar. Fundamentals and ratios from EDGAR. No P/E, VaR or beta in v1 (P/E needs a price; the TradingView symbol-info widget shows it).
 - Moves: a daily percent change of 5% or more triggers an alert. The app decides market vs industry vs stock before searching anything (AGENTS.md rule 14).

@@ -11,7 +11,7 @@ daily percent changes (stocks and SPY), stored in `daily_returns`.
 | Provider | Terms summary | Permission status |
 |---|---|---|
 | yfinance | Personal use only. Local development only; blocked when `APP_ENV=prod`. | n/a (dev only) |
-| Alpha Vantage | Free key is personal use. Written permission requested for a non-commercial public portfolio site. | Asked 2026-11-23 (see below) |
+| Alpha Vantage | Free key is personal use. Written permission requested for a small, private (link-only), non-commercial portfolio site. | Asked 2026-11-23 (see below) |
 | Tiingo | Free plan is internal use only. Redistribution licence requested. | Asked 2026-11-23 (see below) |
 
 ### What the terms say (read 2026-11-23)
