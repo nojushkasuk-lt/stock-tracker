@@ -167,3 +167,5 @@
 - Next: owner confirms Batch profile run; since-start portfolio; then Day 6 deploy on Render Starter.
 - 2026-11-23 (3), Claude Code: Batch API profiles for every stock, top-bar search and the hidden-element fix, Cloud Run container, Neon support, Actions workflows (not pushed). 244 tests.
 - Next: owner decides the price-data licensing route (Day 6 gate); owner creates Neon + Google Cloud billing; then deploy.
+- 2026-11-23 (4), Claude Code: Europe and Asia (25 + 25 SEC foreign filers): 20-F/6-K filings, IFRS and local-currency figures, Sonnet profiles for all 50 ($3.07). Deploy script ready; gcloud installed. 254 tests.
+- Next: owner turns on Google Cloud billing, signs in to gcloud, creates Neon; then copy data and deploy link-only. Quarterly 6-K press releases (TSMC, Alibaba) are not yet detected as profile triggers.
