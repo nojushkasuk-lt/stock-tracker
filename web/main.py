@@ -57,8 +57,9 @@ async def _go_start(request: Request, exc: views.GoStart):
 @app.get("/", response_class=HTMLResponse)
 def start(request: Request):
     me = viewer(request)
-    if me.email or me.demo:
+    if me.email:
         return RedirectResponse("/portfolio", status_code=303)
+    # Demo visitors see the start page too, so they can sign in from the demo.
     return page(request, "start.html", google=auth.configured(), dev_login=auth.dev_login_allowed())
 
 
@@ -100,16 +101,15 @@ def _stock_page(request: Request, ticker: str, coverage=None):
     stock = _stock_or_404(me, ticker)
     following = bool(me.email) and stock.ticker in {s.ticker for s in services.get_watchlist(me.email)}
     perf = services.get_performance(stock.ticker)
+    chart = services.get_price_chart(stock.ticker)  # None in prod: the TradingView chart is shown instead
     model = views.stock_model(
         stock=stock, perf=perf, profile=services.get_profile(stock.ticker),
         financials=services.get_financials(stock.ticker), note=services.get_move_note(stock.ticker, me.email),
-        filings=services.get_recent_filings(stock.ticker), coverage=coverage)
-    theme = "dark"
+        filings=services.get_recent_filings(stock.ticker), coverage=coverage,
+        facts=services.get_key_facts(stock.ticker), chart=chart)
     return page(
         request, "stock.html", s=stock, m=model, following=following, nav="stocks",
-        local_chart=config.APP_ENV == "local" and perf is not None,
-        chart_widget=tv.chart_widget_html(stock.tv_symbol, theme=theme),
-        quote_widget=tv.symbol_info_html(stock.tv_symbol, theme=theme),
+        chart_widget=None if chart else tv.chart_widget_html(stock.tv_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID),
         refreshes_left=services.refreshes_left(me.email) if me.email else 0,
         coverage_on=services.coverage_enabled(me.email),
         searches_left=services.coverage_searches_left(me.email) if me.email else 0,

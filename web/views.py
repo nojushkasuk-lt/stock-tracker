@@ -1,6 +1,6 @@
 """Turns service results into what the templates show. No data access here: only shaping and formatting."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 
 from tracker import services
@@ -26,7 +26,7 @@ class Viewer:
 def pct(x: float | None, signed: bool = True, digits: int = 1) -> str:
     if x is None:
         return "—"
-    s = f"{abs(x):.{digits}f}%"
+    s = f"{abs(x):,.{digits}f}%"
     if not signed:
         return ("−" if x < 0 else "") + s
     return ("+" if x >= 0 else "−") + s
@@ -100,9 +100,55 @@ def _exchange(tv_symbol: str) -> str:
     return tv_symbol.split(":")[0] if ":" in tv_symbol else ""
 
 
-def stock_model(*, stock, perf, profile, financials, note, filings, coverage) -> dict:
+def _since(iso: str | None) -> str:
+    if not iso:
+        return ""
+    d = date.fromisoformat(iso)
+    return f"since {d:%b} {d.year}"
+
+
+def key_facts(stock, facts) -> list[tuple[str, str, str | None]]:
+    """(label, value, href) rows for the Key facts card."""
+    rows: list[tuple[str, str, str | None]] = []
+    if facts:
+        if facts.ceo:
+            rows.append(("CEO", facts.ceo + (f" · {_since(facts.ceo_since)}" if facts.ceo_since else ""), None))
+        if facts.headquarters:
+            rows.append(("Headquarters", facts.headquarters + (f", {facts.country}" if facts.country and facts.country != "United States" else ""), None))
+        if facts.founded:
+            rows.append(("Founded", str(facts.founded), None))
+        if facts.employees:
+            rows.append(("Employees", f"{facts.employees:,}", None))
+    rows.append(("Sector", stock.industry, None))
+    rows.append(("Exchange", _exchange(stock.tv_symbol) or "—", None))
+    rows.append(("Country", (facts.country if facts and facts.country else "United States"), None))
+    if facts and facts.website:
+        host = facts.website.split("//", 1)[-1].split("/", 1)[0].removeprefix("www.")
+        rows.append(("Website", host, "https://" + host))
+    return rows
+
+
+def valuation(metrics, price: float | None) -> dict | None:
+    """Our own valuation from the latest close and EDGAR figures. Diluted shares = net income / diluted EPS."""
+    if metrics is None or not price or not metrics.eps_diluted_ttm or not metrics.net_income_ttm:
+        return None
+    shares = metrics.net_income_ttm / metrics.eps_diluted_ttm
+    mcap = price * shares
+    pe = price / metrics.eps_diluted_ttm
+    ps = mcap / metrics.revenue_ttm if metrics.revenue_ttm else None
+    ev_ebitda = (mcap + (metrics.net_debt or 0)) / metrics.ebitda_ttm if metrics.ebitda_ttm and metrics.ebitda_ttm > 0 else None
+    x = lambda v: "—" if v is None or v <= 0 else f"{v:.1f}x"  # noqa: E731
+    return {"title": "Valuation", "note": "latest close · SEC filings", "metrics": [
+        ("Market value", money(mcap), ""), ("P/E", x(pe), ""), ("Price / sales", x(ps), ""), ("EV / EBITDA", x(ev_ebitda), ""),
+        ("Earnings yield", pct(100 / pe if pe > 0 else None, signed=False), ""), ("Last close", f"${price:,.2f}", "")]}
+
+
+def stock_model(*, stock, perf, profile, financials, note, filings, coverage, facts=None, chart=None) -> dict:
     refs = Refs(labels={f.url: f"{f.label} ({f.form}) · SEC EDGAR" for f in filings})
-    m: dict = {"refs": refs, "filings": filings, "coverage": coverage, "perf": perf}
+    if chart and perf and perf.ranges and chart.ranges and chart.ranges[0].label == "1D":
+        # Same 1D number everywhere on the page: the stored daily change, not the intraday estimate.
+        chart = replace(chart, ranges=[replace(chart.ranges[0], pct=perf.ranges[0].pct), *chart.ranges[1:]])
+    m: dict = {"refs": refs, "filings": filings, "coverage": coverage, "perf": perf, "chart": chart}
 
     # Move note first: its sources are the most recent.
     if note:
@@ -128,11 +174,15 @@ def stock_model(*, stock, perf, profile, financials, note, filings, coverage) ->
                               "points": [{"text": profile.what_changed, "refs": []}]})
         m["profile_updated"] = profile.updated
 
-    m["facts"] = [("Sector", stock.industry), ("Exchange", _exchange(stock.tv_symbol) or "—"), ("Country", "United States")]
-    if stock.rank:
-        m["facts"].append(("Size rank", f"#{stock.rank} in the US by market value"))
+    m["facts"] = key_facts(stock, facts)
+    m["exchange"] = _exchange(stock.tv_symbol)
+    m["country"] = facts.country if facts and facts.country else "United States"
+    m["facts_source"] = facts
 
     groups = []
+    val = valuation(financials.metrics if financials else None, chart.last_close if chart else None)
+    if val:
+        groups.append(val)
     if financials:
         x = financials.metrics
         groups.append({"title": "Growth & profit", "note": "TTM · SEC filings", "metrics": [
@@ -154,6 +204,10 @@ def stock_model(*, stock, perf, profile, financials, note, filings, coverage) ->
             ("Largest drop", pct(r.max_drawdown_pct), "down"),
             ("Best day", pct(r.best_day_pct), "up"), ("Worst day", pct(r.worst_day_pct), "down")]})
     m["groups"] = groups
+    if facts:
+        refs.number(services.SourceLink("Key facts · Wikidata", facts.wikidata_url))
+        if stock.logo:
+            refs.number(services.SourceLink("Logo · Wikimedia Commons", stock.logo.split("?", 1)[0].replace("Special:FilePath/", "File:")))
     return m
 
 

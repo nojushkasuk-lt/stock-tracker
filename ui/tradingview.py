@@ -44,13 +44,22 @@ def _widget(name: str, config: dict, link_text: str, symbol: str | None, height:
 </div>"""
 
 
-def chart_widget_html(symbol: str, height: int = CHART_HEIGHT, theme: str = "light") -> str:
+MIDNIGHT_BG = "#121E33"    # the site's card colour, so the chart sits inside the card
+MIDNIGHT_GRID = "#1C2A44"
+
+
+def chart_widget_html(symbol: str, height: int = CHART_HEIGHT, theme: str = "light",
+                      background: str | None = None, grid: str | None = None) -> str:
     """Advanced chart. Its own toolbar has the 1M / 1Y / 5Y / All ranges."""
     config = {
         "autosize": False, "width": "100%", "height": height - 22, "symbol": symbol, "interval": "D", "timezone": "Etc/UTC",
         "theme": theme, "style": "2", "locale": "en", "range": "12M",
         "allow_symbol_change": False, "calendar": False, "withdateranges": True, "hide_side_toolbar": True, "support_host": "https://www.tradingview.com",
     }
+    if background:
+        config["backgroundColor"] = background
+    if grid:
+        config["gridColor"] = grid
     return _widget("advanced-chart", config, f"{symbol.split(':')[-1]} chart", symbol, height)
 
 

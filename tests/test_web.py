@@ -14,6 +14,14 @@ from tracker.models import AiOutput, DailyReturn, Universe
 D0 = date(2026, 1, 2)
 
 
+def _range(label, pct):
+    return services.ChartRange(label, pct, label.lower(), "0,240 1000,10", [["Jan 2", 100.0], ["Nov 20", 110.0]], 100.0, 110.0)
+
+
+FAKE_CHART = services.PriceChart(110.0, [_range(x, v) for x, v in
+                                         [("1D", -1.9), ("1W", -3.5), ("1M", -1.6), ("6M", 11.1), ("1Y", 28.0), ("5Y", 134.0), ("MAX", 349280.3)]])
+
+
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     engine = make_engine(f"sqlite:///{tmp_path / 'web.db'}")
@@ -42,6 +50,7 @@ def client(tmp_path, monkeypatch):
             s.commit()
 
     monkeypatch.setattr(services, "session_scope", scope)
+    monkeypatch.setattr(services, "get_price_chart", lambda t: FAKE_CHART if t.upper() == "AAPL" else None)
     monkeypatch.setattr(config, "GOOGLE_CLIENT_ID", "")      # local dev sign-in instead of Google
     monkeypatch.setattr(config, "BRAVE_SEARCH_API_KEY", "")
     from web.main import app
@@ -79,9 +88,11 @@ def test_demo_is_read_only(client):
 def test_stock_page_shows_performance_profile_sources_and_escapes_model_text(client):
     client.get("/demo")
     page = client.get("/stock/AAPL").text
-    for label in ("1D", "1W", "1M", "6M", "1Y"):
+    for label in ("1D", "1W", "1M", "6M", "1Y", "5Y", "MAX"):
         assert f'data-range="{label}"' in page
-    assert 'data-range="5Y"' not in page                        # only 300 days of history
+    assert "+349,280.3%" in page
+    assert page.count('data-perf>') == 1 and "advanced-chart" not in page   # one chart, not two
+    assert "symbol-info" not in page                             # valuation is ours, not a widget
     assert "Apple &lt;b&gt;makes&lt;/b&gt; phones." in page      # autoescaped, never raw HTML
     assert "Strategy &amp; outlook" in page and "What changed" in page
     assert "Sources &amp; further reading" in page and "our figures from SEC filings" in page
@@ -121,3 +132,38 @@ def test_dev_login_is_off_when_google_is_configured_or_in_prod(client, monkeypat
 def test_unknown_stock_is_404(client):
     sign_in(client)
     assert client.get("/stock/NOPE").status_code == 404
+
+
+def test_without_local_chart_data_the_page_shows_only_the_tradingview_chart(client):
+    client.get("/demo")
+    page = client.get("/stock/MSFT").text
+    assert "advanced-chart" in page and "data-perf>" not in page and '"backgroundColor": "#121E33"' in page
+
+
+def test_demo_visitors_can_get_to_sign_in(client):
+    client.get("/demo")
+    r = client.get("/")
+    assert r.status_code == 200 and "Sign in locally" in r.text and "Back to the demo" in r.text
+    assert sign_in(client).headers["location"] == "/portfolio"
+    assert "Demo · read-only" not in client.get("/portfolio").text
+
+
+def test_logos_and_key_facts_from_wikidata(client, monkeypatch):
+    facts = services.KeyFacts("John Ternus", "2026-09-01", "Cupertino", "United States", 1976, 164000,
+                              "https://www.apple.com/", "https://en.wikipedia.org/wiki/Apple_Inc.", "https://www.wikidata.org/wiki/Q312", "2026-11-23")
+    monkeypatch.setattr(services, "get_key_facts", lambda t: facts)
+    real = services.get_stock
+    monkeypatch.setattr(services, "get_stock", lambda t: real(t) and services.Stock(**{**real(t).__dict__, "logo": "https://commons.wikimedia.org/wiki/Special:FilePath/A.svg?width=128"}))
+    client.get("/demo")
+    page = client.get("/stock/AAPL").text
+    assert "John Ternus · since Sep 2026" in page and "164,000" in page and "apple.com" in page
+    assert 'src="https://commons.wikimedia.org/wiki/Special:FilePath/A.svg?width=128"' in page
+    assert "Key facts · Wikidata" in page and "Logo · Wikimedia Commons" in page
+
+
+def test_valuation_from_latest_close_and_filings():
+    from web.views import valuation
+    m = type("M", (), {"eps_diluted_ttm": 8.0, "net_income_ttm": 80e9, "revenue_ttm": 400e9, "net_debt": 20e9, "ebitda_ttm": 120e9})()
+    v = dict((label, value) for label, value, _ in valuation(m, 200.0)["metrics"])
+    assert v["Market value"] == "$2.0T" and v["P/E"] == "25.0x" and v["Price / sales"] == "5.0x" and v["EV / EBITDA"] == "16.8x"
+    assert valuation(m, None) is None

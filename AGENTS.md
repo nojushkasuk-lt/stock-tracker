@@ -52,6 +52,7 @@ tracker/
     providers/          # one file per provider (yfinance_dev.py, alphavantage.py, ...)
     edgar.py            # EDGAR client (User-Agent, rate limit), submissions, domestic-filer check
     listings.py         # spot new exchange listings (IPOs) from the SEC ticker file
+    wikidata.py         # key facts (CEO, HQ, founded, employees) and Commons logos, matched by CIK / ticker
     news.py             # Brave live search, outlet filter, transient cache, monthly search cap; RSS fallback
     filings.py          # EDGAR submissions -> new 10-Q / 10-K / 8-K rows; triggers fundamentals refresh
     filing_text.py      # filing HTML -> sections for prompts (10-K Items 1, 1A, 7; 10-Q MD&A; 8-K EX-99), capped
@@ -71,6 +72,7 @@ jobs/
   daily.py              # daily returns, filings check, move detection, notes
   digest.py             # Monday/Thursday market summary
   universe.py           # weekly: re-rank by market cap (entries, exits, demo top 20)
+  facts.py              # weekly: Wikidata key facts and logos (python -m jobs.facts)
   fundamentals.py       # fetch EDGAR financial figures (python -m jobs.fundamentals [TICKER ...] [--all])
   profiles.py           # process queued profile updates
 config/

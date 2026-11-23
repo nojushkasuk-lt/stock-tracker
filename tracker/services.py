@@ -15,7 +15,7 @@ from tracker import config
 from tracker.data import news
 from tracker import accounts
 from tracker.ai import outputs
-from tracker.models import AiOutput, Filing, Fundamental, ListingSeen, Universe
+from tracker.models import AiOutput, CompanyFacts, Filing, Fundamental, ListingSeen, Universe
 from ui.tradingview import tv_symbol
 
 
@@ -26,16 +26,20 @@ class Stock:
     industry: str
     rank: int | None
     tv_symbol: str  # e.g. NASDAQ:AAPL
+    logo: str | None = None  # small PNG thumbnail URL (Wikimedia Commons), None = show the initial
 
 
 def _query():
-    return select(Universe, ListingSeen.exchange).join(
-        ListingSeen, ListingSeen.ticker == Universe.ticker, isouter=True
-    )
+    return (select(Universe, ListingSeen.exchange, CompanyFacts.logo_url)
+            .join(ListingSeen, ListingSeen.ticker == Universe.ticker, isouter=True)
+            .join(CompanyFacts, CompanyFacts.ticker == Universe.ticker, isouter=True))
 
 
-def _to_stock(u: Universe, exchange: str | None) -> Stock:
-    return Stock(u.ticker, u.name, u.industry, u.market_cap_rank, tv_symbol(u.ticker, exchange))
+def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None) -> Stock:
+    from tracker.data.wikidata import logo_thumb
+
+    return Stock(u.ticker, u.name, u.industry, u.market_cap_rank, tv_symbol(u.ticker, exchange),
+                 logo_thumb(logo_url, 128) if logo_url else None)
 
 
 def get_demo_stocks() -> list[Stock]:
@@ -45,7 +49,7 @@ def get_demo_stocks() -> list[Stock]:
             rows = s.execute(
                 _query().where(Universe.is_demo, Universe.active).order_by(Universe.market_cap_rank)
             ).all()
-            return [_to_stock(u, ex) for u, ex in rows]
+            return [_to_stock(*r) for r in rows]
     except OperationalError:
         return []
 
@@ -236,7 +240,7 @@ def get_followable_stocks(email: str | None = None) -> list[Stock]:
             mine = set(accounts.watchlist(s, email)) if email else set()
             rows = s.execute(_query().where(Universe.active | Universe.ticker.in_(mine))
                              .order_by(Universe.market_cap_rank.is_(None), Universe.market_cap_rank, Universe.ticker)).all()
-            return [_to_stock(u, ex) for u, ex in rows]
+            return [_to_stock(*r) for r in rows]
     except OperationalError:
         return []
 
@@ -244,7 +248,7 @@ def get_followable_stocks(email: str | None = None) -> list[Stock]:
 def get_watchlist(email: str) -> list[Stock]:
     with session_scope() as s:
         tickers = accounts.watchlist(s, email)
-        rows = {u.ticker: (u, ex) for u, ex in s.execute(_query().where(Universe.ticker.in_(tickers))).all()}
+        rows = {r[0].ticker: r for r in s.execute(_query().where(Universe.ticker.in_(tickers))).all()}
         return [_to_stock(*rows[t]) for t in tickers if t in rows]
 
 
@@ -467,3 +471,98 @@ def get_last_moves(tickers: list[str]) -> dict[str, tuple[str, float]]:
             return {t: (d.isoformat(), float(r)) for t, d, r in rows}
     except OperationalError:
         return {}
+
+
+# ---- key facts (Wikidata) -------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class KeyFacts:
+    ceo: str | None
+    ceo_since: str | None      # YYYY-MM-DD
+    headquarters: str | None
+    country: str | None
+    founded: int | None
+    employees: int | None
+    website: str | None
+    wikipedia_url: str | None
+    wikidata_url: str
+    fetched: str               # YYYY-MM-DD
+
+
+def get_key_facts(ticker: str) -> KeyFacts | None:
+    try:
+        with session_scope() as s:
+            f = s.get(CompanyFacts, ticker.upper())
+            if f is None:
+                return None
+            return KeyFacts(f.ceo, f.ceo_since.isoformat() if f.ceo_since else None, f.headquarters, f.country,
+                            f.founded, f.employees, f.website, f.wikipedia_url,
+                            f"https://www.wikidata.org/wiki/{f.qid}", f.fetched_at.date().isoformat())
+    except OperationalError:
+        return None
+
+
+# ---- price chart (local development only; rule 13: in prod the TradingView chart is shown instead) ---
+
+@dataclass(frozen=True)
+class ChartRange:
+    label: str            # 1D, 1W, 1M, 6M, 1Y, 5Y, MAX
+    pct: float            # change over the range
+    caption: str          # "Nov 20" / "past month" / "since Dec 1980"
+    points: str           # SVG polyline points in a 1000 x 250 box
+    series: list          # [[label, value], ...] matching the points, for the hover readout
+    low: float
+    high: float
+
+
+@dataclass(frozen=True)
+class PriceChart:
+    last_close: float
+    ranges: list[ChartRange]
+
+
+_CHART_RANGES = [("1M", 21, "past month"), ("6M", 126, "past 6 months"), ("1Y", 252, "past year"), ("5Y", 1260, "past 5 years")]
+
+
+def _chart_range(label, caption, pts, fmt, pct=None) -> ChartRange:
+    from tracker.analysis.performance import svg_points
+
+    values = [v for _, v in pts]
+    step = max(1, -(-len(pts) // 160))
+    sampled = pts[::step] + ([pts[-1]] if (len(pts) - 1) % step else [])
+    return ChartRange(label, pct if pct is not None else (values[-1] / values[0] - 1) * 100, caption,
+                      svg_points([v for _, v in sampled], max_points=len(sampled)),
+                      [[fmt(t), round(v, 2)] for t, v in sampled], min(values), max(values))
+
+
+def get_price_chart(ticker: str) -> PriceChart | None:
+    """One chart with 1D to MAX, from the dev chart provider (in-memory only). None in prod."""
+    from datetime import UTC, datetime
+
+    series = get_chart_series(ticker.upper())
+    if series is None or len(series.points) < 2:
+        return None
+    closes = series.points
+    day = lambda d: f"{d:%b} {d.day}, {d.year}"  # noqa: E731
+    clock = lambda t: datetime.fromtimestamp(t, UTC).strftime("%b %d %H:%M UTC")  # noqa: E731
+    out = []
+    intra = series.intraday
+    if len(intra.get("1D", [])) >= 2:
+        # 1D: today's line, change against the previous close.
+        d = intra["1D"]
+        prev = closes[-2][1] if len(closes) >= 2 else d[0][1]
+        last_day = datetime.fromtimestamp(d[-1][0], UTC).date()
+        caption = f"{last_day:%b} {last_day.day}"
+        out.append(_chart_range("1D", caption, d, clock, (d[-1][1] / prev - 1) * 100))
+    else:
+        out.append(_chart_range("1D", f"{closes[-1][0]:%b} {closes[-1][0].day}", closes[-2:], day))
+    if len(intra.get("1W", [])) >= 2:
+        out.append(_chart_range("1W", "past week", intra["1W"], clock))
+    else:
+        out.append(_chart_range("1W", "past week", closes[-6:], day))
+    for label, n, caption in _CHART_RANGES:
+        if len(closes) > n * 0.9:
+            out.append(_chart_range(label, caption, closes[-(n + 1):], day))
+    first = closes[0][0]
+    out.append(_chart_range("MAX", f"since {first:%b} {first.year}", closes, day))
+    return PriceChart(closes[-1][1], out)

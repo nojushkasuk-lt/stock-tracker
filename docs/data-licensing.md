@@ -37,3 +37,17 @@ Public data. Requests must send a `User-Agent` with a name and contact email and
 ## TradingView
 
 Free embed widgets. Keep the TradingView link on every widget.
+
+## Wikidata (company key facts) and Wikimedia Commons (logos)
+
+Added 2026-11-23 (owner approved Wikidata / Wikipedia as sources for company facts and history).
+
+- **Wikidata** structured data is CC0 (public domain): CEO, headquarters, founding year, employees, website,
+  Wikipedia link, logo file name. Matched by SEC CIK (P5531), falling back to the ticker on a US exchange.
+  Fetched weekly by `python -m jobs.facts` into `company_facts`. Shown with "From Wikidata, checked <date>".
+  Facts can be edited by anyone; spot-checked 2026-11-23: Apple CEO John Ternus (from Sep 1, 2026) and NVIDIA
+  interim CEO Colette Kress (from Nov 12, 2026) both match the companies' own announcements.
+- **Logos** are Wikimedia Commons files (`logo_url`), shown as Commons thumbnails. Most company logos on
+  Commons are public-domain text logos; each file page states its licence and they remain trademarks of their
+  owners (used only to identify the company). The stock page's sources list links the logo's file page.
+- Requests send a generic User-Agent ("StockTracker/0.1 (personal portfolio project)"), no personal data.

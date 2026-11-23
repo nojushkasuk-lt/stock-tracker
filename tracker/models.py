@@ -50,6 +50,25 @@ class Universe(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class CompanyFacts(Base):
+    """Key facts and logo from Wikidata (CC0), refreshed weekly by jobs/facts.py. Shown with their source."""
+
+    __tablename__ = "company_facts"
+
+    ticker: Mapped[str] = mapped_column(ForeignKey("universe.ticker"), primary_key=True)
+    qid: Mapped[str] = mapped_column(Text)
+    logo_url: Mapped[str | None] = mapped_column(Text)        # Wikimedia Commons file
+    ceo: Mapped[str | None] = mapped_column(Text)
+    ceo_since: Mapped[date | None] = mapped_column(Date)
+    headquarters: Mapped[str | None] = mapped_column(Text)
+    country: Mapped[str | None] = mapped_column(Text)
+    founded: Mapped[int | None] = mapped_column(Integer)
+    employees: Mapped[int | None] = mapped_column(Integer)
+    website: Mapped[str | None] = mapped_column(Text)
+    wikipedia_url: Mapped[str | None] = mapped_column(Text)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class ListingSeen(Base):
     __tablename__ = "listings_seen"
 

@@ -1,22 +1,36 @@
 // Small progressive enhancements. Every page works without this file.
 (function () {
-  // Performance ranges: switch the number, caption and growth line.
+  // Performance chart: one chart, ranges 1D to MAX; the number and caption follow the selected range.
   document.querySelectorAll("[data-perf]").forEach(function (box) {
     var num = box.querySelector("[data-perf-num]"), cap = box.querySelector("[data-perf-caption]");
-    var line = box.querySelector("[data-line]"), area = box.querySelector("[data-area]"), note = box.querySelector("[data-chart-note]");
-    box.querySelectorAll("[data-range]").forEach(function (b) {
-      b.addEventListener("click", function () {
-        box.querySelectorAll("[data-range]").forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
-        num.textContent = b.dataset.pct; num.className = "perf-num " + b.dataset.tone; cap.textContent = b.dataset.caption;
-        if (line) {
-          var oneDay = b.dataset.range === "1D";
-          line.setAttribute("points", b.dataset.points);
-          line.setAttribute("stroke-dasharray", oneDay ? "6 6" : "none");
-          area.setAttribute("points", oneDay ? "" : "0,250 " + b.dataset.points + " 1000,250");
-          if (note) note.hidden = !oneDay;
-        }
-      });
+    var line = box.querySelector("[data-line]"), area = box.querySelector("[data-area]");
+    var span = box.querySelector("[data-chart-range]"), svg = box.querySelector("svg");
+    var cursor = box.querySelector("[data-cursor]"), tip = box.querySelector("[data-tip]");
+    var series = [], pts = [];
+    function select(b) {
+      box.querySelectorAll("[data-range]").forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+      num.textContent = b.dataset.pct; num.className = "perf-num " + b.dataset.tone; cap.textContent = b.dataset.caption;
+      line.setAttribute("points", b.dataset.points);
+      area.setAttribute("points", "0,250 " + b.dataset.points + " 1000,250");
+      series = JSON.parse(b.dataset.series);
+      pts = b.dataset.points.split(" ").map(function (p) { return p.split(",").map(Number); });
+      if (span && series.length) span.textContent = series[0][0] + " – " + series[series.length - 1][0];
+    }
+    var buttons = box.querySelectorAll("[data-range]");
+    buttons.forEach(function (b) { b.addEventListener("click", function () { select(b); }); });
+    if (buttons.length) select(buttons[0]);
+    if (!svg || !tip) return;
+    svg.addEventListener("mousemove", function (e) {
+      if (!pts.length) return;
+      var r = svg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 1000;
+      var i = 0, best = Infinity;
+      pts.forEach(function (p, k) { var d = Math.abs(p[0] - x); if (d < best) { best = d; i = k; } });
+      var first = series[0][1], v = series[i][1], ch = (v / first - 1) * 100;
+      cursor.setAttribute("x1", pts[i][0]); cursor.setAttribute("x2", pts[i][0]); cursor.setAttribute("visibility", "visible");
+      tip.hidden = false; tip.style.left = (pts[i][0] / 1000 * 100) + "%";
+      tip.textContent = series[i][0] + " · $" + v.toFixed(2) + " · " + (ch >= 0 ? "+" : "\u2212") + Math.abs(ch).toFixed(1) + "%";
     });
+    svg.addEventListener("mouseleave", function () { tip.hidden = true; cursor.setAttribute("visibility", "hidden"); });
   });
 
   // Tabs (profile sections).

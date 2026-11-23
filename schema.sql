@@ -123,6 +123,21 @@ CREATE TABLE ai_outputs (
 
 ALTER TABLE moves ADD CONSTRAINT fk_moves_note FOREIGN KEY (note_id) REFERENCES ai_outputs(id);
 
+CREATE TABLE company_facts (
+    ticker         TEXT PRIMARY KEY REFERENCES universe(ticker),
+    qid            TEXT NOT NULL,               -- Wikidata item
+    logo_url       TEXT,                        -- Wikimedia Commons file
+    ceo            TEXT,
+    ceo_since      DATE,
+    headquarters   TEXT,
+    country        TEXT,
+    founded        INTEGER,
+    employees      INTEGER,
+    website        TEXT,
+    wikipedia_url  TEXT,
+    fetched_at     TIMESTAMP NOT NULL
+);
+
 CREATE TABLE refresh_requests (
     id            BIGSERIAL PRIMARY KEY,
     email         TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,

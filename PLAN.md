@@ -150,7 +150,9 @@
 - [x] New site, first slice (`web/`): start page (Google / demo), portfolio, stock page (performance ranges, chart, latest move, About, profile tabs, coverage, filings, numbered sources, key facts, valuation widget, growth/balance/risk metrics), market, settings. Tested (`tests/test_web.py`).
 - [ ] Owner adds `http://localhost:8000/auth/callback` to the Google OAuth client's redirect URIs
 - [ ] Portfolio "since your start date" (start date per stock; local only until a display-licensed price source)
-- [ ] About paragraph from Wikipedia + Wikidata key facts (CEO, HQ, founded, employees), logos
+- [x] Wikidata key facts (CEO, HQ, founded, employees, website) and Commons logos: 102 of 103 companies, 99 logos (`jobs.facts`; schedule weekly on Day 6)
+- [x] Owner feedback fixed: one chart (1D–MAX locally; TradingView chart restyled in prod), own valuation card instead of the TradingView widget, demo visitors can sign in
+- [ ] About paragraph from Wikipedia (history) + filings (selling points)
 - [ ] Retire the Streamlit app once the new site covers the revenue/margin chart
 - 2026-11-23, Claude Code: redesign decided (Midnight, FastAPI, Google only, Wikipedia for history); first slice of the new site built on the existing services, with range performance and risk stats from daily returns. 203 tests.
 - Next: owner adds the new redirect URI; then start dates and since-start performance, About from Wikipedia/Wikidata, logos, ETFs, international.
