@@ -33,7 +33,8 @@ daily percent changes (stocks and SPY), stored in `daily_returns`.
 - Derived Products (ToS 1.6c): percentage returns/changes may be allowed when "their scope, granularity, and
   presentation do not permit the underlying Tiingo Data to be reconstructed"; series rebased or indexed to 100 are not.
   A full daily return series can be rebased, so our use needs their approval either way.
-- Websites and apps that show data need a redistribution licence ("flat rate", price not listed): email sales with the
+- Websites and apps that show data need a redistribution licence ("flat rate", price not listed): email sales@tiingo.com (confirmed in
+  the pricing page's own text: "to redistribute data, please contact sales@tiingo.com") with the
   use case, website link, and whether a start-up (<5 employees) or enterprise. Attribution required: "Tiingo must be
   clearly attributed as the data source."
 
