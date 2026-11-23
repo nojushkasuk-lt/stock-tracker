@@ -79,6 +79,28 @@ def _numbers(text: str) -> set[str]:
     return out
 
 
+def _norm(x: float, places: int) -> str:
+    s = f"{x:.{places}f}"
+    return s.rstrip("0").rstrip(".") if "." in s else s
+
+
+def allowed_numbers(text: str) -> set[str]:
+    """Numbers in the input, plus the same amounts restated: rounded to one decimal, or in a larger unit
+    (297,247 million -> 297.2 billion; 84,100 thousand -> 84.1 million). Nothing else is allowed."""
+    out = set()
+    for n in _numbers(text):
+        out.add(n)
+        try:
+            v = float(n)
+        except ValueError:
+            continue
+        out.add(_norm(v, 1))
+        for scale in (1e3, 1e6):
+            if v >= scale:
+                out.update({_norm(v / scale, 1), _norm(v / scale, 2)})
+    return out
+
+
 def unsupported_numbers(text: str, allowed: set[str]) -> set[str]:
     """Numbers in text that appear nowhere in the input. Single digits are allowed (counts, 'two quarters')."""
     return {n for n in _numbers(text) if n not in allowed and not (n.isdigit() and len(n) == 1)}
@@ -127,7 +149,7 @@ class Validator:
     def __init__(self, sources: list[Source], extra_input: str = ""):
         self.by_id = {s.id: s for s in sources}
         self.input_text = extra_input + "\n" + "\n".join(s.text for s in sources)
-        self.allowed_numbers = _numbers(self.input_text)
+        self.allowed_numbers = allowed_numbers(self.input_text)
         self.checked = Checked()
 
     def claims(self, where: str, claims: list[Claim]) -> list[Claim]:

@@ -47,6 +47,7 @@ tracker/
     listings.py         # spot new exchange listings (IPOs) from the SEC ticker file
     news.py             # Brave live search, outlet filter, transient cache, monthly search cap; RSS fallback
     filings.py          # EDGAR submissions -> new 10-Q / 10-K / 8-K rows; triggers fundamentals refresh
+    filing_text.py      # filing HTML -> sections for prompts (10-K Items 1, 1A, 7; 10-Q MD&A; 8-K EX-99), capped
   analysis/
     metrics.py          # TTM, margins, growth, EPS, net debt/EBITDA from EDGAR figures (definitions in docs/metrics.md)
     moves.py            # move detection and the market -> industry -> stock ladder
@@ -54,6 +55,7 @@ tracker/
     llm.py              # single wrapper: all model calls, budget check, cost log
     prompts/            # one .md file per prompt (rules.md is shared by all)
     citations.py        # sources in, cited claims out: source-ID, number and wording checks (rules 3, 4)
+    outputs.py          # ai_outputs store: input-hash cache, generate = cache -> llm -> validate -> save
     profiles.py         # filing-triggered profile updates (Sonnet)
     notes.py            # market / industry / stock notes and link ranking (Haiku)
     digests.py          # Monday/Thursday market summary (Haiku)

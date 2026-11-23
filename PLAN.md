@@ -55,8 +55,8 @@
 
 - [x] `llm.py`: one wrapper, budget check, cost log, model names from config
 - [x] Prompts in `ai/prompts/`; pydantic output models; source-ID validation; cautious wording for headline-only notes
-- [ ] Profile update from a filing (Sonnet); short stock / industry / market notes and link ranking (Haiku)
-- [ ] Cache outputs by input hash
+- [x] Profile update from a filing (Sonnet); short stock / industry / market notes and link ranking (Haiku)
+- [x] Cache outputs by input hash
 - [ ] Dev-only model test (not deployed): 20 recent real moves through Haiku, DeepSeek V4.1 Flash and GLM-5.3-Flash. Record: relevant links ranked first yes/no, any unsupported claim, any claim stated as certain when only a headline was seen.
 - [ ] Done when: a profile shows only claims with valid sources and a note never states a cause as fact from headlines alone
 
@@ -129,3 +129,5 @@
 - Next: Day 4 (AI layer). Owner: Anthropic prepaid credit (auto top-up off) before the first real model call.
 - 2026-11-23, Claude Code: Haiku 5.5 vs Sonnet 5.5 compared on the same notes and profile (docs/model-choice.md): equal on notes, Sonnet slightly better on profiles, so the split stays. Built llm.py (budget stop incl. worst case of the next call, 100k prompt cap via count_tokens, cost log, refusals logged) and citations.py + prompts + output schemas (unknown source IDs, invented numbers, unhedged headline claims and unsupported "beat" dropped). 118 tests; no real API call yet (key empty).
 - Next: notes/profile generation with ai_outputs and the input-hash cache. Owner: put ANTHROPIC_API_KEY in .env (prepaid credit, auto top-up off) for the first live call.
+- 2026-11-23, Claude Code: first live calls OK (key in .env). Built ai_outputs store with input-hash cache, move-note generation (shared market/industry keys, ranked links stored as id/url/outlet), filing section extraction (10-K Items 1/1A/7, 10-Q MD&A, 8-K EX-99), profile generation and queue (`python -m jobs.profiles`: covered stocks only, newest filing per company, stops at budget). Real Costco 10-K profile: $0.07, nothing dropped. 138 tests. Live spend so far about $0.15.
+- Next: Day 4 model test (20 real moves; DeepSeek / GLM need accounts) and "done when" check; notes are wired to moves on Day 5. Profiles not yet in the UI or scheduled.

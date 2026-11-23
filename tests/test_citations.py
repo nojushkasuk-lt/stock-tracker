@@ -4,7 +4,8 @@ The fixtures are real outputs from the Haiku / Sonnet comparison in docs/model-c
 """
 
 from tracker.ai import notes, profiles
-from tracker.ai.citations import NO_CATALYST, Claim, Source, Validator, unsupported_numbers, wording_problem
+from tracker.ai.citations import (NO_CATALYST, Claim, Source, Validator, allowed_numbers, unsupported_numbers,
+                                  wording_problem)
 from tracker.ai.notes import MoveInput, MoveNoteOut
 from tracker.ai.profiles import ProfileOut
 
@@ -71,6 +72,14 @@ def test_numbers_must_come_from_the_input():
     assert unsupported_numbers("Revenue was $12.5 billion.", allowed) == {"12.5"}
     assert unsupported_numbers("Revenue grew for 3 quarters.", allowed) == set()  # single digits are fine
     assert unsupported_numbers("Margin was 45.90%.", allowed) == set()
+
+
+def test_amounts_may_be_restated_in_a_larger_unit_but_not_changed():
+    allowed = allowed_numbers("Net sales were $297,247 million; 84,100 thousand paid members; margin 45.93%.")
+    assert unsupported_numbers("Net sales were $297.2 billion from 84.1 million members.", allowed) == set()
+    assert unsupported_numbers("Net sales were $297.25 billion; margin 45.9%.", allowed) == set()
+    assert unsupported_numbers("Net sales were $298 billion.", allowed) == {"298"}
+    assert unsupported_numbers("Net sales were $297.3 billion.", allowed) == {"297.3"}
 
 
 def test_sonnet_adobe_note_keeps_hedged_claims_and_drops_unhedged_one():

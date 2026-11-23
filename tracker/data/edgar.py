@@ -26,14 +26,21 @@ class EdgarClient:
         self._headers = {"User-Agent": f"{name} {email}"}
         self._last = 0.0
 
-    def get_json(self, url: str) -> dict:
+    def _get(self, url: str) -> httpx.Response:
         wait = self._last + MIN_INTERVAL - time.monotonic()
         if wait > 0:
             time.sleep(wait)
         self._last = time.monotonic()
         r = self._client.get(url, headers=self._headers)
         r.raise_for_status()
-        return r.json()
+        return r
+
+    def get_json(self, url: str) -> dict:
+        return self._get(url).json()
+
+    def get_text(self, url: str) -> str:
+        """A filing document (HTML). Same User-Agent and rate limit as the JSON endpoints."""
+        return self._get(url).text
 
     def tickers_exchange(self) -> list[dict]:
         """All SEC-registered tickers with exchange: [{cik, name, ticker, exchange}]."""

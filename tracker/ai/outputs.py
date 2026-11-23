@@ -41,6 +41,7 @@ def generate[T: BaseModel](
     session: Session, *, kind: str, scope_key: str, job: str, task: llm.Task, system: str, user: str,
     output_model: type[T], sources: list[Source], validate: Callable[[T], tuple[T | None, Checked]],
     confidence: Callable[[T], str | None] = lambda _: None, valid_until: datetime | None = None,
+    max_tokens: int = 4000,
     client=None, now: datetime | None = None,
 ) -> AiOutput | None:
     """Cached result for these exact inputs, or a new validated one. None when validation rejects the output
@@ -51,7 +52,7 @@ def generate[T: BaseModel](
     if hit is not None:
         return hit
     result = llm.call(session, job=job, task=task, system=system, user=user, output_model=output_model,
-                      client=client, now=now)
+                      max_tokens=max_tokens, client=client, now=now)
     out, checked = validate(result.output)
     if out is None:
         return None

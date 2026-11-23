@@ -51,3 +51,10 @@ Same inputs through `tracker/ai/llm.py` with the new prompts. Cost: Haiku notes 
 - Costco (Sonnet): all claims passed, but one mislabels a figure ("net margin of 3.6% at the operating level";
   3.6% is the operating margin). The number check only confirms a number appears in the input, not that it is
   attached to the right label. Keep this in mind for the Day 7 hand-check; a label-aware check is possible later.
+
+## Real filing profile (2026-11-23)
+
+Costco's FY2026 10-K through `jobs/profiles.py` code (Items 1, 1A, 7, each capped at 30k / 30k / 100k characters):
+about 26k prompt tokens, 1.4k output tokens, $0.07 on Sonnet. Nothing dropped by validation. Amounts may now be
+restated in a larger unit ("$297,247 million" as "$297.2 billion"); the number check accepts only that rounding.
+Rough monthly cost at 40 covered stocks: about 27 profile updates, about $1.50 (half with the Batch API, later).
