@@ -413,3 +413,85 @@ def test_settings_puts_saved_stocks_first_after_save(client):
     assert saved.index('value="MSFT" checked') < saved.index('value="AAPL"')
     assert saved.index('value="ZZZ" checked') < saved.index('value="AAPL"')
     assert "data-settings-save hidden" in saved
+
+
+def test_portfolio_exposure_counts_watchlist_stocks_and_shows_earnings(client, monkeypatch):
+    from tracker.data import earnings
+    from tracker.models import Filing
+
+    ir_url = "https://investor.example.com/aapl/earnings"
+    release = "https://www.sec.gov/Archives/edgar/data/1/earnings.htm"
+    monkeypatch.setattr(earnings, "announced_dates", lambda today: {"AAPL": (date(2027, 3, 2), ir_url)})
+    with services.session_scope() as session:
+        session.add_all([
+            Filing(accession="1", ticker="AAPL", form="8-K", items="2.02,9.01",
+                   filed_at=datetime(2026, 11, 12), url=release),
+            Filing(accession="2", ticker="AAPL", form="8-K", items="5.02",
+                   filed_at=datetime(2026, 11, 14), url="https://www.sec.gov/not-earnings.htm"),
+        ])
+
+    client.get("/demo")
+    demo = client.get("/portfolio").text
+    assert "<title>Portfolio · Stock Tracker</title>" in demo
+    assert "Watchlist exposure" in demo and 'aria-label="Software" value="2" max="2"' in demo
+    calendar = client.get("/earnings").text
+    assert "Mar 2, 2027" in calendar and ir_url in calendar
+    assert release in calendar and "not-earnings.htm" not in calendar
+    assert "Microsoft" in calendar and "Date unavailable" in calendar and "Small Co" not in calendar
+
+    client.get("/logout")
+    sign_in(client)
+    assert "Watchlist exposure" not in client.get("/portfolio").text
+    assert services.save_watchlist("a@example.com", ["ZZZ"]) is None
+    own = client.get("/earnings").text
+    assert "Small Co" in own and ir_url not in own and release not in own
+
+
+def test_weekly_brief_is_sourced_shared_and_generated_once(client, monkeypatch):
+    from tracker.ai import llm, weekly_brief
+
+    today = date(2026, 11, 23)
+    start, end = weekly_brief.completed_week(today)
+    assert (start.isoformat(), end.isoformat()) == ("2026-11-16", "2026-11-22")
+    assert weekly_brief.completed_week(end) == (date(2026, 11, 9), date(2026, 11, 15))
+
+    class Brave:
+        calls = 0
+
+        def search(self, query, freshness):
+            self.calls += 1
+            assert freshness == "2026-11-16to2026-11-22"
+            return [
+                {"url": f"https://www.reuters.com/story-{self.calls}",
+                 "title": "Enterprise buyers continue moving infrastructure to cloud platforms",
+                 "published": datetime(2026, 11, 19)},
+                {"url": "https://www.reuters.com/too-late",
+                 "title": "A report released after the week ended", "published": datetime(2026, 11, 23)},
+            ]
+
+    def fake_model(session, **kwargs):
+        assert "after the week ended" not in kwargs["user"]
+        result = weekly_brief.WeeklyBriefOut(
+            cloud=[
+                {"text": "Coverage suggests companies are moving more IT workloads off-site.", "source_ids": ["N3"]},
+                {"text": "This cross-topic claim should never appear.", "source_ids": ["N1"]},
+                {"text": "Spending rose by 67 percent.", "source_ids": ["N3"]},
+            ],
+        )
+        return llm.LLMResult(result, config.MODEL_ROUTINE, 1, 1, 0.001)
+
+    monkeypatch.setattr(llm, "call", fake_model)
+    brave = Brave()
+    with services.session_scope() as session:
+        row = weekly_brief.generate(session, brave, today)
+        assert row is not None
+        assert weekly_brief.generate(session, brave, today).id == row.id
+        assert brave.calls == 4
+        assert row.sources == [{"id": "N3", "url": "https://www.reuters.com/story-3", "outlet": "Reuters"}]
+
+    monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "owner")
+    client.get("/demo")
+    page = client.get("/news").text
+    assert "Weekly market &amp; tech brief" in page
+    assert "workloads off-site" in page and "https://www.reuters.com/story-3" in page
+    assert "cross-topic claim" not in page and "67 percent" not in page

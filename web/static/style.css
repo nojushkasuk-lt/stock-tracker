@@ -335,3 +335,5 @@ input[type="date"], select, .input { background: var(--card); border: 1px solid 
 .qs-list .k { margin-left: auto; font-size: 11.5px; color: var(--faint); }
 .qs-empty { padding: 10px; color: var(--muted); font-size: 13px; }
 @media (max-width: 760px) { .qs { flex: 1 1 100%; order: 5; } }
+
+.exposure-bar { display: block; width: 100%; height: 8px; margin: 5px 0 12px; accent-color: var(--accent); }

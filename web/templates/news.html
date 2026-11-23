@@ -9,6 +9,24 @@
 
 <div class="cols">
   <div class="col-main">
+    <section class="card" id="weekly-brief">
+      <h2 class="h2">Weekly market &amp; tech brief</h2>
+      {% if weekly_brief %}
+      <p class="note-small">{{ weekly_brief.start|nice_date }} – {{ weekly_brief.end|nice_date }} · AI-assisted summary with linked sources</p>
+      {% for title, points in weekly_brief.sections %}
+      <h3 class="h3">{{ title }}</h3>
+      <ul class="points">
+        {% for point in points %}
+        <li><span class="dot"></span><span>{{ point.text }}
+          {% for source in point.sources %}<a class="note-small" href="{{ source.url }}" target="_blank" rel="noopener nofollow">{{ source.label }}</a>{% if not loop.last %} · {% endif %}{% endfor %}
+        </span></li>
+        {% endfor %}
+      </ul>
+      {% endfor %}
+      {% else %}
+      <p class="muted">The first weekly brief has yet to be published.</p>
+      {% endif %}
+    </section>
     <section class="card">
       <div class="row-between" style="align-items: center">
         <div class="eyebrow">Market today</div>
@@ -63,7 +81,7 @@
     </section>
     <section class="card">
       <div class="eyebrow">Coming up</div>
-      <p class="muted" style="margin: 10px 0 0; font-size: 14px">Economic releases and central bank meetings are on the <a href="/market">Markets page</a> calendar.</p>
+      <p class="muted" style="margin: 10px 0 0; font-size: 14px">See the <a href="/earnings">watchlist earnings calendar</a> for company reports or the <a href="/market">Markets calendar</a> for economic releases and central bank meetings.</p>
     </section>
   </div>
 </div>

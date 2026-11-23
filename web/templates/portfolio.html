@@ -51,7 +51,10 @@
 
 <div class="row-between">
   <h2 style="font-size: 20px">{% if me.demo %}Demo stocks{% else %}Following{% endif %}</h2>
-  {% if not me.demo %}<span class="faint" style="font-size: 13px">{{ cards|length }} of {{ max_stocks }}</span>{% endif %}
+  <div class="link-row">
+    <a class="btn sm" href="/earnings">Earnings calendar</a>
+    {% if not me.demo %}<span class="faint" style="font-size: 13px">{{ cards|length }} of {{ max_stocks }}</span>{% endif %}
+  </div>
 </div>
 
 {% if not cards and not me.demo %}
@@ -70,5 +73,22 @@
   {% endfor %}
   {% if not me.demo and cards|length < max_stocks %}<a class="add-card" href="/settings">+ Add a stock</a>{% endif %}
 </div>
+{% endif %}
+{% if cards %}
+<section class="card">
+  <h2 class="h2">Watchlist exposure</h2>
+  <p class="note-small">Share of stocks by count. Each stock counts equally.</p>
+  <div class="summary">
+  {% for group, items in exposure.items() %}
+    <div>
+      <h3 class="h3">{{ group }}</h3>
+      {% for label, count in items %}
+      <div class="row-between"><span>{{ label }}</span><span class="mono note-small">{{ count }} of {{ cards|length }}</span></div>
+      <progress class="exposure-bar" aria-label="{{ label }}" value="{{ count }}" max="{{ cards|length }}"></progress>
+      {% endfor %}
+    </div>
+  {% endfor %}
+  </div>
+</section>
 {% endif %}
 {% endblock %}

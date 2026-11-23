@@ -5,6 +5,7 @@ Demo mode is read-only (rule 7): everything in this file reads, nothing writes.
 
 from contextvars import ContextVar
 from dataclasses import dataclass
+from datetime import UTC, date, datetime
 
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
@@ -939,6 +940,56 @@ def get_market_list():
     return markets.load()
 
 
+@dataclass(frozen=True)
+class EarningsEntry:
+    stock: Stock
+    upcoming_date: date | None
+    announcement: str | None
+    latest: FilingLink | None
+
+
+def get_earnings_calendar(stocks: list[Stock]) -> list[EarningsEntry]:
+    from tracker.data import earnings
+
+    if not stocks:
+        return []
+    dates = earnings.announced_dates(datetime.now(UTC).date())
+    with session_scope() as session:
+        reports = earnings.latest_reports(session, [stock.ticker for stock in stocks])
+        entries = []
+        for stock in stocks:
+            day, announcement = dates.get(stock.ticker, (None, None))
+            report = reports.get(stock.ticker)
+            latest = FilingLink(report.form, report.filed_at.date().isoformat(), report.url,
+                                "Earnings release filing" if report.form == "8-K" else _FORM_LABEL[report.form]) if report else None
+            entries.append(EarningsEntry(stock, day, announcement, latest))
+    return sorted(entries, key=lambda entry: (entry.upcoming_date or date.max, entry.stock.name.casefold()))
+
+
+@dataclass(frozen=True)
+class WeeklyBrief:
+    start: str
+    end: str
+    sections: list[tuple[str, list[NotePoint]]]
+
+
+def get_weekly_brief() -> WeeklyBrief | None:
+    from tracker.ai.weekly_brief import KIND, TOPICS
+
+    with session_scope() as session:
+        row = session.scalars(select(AiOutput).where(AiOutput.kind == KIND)
+                              .order_by(AiOutput.scope_key.desc(), AiOutput.id.desc()).limit(1)).first()
+        if row is None:
+            return None
+        sources = {source["id"]: SourceLink(source["outlet"], source["url"]) for source in row.sources}
+        sections = [
+            (topic, [NotePoint(claim["text"], [sources[i] for i in dict.fromkeys(claim["source_ids"])])
+                     for claim in row.content[topic.lower()]])
+            for topic in TOPICS if row.content.get(topic.lower())
+        ]
+        return WeeklyBrief(row.content["start"], row.content["end"], sections)
+
+
 # ---- news page ------------------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -948,6 +999,7 @@ class NewsPage:
     live: Coverage | None                 # market headlines from a live search (signed in, on request)
     searches_left: int
     outlets: str
+    weekly_brief: WeeklyBrief | None = None
 
 
 class _Hidden(Exception):
@@ -984,7 +1036,7 @@ def get_news_page(email: str | None, live: bool = False, days: int = 30) -> News
         coverage = _market_coverage(email, domains or None)
     names = [o.name for o in news.load_outlets() if o.domain in domains]
     return NewsPage(get_market_status(email), moves, coverage,
-                    coverage_searches_left(email) if email else 0, ", ".join(names) if names else "all outlets")
+                    coverage_searches_left(email) if email else 0, ", ".join(names) if names else "all outlets", get_weekly_brief())
 
 
 def _market_coverage(email: str | None, domains: set[str] | None) -> Coverage:

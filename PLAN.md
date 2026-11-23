@@ -186,3 +186,8 @@
 
 - [x] Put saved watchlist stocks first in Settings and show Save changes only while the form differs from the saved values.
 - Codex: verified saved-stock order, post-save confirmation, and undo behavior. Cloud Run deployment remains pending.
+
+- [x] Add a shared weekly market and tech brief with linked sources and existing budget limits. Schedule it for Mondays independently of the price job.
+- [x] Add a watchlist earnings calendar with curated issuer-confirmed dates and weekday SEC filing sync. Keep announced dates current in `config/earnings.csv`.
+- [x] Add count-based watchlist exposure by industry and region.
+- Codex: verified public brief display, citation validation, watchlist calendar scoping, and exposure totals locally. Publishing requires the Cloud Run update and the GitHub workflows on the default branch with existing API and database secrets.

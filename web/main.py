@@ -104,6 +104,7 @@ def portfolio(request: Request):
     quote_symbols = [c["s"].tv_symbol for c in cards if c["day"] is None and c["s"].quote_embeddable]
     return page(request, "portfolio.html", cards=cards, market=services.get_market_status(me.email),
                 summary=views.day_summary(cards), note=note, note_stock=note_stock,
+                exposure=views.exposure_breakdown(stocks),
                 market_quote=tv.quote_html("AMEX:SPY"),
                 ticker_tape=tv.ticker_tape_html(quote_symbols) if quote_symbols else None,
                 max_stocks=services.watchlist_max(), nav="portfolio")
@@ -357,6 +358,13 @@ def alerts(request: Request):
 def news(request: Request):
     me = require_viewer(request)
     return page(request, "news.html", nav="news", **views.news_model(services.get_news_page(me.email)))
+
+
+@app.get("/earnings", response_class=HTMLResponse)
+def earnings(request: Request):
+    me = require_viewer(request)
+    stocks = services.get_watchlist(me.email) if me.email else services.get_demo_stocks()
+    return page(request, "earnings.html", nav="news", entries=services.get_earnings_calendar(stocks))
 
 
 @app.post("/news/search", response_class=HTMLResponse)

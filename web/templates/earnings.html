@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import logo %}
+{% block title %}Earnings calendar · Stock Tracker{% endblock %}
+{% block content %}
+<div class="row-between">
+  <h1>Earnings calendar</h1>
+  <a class="btn sm" href="/portfolio">Portfolio</a>
+</div>
+<section class="card">
+  <p class="muted sect-intro">Company-announced dates and the latest available SEC results filings for {% if me.demo %}demo stocks{% else %}your watchlist{% endif %}.</p>
+  {% if entries %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th scope="col">Company</th><th scope="col">Upcoming earnings</th><th scope="col">Latest results filing</th></tr></thead>
+      <tbody>
+        {% for entry in entries %}
+        <tr>
+          <td><a class="fund-link" href="/stock/{{ entry.stock.ticker }}">{{ logo(entry.stock, "sm") }} {{ entry.stock.name }}</a></td>
+          <td>{% if entry.upcoming_date %}<a href="{{ entry.announcement }}" target="_blank" rel="noopener">{{ entry.upcoming_date.isoformat()|nice_date }}</a>{% else %}<span class="muted">Date unavailable</span>{% endif %}</td>
+          <td>{% if entry.latest %}<a href="{{ entry.latest.url }}" target="_blank" rel="noopener">{{ entry.latest.label }}</a><div class="note-small">{{ entry.latest.filed|nice_date }}</div>{% else %}<span class="muted">Unavailable</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p>Follow stocks to see their earnings here. <a href="/settings#stocks">Add stocks</a></p>
+  {% endif %}
+</section>
+{% endblock %}

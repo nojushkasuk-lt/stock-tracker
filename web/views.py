@@ -234,6 +234,15 @@ def day_summary(cards: list[dict]) -> dict | None:
             "avg": sum(c["day"] for c in today) / len(today), "n": len(today)}
 
 
+def exposure_breakdown(stocks) -> dict[str, list[tuple[str, int]]]:
+    from collections import Counter
+
+    return {
+        label: sorted(Counter(getattr(stock, attr) for stock in stocks).items(), key=lambda pair: (-pair[1], pair[0]))
+        for label, attr in (("Industry", "industry"), ("Region", "region"))
+    }
+
+
 def latest_note(pairs):
     """pairs = [(stock, MoveNote)]: the newest note, biggest move first on the same day."""
     return max(pairs, key=lambda p: (p[1].date, abs(p[1].return_pct)), default=(None, None))
@@ -265,4 +274,5 @@ def prefs_from_form(form, *, email_ready: bool, alerts_only: bool = False) -> di
 
 
 def news_model(p) -> dict:
-    return {"market": p.market, "moves": p.moves, "live": p.live, "searches_left": p.searches_left, "outlets": p.outlets}
+    return {"market": p.market, "moves": p.moves, "live": p.live, "searches_left": p.searches_left,
+            "outlets": p.outlets, "weekly_brief": p.weekly_brief}
