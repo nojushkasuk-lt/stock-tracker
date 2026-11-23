@@ -61,8 +61,11 @@ class LLMResult(Generic[T]):
     cost_usd: float
 
 
-def model_for(task: Task) -> tuple[str, str]:
-    """(model, effort) for a task, from config."""
+def model_for(task: Task, model: str | None = None) -> tuple[str, str]:
+    """(model, effort) for a task, from config. An explicit model (e.g. Haiku for a first profile) keeps the
+    task's effort."""
+    if model:
+        return model, (config.EFFORT_PROFILE if task == "profile" else config.EFFORT_ROUTINE)
     if task == "profile":
         return config.MODEL_PROFILE, config.EFFORT_PROFILE
     return config.MODEL_ROUTINE, config.EFFORT_ROUTINE
@@ -153,3 +156,92 @@ def call(session: Session, *, job: str, task: Task, system: str, user: str, outp
         raise LLMError(f"{model} returned no parsable output")
     return LLMResult(output=resp.parsed_output, model=model, input_tokens=u.input_tokens,
                      output_tokens=u.output_tokens, cost_usd=cost)
+
+
+
+# ---- Message Batches (50% off; results within 24 hours, usually under 1) -------------------------------
+
+@dataclass
+class BatchRequest:
+    custom_id: str          # ^[a-zA-Z0-9_-]{1,64}$
+    system: str
+    user: str
+    model: str
+    prompt_tokens: int = 0  # filled in by submit_batch
+
+
+def _output_config(effort: str, output_model: type[BaseModel]) -> dict:
+    from anthropic import transform_schema
+
+    return {"effort": effort, "format": {"type": "json_schema", "schema": transform_schema(output_model.model_json_schema())}}
+
+
+def submit_batch(session: Session, *, task: Task, requests: list[BatchRequest], output_model: type[T],
+                 max_tokens: int = 4000, client=None, now: datetime | None = None) -> tuple[str | None, dict[str, str]]:
+    """Count tokens, check the budget against the worst case at batch prices, and create one batch.
+    Returns (batch id or None, {custom_id: reason} for requests left out)."""
+    client = client or get_client()
+    skipped: dict[str, str] = {}
+    kept: list[BatchRequest] = []
+    worst = 0.0
+    for r in requests:
+        r.prompt_tokens = client.messages.count_tokens(model=r.model, system=r.system,
+                                                       messages=[{"role": "user", "content": r.user}],
+                                                       output_format=output_model).input_tokens
+        if r.prompt_tokens > config.MAX_PROMPT_TOKENS:
+            skipped[r.custom_id] = f"{r.prompt_tokens} prompt tokens > {config.MAX_PROMPT_TOKENS}"
+            continue
+        kept.append(r)
+        worst += cost_usd(r.model, r.prompt_tokens, max_tokens, batch=True)
+    if not kept:
+        return None, skipped
+    spent = month_to_date_cost(session, now)
+    if spent + worst > config.MONTHLY_BUDGET_USD:
+        raise BudgetExceeded(f"batch of {len(kept)} (up to ${worst:.2f}) would pass the ${config.MONTHLY_BUDGET_USD:.2f} "
+                             f"budget (${spent:.2f} spent)")
+    batch = client.messages.batches.create(requests=[
+        {"custom_id": r.custom_id,
+         "params": {"model": r.model, "max_tokens": max_tokens, "system": r.system,
+                    "messages": [{"role": "user", "content": r.user}],
+                    "output_config": _output_config(model_for(task, r.model)[1], output_model)}}
+        for r in kept])
+    return batch.id, skipped
+
+
+def batch_status(batch_id: str, client=None) -> tuple[str, dict]:
+    b = (client or get_client()).messages.batches.retrieve(batch_id)
+    return b.processing_status, b.request_counts.to_dict() if hasattr(b.request_counts, "to_dict") else dict(b.request_counts)
+
+
+def collect_batch(session: Session, batch_id: str, *, job: str, output_model: type[T], max_tokens: int = 4000,
+                  client=None, now: datetime | None = None) -> dict[str, LLMResult[T] | LLMError]:
+    """Results of an ended batch: {custom_id: LLMResult or the LLMError explaining why it is unusable}.
+    Logs usage at batch prices for every request the model ran (errored/expired requests are not billed)."""
+    client = client or get_client()
+    out: dict[str, LLMResult[T] | LLMError] = {}
+    for r in client.messages.batches.results(batch_id):
+        res = r.result
+        if res.type != "succeeded":
+            out[r.custom_id] = LLMError(f"batch request {res.type}" + (f": {res.error.error.type}" if res.type == "errored" else ""))
+            continue
+        msg = res.message
+        u = msg.usage
+        cache_write = getattr(u, "cache_creation_input_tokens", 0) or 0
+        cache_read = getattr(u, "cache_read_input_tokens", 0) or 0
+        cost = cost_usd(msg.model, u.input_tokens, u.output_tokens, cache_write, cache_read, batch=True)
+        log_usage(session, job, msg.model, u.input_tokens + cache_write + cache_read, u.output_tokens, cost, now)
+        if msg.stop_reason == "refusal":
+            out[r.custom_id] = LLMRefused(f"{msg.model} declined")
+            continue
+        if msg.stop_reason == "max_tokens":
+            out[r.custom_id] = LLMError(f"{msg.model} hit max_tokens={max_tokens} before finishing")
+            continue
+        text = "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
+        try:
+            parsed = output_model.model_validate_json(text)
+        except Exception as e:  # pydantic ValidationError or bad JSON
+            out[r.custom_id] = LLMError(f"unparsable output: {type(e).__name__}")
+            continue
+        out[r.custom_id] = LLMResult(output=parsed, model=msg.model, input_tokens=u.input_tokens,
+                                     output_tokens=u.output_tokens, cost_usd=cost)
+    return out

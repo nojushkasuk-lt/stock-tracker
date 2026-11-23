@@ -201,6 +201,16 @@ CREATE TABLE usage_log (
     cost_usd       NUMERIC(10,4) NOT NULL       -- summed per month for the AI budget stop
 );
 
+-- Message Batches waiting for results (Batch API, 50% off): enough per request to validate and save it.
+CREATE TABLE ai_batches (
+    id            TEXT PRIMARY KEY,             -- msgbatch_...
+    job           TEXT NOT NULL,
+    kind          TEXT NOT NULL,                -- ai_outputs.kind the results become
+    created_at    TIMESTAMP NOT NULL,
+    collected_at  TIMESTAMP,
+    items         JSONB NOT NULL                -- custom_id -> {scope_key, model, input_hash, sources, ...}
+);
+
 CREATE INDEX idx_returns_date            ON daily_returns (date);
 CREATE INDEX idx_universe_industry       ON universe (industry);
 CREATE INDEX idx_filings_unprocessed     ON filings (processed_at) WHERE processed_at IS NULL;

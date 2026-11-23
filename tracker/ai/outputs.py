@@ -53,6 +53,17 @@ def generate[T: BaseModel](
         return hit
     result = llm.call(session, job=job, task=task, system=system, user=user, output_model=output_model,
                       max_tokens=max_tokens, client=client, now=now)
+    return save(session, kind=kind, scope_key=scope_key, input_hash_=h, result=result, sources=sources,
+                validate=validate, confidence=confidence, valid_until=valid_until, extra=extra, now=now)
+
+
+def save[T: BaseModel](
+    session: Session, *, kind: str, scope_key: str, input_hash_: str, result: llm.LLMResult[T], sources: list[Source],
+    validate: Callable[[T], tuple[T | None, Checked]], confidence: Callable[[T], str | None] = lambda _: None,
+    valid_until: datetime | None = None, extra: dict | None = None, now: datetime | None = None,
+) -> AiOutput | None:
+    """Validate a model result and store it (used by generate and by batch collection). None if rejected."""
+    h = input_hash_
     out, checked = validate(result.output)
     if out is None:
         return None

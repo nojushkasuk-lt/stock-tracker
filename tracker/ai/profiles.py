@@ -211,3 +211,143 @@ def process_queue(session: Session, fetcher: FilingFetcher, *, client=None, limi
         results[ticker] = f"profile {row.id}" if row is not None else "no profile (no sections or rejected)"
     session.flush()
     return results
+
+
+# ---- first profiles for every stock, through the Batch API ------------------------------------------------
+
+CONTEXT_CAPS = {"business": 20_000, "risk_factors": 15_000}  # 10-K context sent next to a newer 10-Q
+
+
+def _latest(session: Session, ticker: str, forms: tuple[str, ...]) -> Filing | None:
+    return session.scalars(select(Filing).where(Filing.ticker == ticker, Filing.form.in_(forms))
+                           .order_by(Filing.filed_at.desc())).first()
+
+
+def initial_sections(fetcher: FilingFetcher, latest: Filing, annual: Filing | None) -> list[Section]:
+    """The latest periodic report; when it is a 10-Q, also the last 10-K's Business and Risk Factors (shortened),
+    since a 10-Q has no business description."""
+    from tracker.data.filing_text import cap
+
+    secs = fetcher.sections(latest.form, latest.items, latest.url)
+    if latest.form == "10-Q" and annual is not None:
+        for sec in fetcher.sections(annual.form, annual.items, annual.url):
+            if sec.key in CONTEXT_CAPS:
+                secs.append(Section(sec.key, sec.label + f" (filed {annual.filed_at.date().isoformat()})",
+                                    cap(sec.text, CONTEXT_CAPS[sec.key]), sec.url))
+    return secs
+
+
+def needs_first_profile(session: Session, ticker: str) -> bool:
+    """No profile yet, or only a version-1 profile (before about / titled points)."""
+    row = outputs.latest(session, "profile", ticker)
+    return row is None or "about" not in row.content
+
+
+def model_for_rank(rank: int | None, sonnet_top: int) -> str:
+    from tracker import config
+
+    return config.MODEL_PROFILE if rank is not None and rank <= sonnet_top else config.MODEL_ROUTINE
+
+
+def submit_first_profiles(session: Session, fetcher: FilingFetcher, *, sonnet_top: int = 30, tickers: list[str] | None = None,
+                          force: bool = False, client=None, now: datetime | None = None, log=print) -> str | None:
+    """One batch with a first (version-2) profile for every active stock that lacks one: the top `sonnet_top` by
+    market cap on the profile model (Sonnet), the rest on the routine model (Haiku). Returns the batch id."""
+    from tracker.models import AiBatch
+
+    now = now or _now()
+    q = select(Universe).where(Universe.active).order_by(Universe.market_cap_rank)
+    if tickers:
+        q = select(Universe).where(Universe.ticker.in_([t.upper() for t in tickers]))
+    reqs, items = [], {}
+    for u in session.scalars(q):
+        if not force and not needs_first_profile(session, u.ticker):
+            continue
+        latest = _latest(session, u.ticker, ("10-K", "10-Q"))
+        if latest is None:
+            log(f"{u.ticker}: no 10-K or 10-Q on record, skipped")
+            continue
+        try:
+            sections = initial_sections(fetcher, latest, _latest(session, u.ticker, ("10-K",)))
+        except Exception as e:
+            log(f"{u.ticker}: could not read the filing ({type(e).__name__}), skipped")
+            continue
+        if not sections:
+            log(f"{u.ticker}: no usable sections in {latest.form}, skipped")
+            continue
+        rows = list(session.scalars(select(Fundamental).where(Fundamental.ticker == u.ticker)))
+        metrics = compute_metrics(rows, u.industry) if rows else None
+        prev = outputs.latest(session, "profile", u.ticker) if force else None
+        sources = build_sources(prev, metrics, sections, reference=_reference(session, u.ticker))
+        model = model_for_rank(u.market_cap_rank, sonnet_top)
+        system, user = system_prompt(), user_prompt(u.name, u.ticker, filing_label(latest), sources)
+        reqs.append(llm.BatchRequest(custom_id=u.ticker.replace(".", "_"), system=system, user=user, model=model))
+        items[u.ticker.replace(".", "_")] = {"scope_key": u.ticker, "model": model, "filing": latest.accession,
+                                            "input_hash": outputs.input_hash(model, system, user, ProfileOut),
+                                            "sources": [x.model_dump() for x in sources]}
+        log(f"{u.ticker}: {model.split('-')[1]}, {latest.form} {latest.filed_at.date()}, {len(sections)} sections")
+    if not reqs:
+        return None
+    batch_id, skipped = llm.submit_batch(session, task="profile", requests=reqs, output_model=ProfileOut,
+                                         max_tokens=PROFILE_MAX_TOKENS, client=client, now=now)
+    for cid, why in skipped.items():
+        log(f"{cid}: left out ({why})")
+        items.pop(cid, None)
+    if batch_id:
+        for r in reqs:
+            if r.custom_id in items:
+                items[r.custom_id]["prompt_tokens"] = r.prompt_tokens
+        session.add(AiBatch(id=batch_id, job="profiles", kind="profile", created_at=now, collected_at=None, items=items))
+        session.flush()
+    return batch_id
+
+
+def collect_profiles(session: Session, batch_id: str, *, client=None, now: datetime | None = None, log=print) -> dict[str, str]:
+    """Validate and save the results of an ended profile batch. Returns {ticker: outcome}."""
+    from tracker.ai.citations import Source
+    from tracker.models import AiBatch
+
+    now = now or _now()
+    b = session.get(AiBatch, batch_id)
+    if b is None or b.collected_at is not None:
+        return {}
+    status, counts = llm.batch_status(batch_id, client)
+    if status != "ended":
+        log(f"batch {batch_id}: {status} {counts}")
+        return {}
+    results = llm.collect_batch(session, batch_id, job="profiles", output_model=ProfileOut,
+                                max_tokens=PROFILE_MAX_TOKENS, client=client, now=now)
+    outcomes: dict[str, str] = {}
+    for cid, item in b.items.items():
+        ticker, res = item["scope_key"], results.get(cid)
+        if res is None or isinstance(res, llm.LLMError):
+            outcomes[ticker] = f"failed: {res}"
+            continue
+        sources = [Source(**x) for x in item["sources"]]
+        row = outputs.save(session, kind="profile", scope_key=ticker, input_hash_=item["input_hash"], result=res,
+                           sources=sources, validate=lambda out, src=sources: validate(out, src), now=now)
+        if row is None:
+            outcomes[ticker] = "rejected by validation (a required section was empty)"
+            continue
+        f = session.get(Filing, item.get("filing"))
+        if f is not None and f.processed_at is None:
+            f.processed_at = now
+        dropped = len(row.content.get("dropped", []))
+        outcomes[ticker] = f"saved ({res.model.split('-')[1]}, ${res.cost_usd:.3f}, {dropped} claims dropped)"
+    b.collected_at = now
+    b.items = {cid: {"scope_key": it["scope_key"], "model": it["model"]} for cid, it in b.items.items()}  # drop source text
+    session.flush()
+    return outcomes
+
+
+def upgrade_targets(session: Session) -> list[str]:
+    """Covered stocks (someone follows them, or demo) whose current profile came from the routine model:
+    they get a profile-model version in the next batch."""
+    from tracker import config
+
+    out = []
+    for t in sorted(covered_tickers(session)):
+        row = outputs.latest(session, "profile", t)
+        if row is not None and row.model != config.MODEL_PROFILE:
+            out.append(t)
+    return out

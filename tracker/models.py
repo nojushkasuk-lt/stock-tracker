@@ -278,3 +278,16 @@ class UsageLog(Base):
     output_tokens: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     search_calls: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     cost_usd: Mapped[float] = mapped_column(Numeric(10, 4, asdecimal=False))
+
+
+class AiBatch(Base):
+    """A Message Batch waiting for results. items holds what is needed to validate and save each result
+    (custom_id -> scope, model, prompt hash, sources). Deleted contents after collection keep the table small."""
+    __tablename__ = "ai_batches"
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)  # msgbatch_...
+    job: Mapped[str] = mapped_column(Text)
+    kind: Mapped[str] = mapped_column(Text)                  # ai_outputs.kind the results become
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    collected_at: Mapped[datetime | None] = mapped_column(DateTime)
+    items: Mapped[dict] = mapped_column(Json)
