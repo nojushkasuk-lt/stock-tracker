@@ -137,3 +137,13 @@
 - 2026-11-23, Claude Code: Day 5 built: moves.py ladder (tests for every branch and the 40-stock day), daily job writes market / industry / stock notes with earnings releases filed before the close, rechecks (`jobs.daily --recheck`), market note at most every 3 hours; accounts.py (watchlist max 15, outlets, 3 refreshes/day, 300/month, 6-hour shared refresh, 10 coverage searches/day); page: sign-in (Google or local dev box), watchlist and outlet settings, move-note card, Refresh now, market alert with the shared note. Live: Nov 20 sell-off, 10 demo moves -> 7 notes. All timestamps now UTC. 190 tests; spend about $0.25.
 - 2026-11-23: owner verified Google sign-in locally. Day 5 complete.
 - Next: UI design pass with the owner's list of design and content changes, then Day 6.
+
+## Redesign (owner decisions, 2026-11-23)
+
+- Frontend: replace Streamlit with FastAPI + server-rendered pages + Tailwind; own domain on a small host (~$5–7/month). `tracker/` logic stays; only the page layer changes.
+- Sign-in: Google only, on a separate start page with "Explore the demo".
+- Company history: Wikipedia allowed as a cited source, for history only. The About section is one paragraph: a few historical facts that explain how the company reached its position, plus its main selling points. Not a history lesson.
+- Look: minimalist but sophisticated, dark blue / blue-gray palette. Mockups: https://claude.ai/artifact/MrZqaUub8gP6irMyBEetQo (A Midnight, B Harbor, C Slate). Owner picks one.
+- Then, in order: new site on the existing services; richer content (About, sections, risk metrics from daily returns, logos); ETFs; international (20-F filers, then EU ESEF, then Korea DART, Japan last); deploy on the domain (licensing gate still applies).
+- [ ] Owner picks a design direction
+- [ ] Owner picks the host and buys the domain
