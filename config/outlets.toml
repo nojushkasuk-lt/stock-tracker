@@ -1,62 +1,219 @@
 # Outlets users can pick for coverage links. domain matches the outlet and its subdomains.
 # paywall = true: we only ever show the headline and link, and the note says it is based on the headline.
+# group: how Settings lists them.
 
 [[outlet]]
 name = "Reuters"
 domain = "reuters.com"
+group = "Wires & markets"
 paywall = false
 
 [[outlet]]
 name = "Bloomberg"
 domain = "bloomberg.com"
+group = "Wires & markets"
 paywall = true
-
-[[outlet]]
-name = "The Wall Street Journal"
-domain = "wsj.com"
-paywall = true
-
-[[outlet]]
-name = "Financial Times"
-domain = "ft.com"
-paywall = true
-
-[[outlet]]
-name = "The New York Times"
-domain = "nytimes.com"
-paywall = true
-
-[[outlet]]
-name = "CNBC"
-domain = "cnbc.com"
-paywall = false
 
 [[outlet]]
 name = "AP News"
 domain = "apnews.com"
+group = "Wires & markets"
+paywall = false
+
+[[outlet]]
+name = "CNBC"
+domain = "cnbc.com"
+group = "Wires & markets"
 paywall = false
 
 [[outlet]]
 name = "MarketWatch"
 domain = "marketwatch.com"
+group = "Wires & markets"
+paywall = false
+
+[[outlet]]
+name = "Yahoo Finance"
+domain = "finance.yahoo.com"
+group = "Wires & markets"
+paywall = false
+
+[[outlet]]
+name = "Investing.com"
+domain = "investing.com"
+group = "Wires & markets"
+paywall = false
+
+[[outlet]]
+name = "Benzinga"
+domain = "benzinga.com"
+group = "Wires & markets"
+paywall = false
+
+[[outlet]]
+name = "The Wall Street Journal"
+domain = "wsj.com"
+group = "Newspapers"
+paywall = true
+
+[[outlet]]
+name = "Financial Times"
+domain = "ft.com"
+group = "Newspapers"
+paywall = true
+
+[[outlet]]
+name = "The New York Times"
+domain = "nytimes.com"
+group = "Newspapers"
+paywall = true
+
+[[outlet]]
+name = "The Washington Post"
+domain = "washingtonpost.com"
+group = "Newspapers"
+paywall = true
+
+[[outlet]]
+name = "The Guardian"
+domain = "theguardian.com"
+group = "Newspapers"
+paywall = false
+
+[[outlet]]
+name = "BBC"
+domain = "bbc.com"
+group = "Newspapers"
 paywall = false
 
 [[outlet]]
 name = "Barron's"
 domain = "barrons.com"
+group = "Business magazines"
 paywall = true
 
 [[outlet]]
-name = "Yahoo Finance"
-domain = "finance.yahoo.com"
-paywall = false
+name = "The Economist"
+domain = "economist.com"
+group = "Business magazines"
+paywall = true
 
 [[outlet]]
 name = "Fortune"
 domain = "fortune.com"
+group = "Business magazines"
 paywall = false
+
+[[outlet]]
+name = "Forbes"
+domain = "forbes.com"
+group = "Business magazines"
+paywall = false
+
+[[outlet]]
+name = "Business Insider"
+domain = "businessinsider.com"
+group = "Business magazines"
+paywall = true
 
 [[outlet]]
 name = "Axios"
 domain = "axios.com"
+group = "Business magazines"
+paywall = false
+
+[[outlet]]
+name = "Morningstar"
+domain = "morningstar.com"
+group = "Investing"
+paywall = false
+
+[[outlet]]
+name = "The Motley Fool"
+domain = "fool.com"
+group = "Investing"
+paywall = false
+
+[[outlet]]
+name = "Seeking Alpha"
+domain = "seekingalpha.com"
+group = "Investing"
+paywall = true
+
+[[outlet]]
+name = "Investor's Business Daily"
+domain = "investors.com"
+group = "Investing"
+paywall = true
+
+[[outlet]]
+name = "Kiplinger"
+domain = "kiplinger.com"
+group = "Investing"
+paywall = false
+
+[[outlet]]
+name = "TechCrunch"
+domain = "techcrunch.com"
+group = "Technology"
+paywall = false
+
+[[outlet]]
+name = "The Verge"
+domain = "theverge.com"
+group = "Technology"
+paywall = false
+
+[[outlet]]
+name = "The Information"
+domain = "theinformation.com"
+group = "Technology"
+paywall = true
+
+[[outlet]]
+name = "Ars Technica"
+domain = "arstechnica.com"
+group = "Technology"
+paywall = false
+
+[[outlet]]
+name = "Wired"
+domain = "wired.com"
+group = "Technology"
+paywall = true
+
+[[outlet]]
+name = "Nikkei Asia"
+domain = "asia.nikkei.com"
+group = "Europe & Asia"
+paywall = true
+
+[[outlet]]
+name = "South China Morning Post"
+domain = "scmp.com"
+group = "Europe & Asia"
+paywall = true
+
+[[outlet]]
+name = "The Korea Herald"
+domain = "koreaherald.com"
+group = "Europe & Asia"
+paywall = false
+
+[[outlet]]
+name = "CNA"
+domain = "channelnewsasia.com"
+group = "Europe & Asia"
+paywall = false
+
+[[outlet]]
+name = "Euronews"
+domain = "euronews.com"
+group = "Europe & Asia"
+paywall = false
+
+[[outlet]]
+name = "DW"
+domain = "dw.com"
+group = "Europe & Asia"
 paywall = false

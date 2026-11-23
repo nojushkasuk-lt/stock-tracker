@@ -30,6 +30,7 @@ class Outlet:
     name: str
     domain: str
     paywall: bool
+    group: str = "Other"
 
 
 @dataclass(frozen=True)
@@ -53,7 +54,10 @@ class NewsNotConfigured(RuntimeError):
 def load_outlets(path: Path = OUTLETS_PATH) -> list[Outlet]:
     with path.open("rb") as f:
         data = tomllib.load(f)
-    return [Outlet(o["name"], o["domain"].lower(), bool(o.get("paywall", False))) for o in data.get("outlet", [])]
+    return [Outlet(o["name"], o["domain"].lower(), bool(o.get("paywall", False)), o.get("group", "Other")) for o in data.get("outlet", [])]
+
+
+SITE_FILTER_MAX = 10  # more site: terms than this makes the query too long (Brave caps queries at 400 chars / 50 words)
 
 
 def match_outlet(url: str, outlets: list[Outlet]) -> Outlet | None:
@@ -158,12 +162,16 @@ def coverage_query(company: str, ticker: str, domains: list[str] | set[str] | No
     Domains are sorted so the same outlet choice always gives the same query (and so shares the cache).
     """
     base = f'"{company}" {ticker} stock'
-    ds = sorted(domains or [o.domain for o in load_outlets()])
-    return f"{base} ({' OR '.join('site:' + d for d in ds)})"
+    sites = _sites(domains)
+    return f"{base} {sites}".strip()
 
 
 def _sites(domains: list[str] | set[str] | None) -> str:
+    """site: filter for a short outlet choice. For a long one (or all outlets) the query is left open and
+    coverage_links filters the results to the chosen outlets instead."""
     ds = sorted(domains or [o.domain for o in load_outlets()])
+    if len(ds) > SITE_FILTER_MAX:
+        return ""
     return f"({' OR '.join('site:' + d for d in ds)})"
 
 

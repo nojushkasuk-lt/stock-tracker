@@ -130,8 +130,18 @@ def test_query_restricts_to_outlets_in_a_stable_order():
     q = news.coverage_query("Apple Inc.", "AAPL", {"wsj.com", "cnbc.com"})
     assert q == '"Apple Inc." AAPL stock (site:cnbc.com OR site:wsj.com)'
     assert news.coverage_query("Apple Inc.", "AAPL", ["wsj.com", "cnbc.com"]) == q
-    everything = news.coverage_query("Apple Inc.", "AAPL")
-    assert all(f"site:{o.domain}" in everything for o in news.load_outlets())
+    # All outlets (or a long choice): too many site: terms for Brave, so the query is open and the
+    # results are filtered to the chosen outlets afterwards.
+    assert news.coverage_query("Apple Inc.", "AAPL") == '"Apple Inc." AAPL stock'
+    ten = sorted(o.domain for o in news.load_outlets())[:news.SITE_FILTER_MAX]
+    q10 = news.coverage_query("Apple Inc.", "AAPL", ten)
+    assert all(f"site:{d}" in q10 for d in ten) and len(q10) < 400
+
+
+def test_outlets_have_groups_and_unique_domains():
+    outs = news.load_outlets()
+    assert len(outs) >= 30 and len({o.domain for o in outs}) == len(outs)
+    assert all(o.group != "Other" for o in outs)
 
 
 def test_one_busy_outlet_cannot_fill_the_list_unless_it_is_the_only_choice():
