@@ -95,6 +95,63 @@ class UserWatchlist(Base):
     email: Mapped[str] = mapped_column(ForeignKey("users.email", ondelete="CASCADE"), primary_key=True)
     ticker: Mapped[str] = mapped_column(ForeignKey("universe.ticker"), primary_key=True)
     added_at: Mapped[datetime] = mapped_column(DateTime)
+    start_date: Mapped[date | None] = mapped_column(Date)  # performance is measured from here (default: added_at)
+
+
+class UserMarket(Base):
+    """Index funds / ETFs a user follows (config/markets.csv tickers)."""
+
+    __tablename__ = "user_markets"
+
+    email: Mapped[str] = mapped_column(ForeignKey("users.email", ondelete="CASCADE"), primary_key=True)
+    ticker: Mapped[str] = mapped_column(Text, primary_key=True)
+    added_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class UserPrefs(Base):
+    __tablename__ = "user_prefs"
+
+    email: Mapped[str] = mapped_column(ForeignKey("users.email", ondelete="CASCADE"), primary_key=True)
+    onboarded_at: Mapped[datetime | None] = mapped_column(DateTime)
+    stock_alerts: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    market_alerts: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    alert_threshold_pct: Mapped[float] = mapped_column(Num, default=5.0, server_default="5.0")
+    email_alerts: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    digest: Mapped[str] = mapped_column(Text, default="weekly", server_default="weekly")    # off, daily, weekly
+    home: Mapped[str] = mapped_column(Text, default="portfolio", server_default="portfolio")  # portfolio, market, news
+    perf_basis: Mapped[str] = mapped_column(Text, default="start", server_default="start")    # start, 1D, 1M, 1Y
+
+
+class Notification(Base):
+    """In-site alerts (and the record of what was emailed). Text is our own note summary, never article text."""
+
+    __tablename__ = "notifications"
+    __table_args__ = (Index("idx_notifications_user", "email", "created_at"),)
+
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(ForeignKey("users.email", ondelete="CASCADE"))
+    kind: Mapped[str] = mapped_column(Text)            # stock_move, market_move, digest
+    ticker: Mapped[str | None] = mapped_column(Text)
+    title: Mapped[str] = mapped_column(Text)
+    body: Mapped[str] = mapped_column(Text)
+    url: Mapped[str] = mapped_column(Text)             # path on our site
+    dedupe_key: Mapped[str] = mapped_column(Text)      # one alert per user per move
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime)
+    emailed_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+class ShareLink(Base):
+    """Private-access links the owner hands out (e.g. to an employer). The site is closed without one."""
+
+    __tablename__ = "share_links"
+
+    token: Mapped[str] = mapped_column(Text, primary_key=True)
+    label: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime)
+    uses: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
 class UserOutlet(Base):

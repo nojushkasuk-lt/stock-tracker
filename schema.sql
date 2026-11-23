@@ -38,6 +38,7 @@ CREATE TABLE user_watchlist (
     email     TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
     ticker    TEXT NOT NULL REFERENCES universe(ticker),
     added_at  TIMESTAMP NOT NULL,
+    start_date DATE,                          -- performance is measured from here (default: added_at)
     PRIMARY KEY (email, ticker)
 );
 
@@ -123,6 +124,48 @@ CREATE TABLE ai_outputs (
 
 ALTER TABLE moves ADD CONSTRAINT fk_moves_note FOREIGN KEY (note_id) REFERENCES ai_outputs(id);
 
+CREATE TABLE user_markets (
+    email     TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+    ticker    TEXT NOT NULL,                 -- config/markets.csv
+    added_at  TIMESTAMP NOT NULL,
+    PRIMARY KEY (email, ticker)
+);
+
+CREATE TABLE user_prefs (
+    email                TEXT PRIMARY KEY REFERENCES users(email) ON DELETE CASCADE,
+    onboarded_at         TIMESTAMP,
+    stock_alerts         BOOLEAN NOT NULL DEFAULT TRUE,
+    market_alerts        BOOLEAN NOT NULL DEFAULT TRUE,
+    alert_threshold_pct  NUMERIC NOT NULL DEFAULT 5.0,
+    email_alerts         BOOLEAN NOT NULL DEFAULT FALSE,
+    digest               TEXT NOT NULL DEFAULT 'weekly',     -- off, daily, weekly
+    home                 TEXT NOT NULL DEFAULT 'portfolio',  -- portfolio, market, news
+    perf_basis           TEXT NOT NULL DEFAULT 'start'       -- start, 1D, 1M, 1Y
+);
+
+CREATE TABLE notifications (
+    id          BIGSERIAL PRIMARY KEY,
+    email       TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+    kind        TEXT NOT NULL,                -- stock_move, market_move, digest
+    ticker      TEXT,
+    title       TEXT NOT NULL,
+    body        TEXT NOT NULL,                -- our own note summary, never article text
+    url         TEXT NOT NULL,                -- path on our site
+    dedupe_key  TEXT NOT NULL,
+    created_at  TIMESTAMP NOT NULL,
+    read_at     TIMESTAMP,
+    emailed_at  TIMESTAMP
+);
+
+CREATE TABLE share_links (
+    token         TEXT PRIMARY KEY,
+    label         TEXT NOT NULL,
+    created_at    TIMESTAMP NOT NULL,
+    revoked_at    TIMESTAMP,
+    last_used_at  TIMESTAMP,
+    uses          INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE company_facts (
     ticker         TEXT PRIMARY KEY REFERENCES universe(ticker),
     qid            TEXT NOT NULL,               -- Wikidata item
@@ -164,4 +207,5 @@ CREATE INDEX idx_filings_unprocessed     ON filings (processed_at) WHERE process
 CREATE INDEX idx_moves_date              ON moves (date DESC);
 CREATE INDEX idx_ai_outputs_lookup       ON ai_outputs (kind, scope_key, created_at DESC);
 CREATE INDEX idx_refresh_user_day        ON refresh_requests (email, requested_at);
+CREATE INDEX idx_notifications_user      ON notifications (email, created_at);
 CREATE INDEX idx_usage_month             ON usage_log (created_at);

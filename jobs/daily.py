@@ -16,6 +16,7 @@ from tracker.data.edgar import EdgarClient
 from tracker.data.filing_text import FilingFetcher
 from tracker.data.filings import check_filings, needs_new_figures
 from tracker.data.fundamentals import refresh_fundamentals
+from tracker.data.markets import tickers as market_tickers
 from tracker.data.prices import MARKET_TICKER, get_provider, store_returns
 from tracker.data.universe import covered_tickers, load_universe
 from tracker.db import create_tables, session_scope
@@ -58,7 +59,7 @@ def main(years: int = 5, recheck_only: bool = False) -> None:
             return
         n = load_universe(s)
         print(f"universe: {n} new rows")
-        tickers = list(s.scalars(select(Universe.ticker))) + [MARKET_TICKER]
+        tickers = sorted(set(s.scalars(select(Universe.ticker))) | {MARKET_TICKER} | set(market_tickers()))
         start = date.today() - timedelta(days=365 * years + 5)
         returns = get_provider().daily_returns(tickers, start)
         missing = sorted(set(tickers) - set(returns))

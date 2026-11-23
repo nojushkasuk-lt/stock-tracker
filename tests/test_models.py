@@ -35,3 +35,17 @@ def test_create_tables_and_roundtrip(tmp_path):
         s.commit()
         assert out.id == 1
         assert s.get(Universe, "AAPL").region == "US"
+
+
+def test_new_nullable_columns_are_added_to_existing_tables(tmp_path):
+    from sqlalchemy import text
+
+    from tracker.db import add_missing_columns
+
+    engine = make_engine(f"sqlite:///{tmp_path / 'old.db'}")
+    with engine.begin() as c:  # a table as it was before start_date existed
+        c.execute(text("CREATE TABLE users (email TEXT PRIMARY KEY, created_at TIMESTAMP, last_login TIMESTAMP)"))
+        c.execute(text("CREATE TABLE user_watchlist (email TEXT, ticker TEXT, added_at TIMESTAMP, PRIMARY KEY (email, ticker))"))
+    create_tables(engine)
+    assert "start_date" in {c["name"] for c in inspect(engine).get_columns("user_watchlist")}
+    assert add_missing_columns(engine) == []  # idempotent
