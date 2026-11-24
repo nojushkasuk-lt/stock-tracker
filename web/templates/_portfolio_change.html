@@ -1,0 +1,9 @@
+{% if summary %}
+  <div class="mono {{ summary.percent|tone }}" style="font-size: 40px">{{ summary.percent|pct }}</div>
+  <div class="muted">Equal-weight change since previous close · {{ summary.as_of.strftime('%b %d, %H:%M %Z') }}</div>
+  <div class="note-small"><a href="https://www.tiingo.com/" target="_blank" rel="noopener">Data sourced by Tiingo</a></div>
+{% elif stocks|length < 2 %}
+  <p class="muted">Add at least 2 stocks to view aggregate performance.</p>
+{% else %}
+  <p class="muted">Aggregate performance is currently unavailable.</p>
+{% endif %}

@@ -97,17 +97,26 @@ def demo(request: Request):
 def portfolio(request: Request):
     me = require_viewer(request)
     stocks = services.get_watchlist(me.email) if me.email else services.get_demo_stocks()
-    moves = services.get_last_moves([s.ticker for s in stocks])
-    cards = [views.stock_card(s, moves.get(s.ticker)) for s in stocks]
     pairs = [(s, n) for s in stocks if (n := services.get_move_note(s.ticker, me.email))]
     note_stock, note = views.latest_note(pairs)
     quotes = {stock.ticker: tv.quote_html(stock.tv_symbol) for stock in stocks if stock.quote_embeddable}
-    return page(request, "portfolio.html", cards=cards, market=services.get_market_status(me.email),
-                summary=views.day_summary(cards), note=note, note_stock=note_stock,
+    return page(request, "portfolio.html", stocks=stocks, market=services.get_market_status(me.email),
+                summary=services.get_watchlist_change(stocks), note=note, note_stock=note_stock,
                 exposure=views.exposure_breakdown(stocks),
                 market_quote=tv.quote_html("AMEX:SPY"),
                 quotes=quotes,
                 max_stocks=services.watchlist_max(), nav="portfolio")
+
+
+@app.get("/portfolio/change", response_class=HTMLResponse)
+def portfolio_change(request: Request):
+    me = require_viewer(request)
+    stocks = services.get_watchlist(me.email) if me.email else services.get_demo_stocks()
+    return templates.TemplateResponse(
+        request, "_portfolio_change.html",
+        {"stocks": stocks, "summary": services.get_watchlist_change(stocks)},
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.get("/search.json")

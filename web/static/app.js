@@ -1,5 +1,17 @@
 // Small progressive enhancements. Every page works without this file.
 (function () {
+  var watchlistChange = document.querySelector("[data-watchlist-change]");
+  if (watchlistChange) {
+    window.setInterval(async function () {
+      try {
+        var response = await fetch("/portfolio/change", {cache: "no-store", redirect: "error"});
+        if (response.ok) watchlistChange.innerHTML = await response.text();
+      } catch {
+        // Keep the last rendered value and its timestamp until the next refresh.
+      }
+    }, 15 * 60 * 1000);
+  }
+
   // Performance chart: one chart, ranges 1D to MAX; the number and caption follow the selected range.
   document.querySelectorAll("[data-perf]").forEach(function (box) {
     var num = box.querySelector("[data-perf-num]"), cap = box.querySelector("[data-perf-caption]");

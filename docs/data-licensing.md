@@ -14,6 +14,16 @@ daily percent changes (stocks and SPY), stored in `daily_returns`.
 | Alpha Vantage | Free key is personal use. Written permission requested for a small, private (link-only), non-commercial portfolio site. | Asked 2026-11-23 (see below) |
 | Tiingo | Free plan is internal use only. Redistribution licence requested. | Asked 2026-11-23 (see below) |
 
+### Tiingo Starter watchlist aggregate
+
+Tiingo Sales confirmed that the free public demo may show a single equal-weight change across
+multiple stocks, with “Data sourced by Tiingo” linked to Tiingo. The 24x5 feed is refreshed at
+15-minute intervals on demand. Tiingo prices and single-stock returns are private to the backend
+and never written to durable storage. Single-stock watchlists show a fallback. The existing
+daily-return job does not use this feed. Tiingo also allows internal closing-news triggers if
+resulting summaries omit raw Tiingo prices and exact moves. This integration only updates the
+portfolio aggregate.
+
 ### What the terms say (read 2026-11-23)
 
 **Alpha Vantage** (Terms of Service PDF; support and premium pages)

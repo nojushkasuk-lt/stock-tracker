@@ -220,20 +220,6 @@ def stock_model(*, stock, perf, profile, financials, note, filings, coverage, fa
 
 # ---- portfolio ------------------------------------------------------------------------------------
 
-def stock_card(stock, move: tuple[str, float] | None) -> dict:
-    return {"s": stock, "date": move[0] if move else None, "day": move[1] if move else None}
-
-
-def day_summary(cards: list[dict]) -> dict | None:
-    days = [c for c in cards if c["day"] is not None]
-    if not days:
-        return None
-    last = max(c["date"] for c in days)
-    today = [c for c in days if c["date"] == last]
-    return {"date": last, "up": sum(c["day"] >= 0 for c in today), "down": sum(c["day"] < 0 for c in today),
-            "avg": sum(c["day"] for c in today) / len(today), "n": len(today)}
-
-
 def exposure_breakdown(stocks) -> dict[str, list[tuple[str, int]]]:
     from collections import Counter
 

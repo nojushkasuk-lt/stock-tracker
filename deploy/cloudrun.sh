@@ -3,7 +3,7 @@
 #   deploy/cloudrun.sh            build from source with Cloud Build and deploy
 # Needs: gcloud signed in with a project set (gcloud config set project ID), billing on, and in .env:
 #   NEON_DATABASE_URL, ANTHROPIC_API_KEY, BRAVE_SEARCH_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-#   OWNER_EMAIL, SMTP_USER, SMTP_APP_PASSWORD (optional). Secret values go straight from .env to Secret
+#   OWNER_EMAIL, SMTP_USER, SMTP_APP_PASSWORD and TIINGO_API_KEY (optional). Secret values go straight from .env to Secret
 #   Manager through stdin: they are never printed or put on the command line.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -41,7 +41,7 @@ put_secret() {  # name, value from stdin. Adds a version only when the value cha
 [ -n "$(envval NEON_DATABASE_URL)" ] || { echo "add NEON_DATABASE_URL=... to .env first"; exit 1; }
 [ -n "$(envval EDGAR_USER_AGENT_EMAIL)" ] || { echo "add EDGAR_USER_AGENT_NAME and EDGAR_USER_AGENT_EMAIL to .env (the SEC requires them)"; exit 1; }
 envval NEON_DATABASE_URL | put_secret DATABASE_URL
-for k in ANTHROPIC_API_KEY BRAVE_SEARCH_API_KEY GOOGLE_CLIENT_SECRET SMTP_APP_PASSWORD; do
+for k in ANTHROPIC_API_KEY BRAVE_SEARCH_API_KEY GOOGLE_CLIENT_SECRET SMTP_APP_PASSWORD TIINGO_API_KEY; do
   [ -n "$(envval $k)" ] && envval $k | put_secret $k
 done
 # A separate session key for prod, made once and kept in Secret Manager.
@@ -51,6 +51,7 @@ gcloud secrets describe SESSION_SECRET >/dev/null 2>&1 || /usr/bin/python3 -I -c
 URL="https://$SERVICE-$NUMBER.$REGION.run.app"
 SECRETS="DATABASE_URL=DATABASE_URL:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,SESSION_SECRET=SESSION_SECRET:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest"
 [ -n "$(envval BRAVE_SEARCH_API_KEY)" ] && SECRETS="$SECRETS,BRAVE_SEARCH_API_KEY=BRAVE_SEARCH_API_KEY:latest"
+[ -n "$(envval TIINGO_API_KEY)" ] && SECRETS="$SECRETS,TIINGO_API_KEY=TIINGO_API_KEY:latest"
 [ -n "$(envval SMTP_APP_PASSWORD)" ] && SECRETS="$SECRETS,SMTP_APP_PASSWORD=SMTP_APP_PASSWORD:latest"
 VARS="^|^APP_ENV=prod|ACCESS_MODE=open|PRICE_DATA_DISPLAY=owner|GOOGLE_CLIENT_ID=$(envval GOOGLE_CLIENT_ID)|OWNER_EMAIL=$(envval OWNER_EMAIL)|SMTP_USER=$(envval SMTP_USER)|EDGAR_USER_AGENT_NAME=$(envval EDGAR_USER_AGENT_NAME)|EDGAR_USER_AGENT_EMAIL=$(envval EDGAR_USER_AGENT_EMAIL)|BASE_URL=$URL"
 

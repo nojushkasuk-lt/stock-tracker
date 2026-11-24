@@ -5,16 +5,9 @@
 <section class="summary">
   <div class="card">
     <div class="eyebrow">{% if me.demo %}Demo · 20 largest US companies{% else %}Your stocks{% endif %}</div>
-    {% if summary %}
-      <div style="display: flex; align-items: baseline; gap: 14px; margin-top: 8px; flex-wrap: wrap">
-        <div class="mono {{ summary.avg|tone }}" style="font-size: 40px">{{ summary.avg|pct }}</div>
-        <div class="muted" style="font-size: 14px">average at the saved close on {{ summary.date|short_date }}
-          {% if market %} · S&amp;P 500 <span class="mono {{ market.index_return_pct|tone }}">{{ market.index_return_pct|pct }}</span>{% endif %}</div>
-      </div>
-      <div class="note-small" style="margin-top: 6px">{{ summary.up }} up, {{ summary.down }} down at that close. Equal weight.</div>
-    {% else %}
-      <p class="muted" style="margin: 8px 0 0">Prices and daily changes below are delayed.</p>
-    {% endif %}
+    <div{% if stocks|length >= 2 %} data-watchlist-change{% endif %}>
+      {% include "_portfolio_change.html" %}
+    </div>
   </div>
   <div class="card">
     <div class="eyebrow">Market</div>
@@ -51,28 +44,28 @@
   <h2 style="font-size: 20px">{% if me.demo %}Demo stocks{% else %}Following{% endif %}</h2>
   <div class="link-row">
     <a class="btn sm" href="/earnings">Earnings calendar</a>
-    {% if not me.demo %}<span class="faint" style="font-size: 13px">{{ cards|length }} of {{ max_stocks }}</span>{% endif %}
+    {% if not me.demo %}<span class="faint" style="font-size: 13px">{{ stocks|length }} of {{ max_stocks }}</span>{% endif %}
   </div>
 </div>
 
-{% if not cards and not me.demo %}
+{% if not stocks and not me.demo %}
   <div class="card"><p style="margin: 0">You don't follow any stocks yet.</p><p style="margin: 12px 0 0"><a class="btn primary" href="/settings">Pick up to {{ max_stocks }} stocks</a></p></div>
 {% else %}
 <div class="grid">
-  {% for c in cards %}
+  {% for stock in stocks %}
   <article class="stock-card">
-    <a class="top" href="/stock/{{ c.s.ticker }}">{{ logo(c.s, "sm") }}<span style="flex: 1; min-width: 0"><span class="nm">{{ c.s.name }}</span><span class="sub">{{ c.s.ticker }} · {{ c.s.industry }}</span></span></a>
-    {% if c.s.ticker in quotes %}
-      {{ quotes[c.s.ticker]|safe }}
+    <a class="top" href="/stock/{{ stock.ticker }}">{{ logo(stock, "sm") }}<span style="flex: 1; min-width: 0"><span class="nm">{{ stock.name }}</span><span class="sub">{{ stock.ticker }} · {{ stock.industry }}</span></span></a>
+    {% if stock.ticker in quotes %}
+      {{ quotes[stock.ticker]|safe }}
     {% else %}
-      <a class="note-small" href="/stock/{{ c.s.ticker }}">View price on the stock page</a>
+      <a class="note-small" href="/stock/{{ stock.ticker }}">View price on the stock page</a>
     {% endif %}
   </article>
   {% endfor %}
-  {% if not me.demo and cards|length < max_stocks %}<a class="add-card" href="/settings">+ Add a stock</a>{% endif %}
+  {% if not me.demo and stocks|length < max_stocks %}<a class="add-card" href="/settings">+ Add a stock</a>{% endif %}
 </div>
 {% endif %}
-{% if cards %}
+{% if stocks %}
 <section class="card">
   <h2 class="h2">Watchlist exposure</h2>
   <p class="note-small">Share of stocks by count. Each stock counts equally.</p>
@@ -81,8 +74,8 @@
     <div>
       <h3 class="h3">{{ group }}</h3>
       {% for label, count in items %}
-      <div class="row-between"><span>{{ label }}</span><span class="mono note-small">{{ count }} of {{ cards|length }}</span></div>
-      <progress class="exposure-bar" aria-label="{{ label }}" value="{{ count }}" max="{{ cards|length }}"></progress>
+      <div class="row-between"><span>{{ label }}</span><span class="mono note-small">{{ count }} of {{ stocks|length }}</span></div>
+      <progress class="exposure-bar" aria-label="{{ label }}" value="{{ count }}" max="{{ stocks|length }}"></progress>
       {% endfor %}
     </div>
   {% endfor %}

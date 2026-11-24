@@ -500,3 +500,59 @@ def test_weekly_brief_is_sourced_shared_and_generated_once(client, monkeypatch):
     assert "Weekly market &amp; tech brief" in page
     assert "workloads off-site" in page and "https://www.reuters.com/story-3" in page
     assert "cross-topic claim" not in page and "67 percent" not in page
+
+
+def test_tiingo_aggregate_refresh_and_single_stock_fallback(client, monkeypatch):
+    import httpx
+
+    from tracker.data.providers import tiingo
+
+    snapshots = [
+        {"ticker": "AAPL", "tngoLast": 104, "prevClose": 100,
+         "timestamp": "2026-11-23T20:00:00Z", "prevDate": "2026-11-20"},
+        {"ticker": "MSFT", "tngoLast": 202, "prevClose": 200,
+         "timestamp": "2026-11-23T20:05:00Z", "prevDate": "2026-11-20"},
+    ]
+    calls = []
+    clock = [100.0]
+
+    def snapshot(url, *, headers, timeout):
+        assert url == tiingo.SNAPSHOT_URL
+        assert headers["Authorization"] == "Token test-token"
+        calls.append(url)
+        return httpx.Response(200, json=snapshots, request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(config, "TIINGO_API_KEY", "test-token")
+    monkeypatch.setattr(tiingo.httpx, "get", snapshot)
+    monkeypatch.setattr(tiingo, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(tiingo, "_refresh_at", 0)
+    monkeypatch.setattr(tiingo, "_cached_moves", {})
+
+    sign_in(client)
+    assert services.save_watchlist("a@example.com", ["AAPL"]) is None
+    assert "Add at least 2 stocks" in client.get("/portfolio/change").text
+    assert calls == []
+
+    client.get("/demo")
+    page = client.get("/portfolio").text
+    assert "+2.5%" in page and "data-watchlist-change" in page
+    fragment = client.get("/portfolio/change")
+    assert fragment.headers["Cache-Control"] == "no-store"
+    assert "+2.5%" in fragment.text and "Data sourced by Tiingo" in fragment.text
+    assert "Nov 23, 15:00 EST" in fragment.text
+    assert "+4.0%" not in fragment.text and "+1.0%" not in fragment.text
+    assert len(calls) == 1
+
+    sign_in(client)
+    assert services.save_watchlist("a@example.com", ["AAPL", "MSFT"]) is None
+    assert "+2.5%" in client.get("/portfolio").text
+    assert len(calls) == 1
+
+    clock[0] += tiingo.REFRESH_SECONDS
+    snapshots[0]["tngoLast"] = 106
+    assert "+3.5%" in client.get("/portfolio/change").text
+    assert len(calls) == 2
+
+    clock[0] += tiingo.REFRESH_SECONDS
+    snapshots.pop()
+    assert "currently unavailable" in client.get("/portfolio/change").text

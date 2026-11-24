@@ -200,3 +200,6 @@
 
 - [x] Put delayed prices and day changes directly on each supported portfolio stock card for demo visitors and signed-in users.
 - Codex: saved returns remain dated in the performance view. Publish the card changes to Cloud Run.
+
+- [x] Replace the portfolio's saved-close average with an in-memory Tiingo Starter multi-stock aggregate, refreshed every 15 minutes while the page is open.
+- Codex: verify the deployed snapshot with a Starter token after local tests. Closing-news automation remains separate.

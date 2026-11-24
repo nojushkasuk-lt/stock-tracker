@@ -34,6 +34,7 @@ MONTHLY_BUDGET_USD = _float("MONTHLY_BUDGET_USD", 8.00)
 MONTHLY_SEARCH_CAP = _int("MONTHLY_SEARCH_CAP", 900)
 
 PRICE_PROVIDER = os.environ.get("PRICE_PROVIDER") or "yfinance_dev"
+TIINGO_API_KEY = os.environ.get("TIINGO_API_KEY", "")
 
 # Universe refresh
 UNIVERSE_SIZE = _int("UNIVERSE_SIZE", 100)

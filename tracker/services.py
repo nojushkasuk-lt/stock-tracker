@@ -16,6 +16,7 @@ from tracker.data.charts import get_chart_series
 from tracker.db import session_scope
 from tracker import config
 from tracker.data import news
+from tracker.data.providers import tiingo
 from tracker import accounts
 from tracker.ai import outputs
 from tracker.models import AiOutput, CompanyFacts, Filing, Fundamental, ListingSeen, Universe
@@ -577,6 +578,12 @@ def get_performance(ticker: str) -> Performance | None:
     aligned = [(r, spy[d]) for d, r in rows[-performance.TRADING_DAYS:] if d in spy]
     rk = performance.risk([a for a, _ in aligned], [b for _, b in aligned]) if aligned else None
     return Performance(last.isoformat(), views, rk)
+
+
+def get_watchlist_change(stocks: list[Stock]) -> tiingo.WatchlistChange | None:
+    if any(stock.global_listing for stock in stocks):
+        return None  # the US feed cannot price a complete watchlist with primary foreign listings
+    return tiingo.watchlist_change([stock.ticker for stock in stocks])
 
 
 def get_last_moves(tickers: list[str]) -> dict[str, tuple[str, float]]:
