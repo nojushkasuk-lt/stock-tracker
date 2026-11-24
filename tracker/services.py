@@ -581,9 +581,7 @@ def get_performance(ticker: str) -> Performance | None:
 
 
 def get_watchlist_change(stocks: list[Stock]) -> tiingo.WatchlistChange | None:
-    if any(stock.global_listing for stock in stocks):
-        return None  # the US feed cannot price a complete watchlist with primary foreign listings
-    return tiingo.watchlist_change([stock.ticker for stock in stocks])
+    return tiingo.watchlist_change([stock.ticker for stock in stocks if not stock.global_listing])
 
 
 def get_last_moves(tickers: list[str]) -> dict[str, tuple[str, float]]:

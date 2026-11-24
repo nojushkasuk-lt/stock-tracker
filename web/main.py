@@ -101,7 +101,7 @@ def portfolio(request: Request):
     note_stock, note = views.latest_note(pairs)
     quotes = {stock.ticker: tv.quote_html(stock.tv_symbol) for stock in stocks if stock.quote_embeddable}
     return page(request, "portfolio.html", stocks=stocks, market=services.get_market_status(me.email),
-                summary=services.get_watchlist_change(stocks), note=note, note_stock=note_stock,
+                summary=services.get_watchlist_change(stocks), tiingo_configured=bool(config.TIINGO_API_KEY), note=note, note_stock=note_stock,
                 exposure=views.exposure_breakdown(stocks),
                 market_quote=tv.quote_html("AMEX:SPY"),
                 quotes=quotes,
@@ -114,7 +114,8 @@ def portfolio_change(request: Request):
     stocks = services.get_watchlist(me.email) if me.email else services.get_demo_stocks()
     return templates.TemplateResponse(
         request, "_portfolio_change.html",
-        {"stocks": stocks, "summary": services.get_watchlist_change(stocks)},
+        {"stocks": stocks, "summary": services.get_watchlist_change(stocks),
+         "tiingo_configured": bool(config.TIINGO_API_KEY)},
         headers={"Cache-Control": "no-store"},
     )
 

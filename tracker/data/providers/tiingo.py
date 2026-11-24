@@ -20,6 +20,7 @@ NEW_YORK = ZoneInfo("America/New_York")
 class WatchlistChange:
     percent: float
     as_of: datetime
+    covered: int
 
 
 @dataclass(frozen=True)
@@ -73,7 +74,7 @@ _refresh_at = 0.0
 
 
 def watchlist_change(tickers: list[str]) -> WatchlistChange | None:
-    """Return only the aggregate, and only for complete, comparable watchlists."""
+    """Return only the aggregate, and only for two or more comparable quotes."""
     symbols = {ticker.upper().replace("-", ".") for ticker in tickers}
     token = config.TIINGO_API_KEY
     if len(symbols) < 2 or not token:
@@ -85,7 +86,13 @@ def watchlist_change(tickers: list[str]) -> WatchlistChange | None:
             _cached_moves = _fetch(token)
             _refresh_at = monotonic() + REFRESH_SECONDS
         moves = [_cached_moves[symbol] for symbol in symbols if symbol in _cached_moves]
-    if len(moves) != len(symbols) or len({(move.session, move.previous_session) for move in moves}) != 1:
+    groups: dict[tuple[date, date], list[_Move]] = {}
+    for move in moves:
+        groups.setdefault((move.session, move.previous_session), []).append(move)
+    if not groups:
         return None
-    return WatchlistChange(math.fsum(move.percent / len(moves) for move in moves),
-                           min(move.timestamp for move in moves))
+    latest = groups[max(groups)]
+    if len(latest) < 2:
+        return None
+    return WatchlistChange(math.fsum(move.percent / len(latest) for move in latest),
+                           min(move.timestamp for move in latest), len(latest))

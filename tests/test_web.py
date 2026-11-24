@@ -522,6 +522,9 @@ def test_tiingo_aggregate_refresh_and_single_stock_fallback(client, monkeypatch)
         calls.append(url)
         return httpx.Response(200, json=snapshots, request=httpx.Request("GET", url))
 
+    monkeypatch.setattr(config, "TIINGO_API_KEY", "")
+    client.get("/demo")
+    assert "data feed is not configured" in client.get("/portfolio/change").text
     monkeypatch.setattr(config, "TIINGO_API_KEY", "test-token")
     monkeypatch.setattr(tiingo.httpx, "get", snapshot)
     monkeypatch.setattr(tiingo, "monotonic", lambda: clock[0])
@@ -547,6 +550,10 @@ def test_tiingo_aggregate_refresh_and_single_stock_fallback(client, monkeypatch)
     assert services.save_watchlist("a@example.com", ["AAPL", "MSFT"]) is None
     assert "+2.5%" in client.get("/portfolio").text
     assert len(calls) == 1
+
+    assert services.save_watchlist("a@example.com", ["AAPL", "MSFT", "ZZZ"]) is None
+    partial = client.get("/portfolio/change").text
+    assert "+2.5%" in partial and "Includes 2 of 3 stocks" in partial
 
     clock[0] += tiingo.REFRESH_SECONDS
     snapshots[0]["tngoLast"] = 106

@@ -203,3 +203,6 @@
 
 - [x] Replace the portfolio's saved-close average with an in-memory Tiingo Starter multi-stock aggregate, refreshed every 15 minutes while the page is open.
 - Codex: verify the deployed snapshot with a Starter token after local tests. Closing-news automation remains separate.
+
+- [x] Distinguish a missing Tiingo configuration from missing quotes and show how much of the watchlist is represented when a comparable subset is available.
+- Codex: the local environment has no Starter token. Validate the demo after configuring it.
