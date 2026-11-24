@@ -53,6 +53,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(services, "get_price_chart", lambda t: FAKE_CHART if t.upper() == "AAPL" else None)
     monkeypatch.setattr(config, "GOOGLE_CLIENT_ID", "")      # local dev sign-in instead of Google
     monkeypatch.setattr(config, "BRAVE_SEARCH_API_KEY", "")
+    monkeypatch.setattr(config, "TIINGO_API_KEY", "")
     from web.main import app
     return TestClient(app)
 
@@ -592,3 +593,32 @@ def test_tiingo_snapshot_redirect_keeps_token_on_api_origin(monkeypatch, locatio
     moves = tiingo._fetch("test-token")
     assert calls == [tiingo.SNAPSHOT_URL] + ([tiingo.SNAPSHOT_URL + "/"] if follows else [])
     assert ("AAPL" in moves) is follows
+
+
+def test_stock_coverage_uses_latest_notable_move_without_showing_exact_return(client, monkeypatch):
+    from tracker.data.providers import tiingo
+
+    move = tiingo._parse_move({
+        "ticker": "AAPL", "tngoLast": 107.32, "prevClose": 100,
+        "timestamp": "2026-11-23T20:00:00Z", "prevDate": "2026-11-20",
+    })
+    monkeypatch.setattr(tiingo, "_snapshot_moves", lambda symbols: [move] if symbols == {"AAPL"} else [])
+    monkeypatch.setattr(config, "BRAVE_SEARCH_API_KEY", "test-key")
+    searches = []
+
+    def search(session, brave, query, freshness):
+        searches.append((query, freshness))
+        return []
+
+    monkeypatch.setattr(services.news, "cached_search", search)
+    sign_in(client)
+    page = client.get("/stock/AAPL").text
+    assert "Apple rose sharply versus the previous close" in page
+    assert "Nov 23, 2026" in page and "Find coverage of this move" in page
+    assert "7.32%" not in page and "+7.3%" not in page
+    assert searches == []
+    coverage = client.post("/stock/AAPL/coverage").text
+    assert "Coverage for Nov 23" in coverage
+    assert len(searches) == 1
+    assert "(rose OR rallied OR jumped)" in searches[0][0]
+    assert searches[0][1] == "2026-11-20to2026-11-23"

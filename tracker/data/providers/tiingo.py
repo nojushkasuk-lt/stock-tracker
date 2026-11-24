@@ -1,4 +1,4 @@
-"""Transient Tiingo Starter snapshots for the licensed watchlist aggregate."""
+"""Transient Tiingo Starter snapshots for the watchlist aggregate and news lookups."""
 
 import logging
 import math
@@ -23,6 +23,13 @@ class WatchlistChange:
     percent: float
     as_of: datetime
     covered: int
+
+
+@dataclass(frozen=True)
+class NotableMove:
+    direction: str
+    session: date
+    previous_session: date
 
 
 @dataclass(frozen=True)
@@ -89,19 +96,33 @@ _cached_moves: dict[str, _Move] = {}
 _refresh_at = 0.0
 
 
-def watchlist_change(tickers: list[str]) -> WatchlistChange | None:
-    """Return only the aggregate, and only for two or more comparable quotes."""
-    symbols = {ticker.upper().replace("-", ".") for ticker in tickers}
+def _snapshot_moves(symbols: set[str]) -> list[_Move]:
     token = config.TIINGO_API_KEY
-    if len(symbols) < 2 or not token:
-        return None
-
+    if not symbols or not token:
+        return []
     global _cached_moves, _refresh_at
     with _lock:
         if monotonic() >= _refresh_at:
             _cached_moves = _fetch(token)
             _refresh_at = monotonic() + REFRESH_SECONDS
-        moves = [_cached_moves[symbol] for symbol in symbols if symbol in _cached_moves]
+        return [_cached_moves[symbol] for symbol in symbols if symbol in _cached_moves]
+
+
+def notable_move(ticker: str) -> NotableMove | None:
+    """Expose only the direction and session of a move that meets the coverage threshold."""
+    moves = _snapshot_moves({ticker.upper().replace("-", ".")})
+    if moves and abs(moves[0].percent) >= config.MOVE_THRESHOLD_PCT:
+        move = moves[0]
+        return NotableMove("rose" if move.percent > 0 else "fell", move.session, move.previous_session)
+    return None
+
+
+def watchlist_change(tickers: list[str]) -> WatchlistChange | None:
+    """Return only the aggregate, and only for two or more comparable quotes."""
+    symbols = {ticker.upper().replace("-", ".") for ticker in tickers}
+    if len(symbols) < 2:
+        return None
+    moves = _snapshot_moves(symbols)
     groups: dict[tuple[date, date], list[_Move]] = {}
     for move in moves:
         groups.setdefault((move.session, move.previous_session), []).append(move)

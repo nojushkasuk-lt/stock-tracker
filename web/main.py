@@ -150,10 +150,15 @@ def _stock_or_404(me: views.Viewer, ticker: str):
     return stock
 
 
-def _stock_page(request: Request, ticker: str, coverage=None):
+def _stock_page(request: Request, ticker: str, search_coverage: bool = False):
     me = require_viewer(request)
     stock = _stock_or_404(me, ticker)
     following = bool(me.email) and stock.ticker in {s.ticker for s in services.get_watchlist(me.email)}
+    move = services.get_notable_move(stock)
+    coverage = None
+    if search_coverage:
+        domains = services.get_outlet_choice(me.email) or None
+        coverage = services.get_coverage(stock.ticker, domains, me.email, move=move)
     perf = services.get_performance(stock.ticker)
     chart = None if stock.global_listing else services.get_price_chart(stock.ticker)  # None in prod: the TradingView chart is shown instead
     model = views.stock_model(
@@ -163,7 +168,7 @@ def _stock_page(request: Request, ticker: str, coverage=None):
         facts=services.get_key_facts(stock.ticker), chart=chart)
     chart_symbol = stock.chart_symbol
     return page(
-        request, "stock.html", s=stock, m=model, following=following, nav="stocks",
+        request, "stock.html", s=stock, m=model, following=following, move=move, nav="stocks",
         chart_widget=tv.chart_widget_html(chart_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID)
         if not chart and chart_symbol else None,
         quote_widget=tv.quote_html(stock.tv_symbol) if stock.quote_embeddable else None,
@@ -187,8 +192,7 @@ def stock_coverage(request: Request, ticker: str):
     me = require_viewer(request)
     if not me.email:
         raise HTTPException(403, "Live coverage is for signed-in users.")
-    domains = services.get_outlet_choice(me.email) or None
-    return _stock_page(request, ticker, coverage=services.get_coverage(ticker, domains, me.email))
+    return _stock_page(request, ticker, search_coverage=True)
 
 
 @app.post("/stock/{ticker}/refresh")

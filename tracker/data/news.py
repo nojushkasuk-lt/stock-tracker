@@ -155,13 +155,16 @@ def cached_search(session: Session, brave: BraveNews, q: str, freshness: str = "
     return results
 
 
-def coverage_query(company: str, ticker: str, domains: list[str] | set[str] | None = None) -> str:
+def coverage_query(company: str, ticker: str, domains: list[str] | set[str] | None = None,
+                   *, direction: str | None = None) -> str:
     """Brave query restricted to the given outlet domains with site: (all configured outlets when none given).
 
     Restricting in the query matters: an open query spends most of its 50 results on outlets we do not offer.
     Domains are sorted so the same outlet choice always gives the same query (and so shares the cache).
     """
     base = f'"{company}" {ticker} stock'
+    if direction:
+        base += " (rose OR rallied OR jumped)" if direction == "rose" else " (fell OR dropped OR slid)"
     sites = _sites(domains)
     return f"{base} {sites}".strip()
 

@@ -209,3 +209,6 @@
 
 - [x] Handle Tiingo snapshot redirects on the same HTTPS API origin and log feed errors without credentials.
 - Codex: reproduced the reported HTTP 301 in a test. The live redirect destination and subsequent response still need verification.
+
+- [x] Show a qualitative notable move from Tiingo on stock pages and search recent coverage for that direction and session on demand.
+- Codex: historical move notes are dated and labeled. Scheduled alerts and automatic cause summaries remain separate.

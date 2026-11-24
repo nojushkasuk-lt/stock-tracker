@@ -245,7 +245,12 @@ class Coverage:
     message: str | None = None  # shown instead of / above the links
 
 
-def get_coverage(ticker: str, domains: set[str] | None = None, email: str | None = None) -> Coverage:
+def get_notable_move(stock: Stock) -> tiingo.NotableMove | None:
+    return None if stock.global_listing else tiingo.notable_move(stock.ticker)
+
+
+def get_coverage(ticker: str, domains: set[str] | None = None, email: str | None = None,
+                 move: tiingo.NotableMove | None = None) -> Coverage:
     """Live, outlet-filtered links for one stock, at most COVERAGE_SEARCHES_PER_USER_PER_DAY per user.
     Results stay in memory; only the search count is stored."""
     if not coverage_enabled(email):
@@ -258,7 +263,9 @@ def get_coverage(ticker: str, domains: set[str] | None = None, email: str | None
             if not accounts.use_coverage_search(s, email, stock.ticker):
                 return Coverage([], f"You've used your {config.COVERAGE_SEARCHES_PER_USER_PER_DAY} coverage searches "
                                     "for today. They reset at midnight UTC.")
-            results = news.cached_search(s, news.BraveNews(), news.coverage_query(stock.name, stock.ticker, domains))
+            query = news.coverage_query(stock.name, stock.ticker, domains, direction=move.direction if move else None)
+            freshness = f"{move.previous_session}to{move.session}" if move else "pw"
+            results = news.cached_search(s, news.BraveNews(), query, freshness=freshness)
     except news.SearchCapReached:
         return Coverage([], "The monthly search limit has been reached. Coverage will be back next month.")
     except Exception:

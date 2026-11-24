@@ -30,11 +30,23 @@
 
 {% set chart = m.chart %}{% include "_chart.html" %}
 
+{% if move %}
+<section class="card hl">
+  <div class="eyebrow">Notable move · {{ move.session.strftime('%b %d, %Y') }}</div>
+  <p>{{ s.name }} {{ move.direction }} sharply versus the previous close.</p>
+  {% if coverage_on %}
+  <form method="post" action="/stock/{{ s.ticker }}/coverage#coverage">
+    <button class="btn" type="submit" {% if searches_left == 0 %}disabled{% endif %}>Find coverage of this move</button>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+
 {% if m.note %}
 {% set n = m.note.n %}
 <section class="card hl">
   <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline">
-    <span class="eyebrow">Latest move</span>
+    <span class="eyebrow">Past session note</span>
     <span class="mono {{ n.return_pct|tone }}">{{ n.return_pct|pct }}</span>
     <span class="faint" style="font-size: 13px">{{ n.date|nice_date }}</span>
     <span class="chip">{{ n.scope_label }}</span>
@@ -47,13 +59,13 @@
     <span class="note-small">AI note, written {{ n.written }}. {% if n.headline_based %}Based on headlines; causes are not confirmed.{% else %}Based on the company's SEC filing and coverage.{% endif %}</span>
     {% if can_refresh %}
     <form method="post" action="/stock/{{ s.ticker }}/refresh" style="display: flex; gap: 10px; align-items: center">
-      <span class="note-small">{{ refreshes_left }} refreshes left today · Closing moves only</span>
+      <span class="note-small">{{ refreshes_left }} refreshes left today · Saved closing data</span>
       <button class="btn" type="submit" {% if refreshes_left == 0 %}disabled{% endif %}>Refresh now</button>
     </form>
     {% endif %}
   </div>
 </section>
-{% elif can_refresh %}
+{% elif can_refresh and not move %}
 <section class="card row-between" style="align-items: center">
   <span class="muted">Refresh searches for coverage of the latest stored closing move. {% if perf %}Price data through {{ perf.as_of|nice_date }}.{% endif %}</span>
   <form method="post" action="/stock/{{ s.ticker }}/refresh" style="display: flex; gap: 10px; align-items: center">
@@ -94,7 +106,7 @@
 
     <section class="card" id="coverage">
       <div class="row-between" style="margin-bottom: 6px">
-        <div class="eyebrow">Coverage</div>
+        <div class="eyebrow">{% if move and m.coverage %}Coverage for {{ move.session.strftime("%b %d") }}{% else %}Coverage{% endif %}</div>
         <div class="note-small">{% if me.email %}Key articles from {{ outlets }}{% else %}For signed-in users{% endif %}</div>
       </div>
       {% if m.coverage %}
