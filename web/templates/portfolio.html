@@ -8,12 +8,12 @@
     {% if summary %}
       <div style="display: flex; align-items: baseline; gap: 14px; margin-top: 8px; flex-wrap: wrap">
         <div class="mono {{ summary.avg|tone }}" style="font-size: 40px">{{ summary.avg|pct }}</div>
-        <div class="muted" style="font-size: 14px">average on {{ summary.date|short_date }}
+        <div class="muted" style="font-size: 14px">average at the saved close on {{ summary.date|short_date }}
           {% if market %} · S&amp;P 500 <span class="mono {{ market.index_return_pct|tone }}">{{ market.index_return_pct|pct }}</span>{% endif %}</div>
       </div>
-      <div class="note-small" style="margin-top: 6px">{{ summary.up }} up, {{ summary.down }} down in the last session. Equal weight.</div>
+      <div class="note-small" style="margin-top: 6px">{{ summary.up }} up, {{ summary.down }} down at that close. Equal weight.</div>
     {% else %}
-      <p class="muted" style="margin: 8px 0 0">Open a stock for its price and daily change.</p>
+      <p class="muted" style="margin: 8px 0 0">See the delayed quotes below for prices and daily changes.</p>
     {% endif %}
   </div>
   <div class="card">
@@ -31,7 +31,10 @@
   </div>
 </section>
 
-{% if ticker_tape %}<section class="card" aria-label="Stock quotes">{{ ticker_tape|safe }}</section>{% endif %}
+{% if ticker_tape %}<section class="card" aria-label="Delayed stock quotes">
+  <div class="eyebrow">Delayed stock quotes</div>
+  {{ ticker_tape|safe }}
+</section>{% endif %}
 
 {% if note %}
 <section class="card hl move">
@@ -66,7 +69,7 @@
     <span class="top">{{ logo(c.s, "sm") }}<span style="flex: 1; min-width: 0"><span class="nm">{{ c.s.name }}</span><span class="sub">{{ c.s.ticker }} · {{ c.s.industry }}</span></span></span>
     {% if c.day is none %}<span class="nums">View daily change</span>{% else %}
     <span class="nums">
-      <span>Last session<span class="mono {{ c.day|tone }}">{{ c.day|pct }}</span></span>
+      <span>Saved close<span class="mono {{ c.day|tone }}">{{ c.day|pct }}</span></span>
       <span style="text-align: right">{{ c.date|short_date }}</span>
     </span>{% endif %}
   </a>

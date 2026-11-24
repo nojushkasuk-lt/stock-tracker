@@ -101,7 +101,7 @@ def portfolio(request: Request):
     cards = [views.stock_card(s, moves.get(s.ticker)) for s in stocks]
     pairs = [(s, n) for s in stocks if (n := services.get_move_note(s.ticker, me.email))]
     note_stock, note = views.latest_note(pairs)
-    quote_symbols = [c["s"].tv_symbol for c in cards if c["day"] is None and c["s"].quote_embeddable]
+    quote_symbols = [stock.tv_symbol for stock in stocks if stock.quote_embeddable]
     return page(request, "portfolio.html", cards=cards, market=services.get_market_status(me.email),
                 summary=views.day_summary(cards), note=note, note_stock=note_stock,
                 exposure=views.exposure_breakdown(stocks),
@@ -156,7 +156,7 @@ def _stock_page(request: Request, ticker: str, coverage=None):
         request, "stock.html", s=stock, m=model, following=following, nav="stocks",
         chart_widget=tv.chart_widget_html(chart_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID)
         if not chart and chart_symbol else None,
-        quote_widget=tv.quote_html(stock.tv_symbol) if not chart and not perf and stock.quote_embeddable else None,
+        quote_widget=tv.quote_html(stock.tv_symbol) if stock.quote_embeddable else None,
         quote_url=tv.symbol_url(stock.tv_symbol) if stock.global_listing else None,
         chart_url=tv.chart_url(stock.tv_symbol), alternate_chart_label=stock.alternate_chart_label,
         chart_symbol=chart_symbol,
@@ -210,7 +210,7 @@ def fund(request: Request, ticker: str):
     return page(request, "fund.html", f=f, chart=f.chart, nav="market",
                 chart_url=tv.chart_url(f.tv_symbol),
                 chart_widget=None if f.chart else tv.chart_widget_html(f.tv_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID),
-                quote_widget=None if f.chart or f.perf else tv.quote_html(f.tv_symbol))
+                quote_widget=tv.quote_html(f.tv_symbol))
 
 
 @app.post("/etf/{ticker}/follow")

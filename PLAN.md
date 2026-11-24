@@ -194,3 +194,6 @@
 
 - [x] Increase weekly brief output allowance and use low effort for the scheduled brief after the first live run exhausted its token limit.
 - Codex: verified the weekly brief tests with the larger cap. A new GitHub Actions run on the updated commit is needed to verify publication.
+
+- [x] Show delayed TradingView quotes for supported watchlist symbols and on stock and fund detail pages, alongside dated saved returns.
+- Codex: updated route coverage for watchlists with saved returns. Cloud Run publication requires network access to Google Cloud.

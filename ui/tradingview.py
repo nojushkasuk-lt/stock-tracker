@@ -78,13 +78,13 @@ QUOTE_HEIGHT = 96
 
 
 def quote_html(symbol: str, theme: str = "dark") -> str:
-    """Compact live quote (price and day change). Shown above the chart where our own figures cannot be."""
+    """Compact TradingView quote with price and day change."""
     config = {"symbol": symbol, "width": "100%", "isTransparent": True, "colorTheme": theme, "locale": "en"}
     return _widget("single-quote", config, f"{symbol.split(':')[-1]} quote", symbol, QUOTE_HEIGHT)
 
 
 def ticker_tape_html(symbols: list[str]) -> str:
-    """Daily changes for portfolio stocks without displayable provider returns."""
+    """TradingView prices and daily changes for the watchlist."""
     config = {
         "symbols": [{"proName": symbol} for symbol in symbols],
         "colorTheme": "dark", "isTransparent": True, "displayMode": "regular", "locale": "en",

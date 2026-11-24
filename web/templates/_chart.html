@@ -1,3 +1,9 @@
+{% if quote_widget %}
+<section class="card">
+  <div class="eyebrow">Delayed quote</div>
+  <div class="tv-quote">{{ quote_widget|safe }}</div>
+</section>
+{% endif %}
 {# needs: chart (PriceChart or None), chart_widget (TradingView HTML) #}
 {% if chart %}
 {% set c = chart %}
@@ -50,8 +56,6 @@
       {% for r in perf.ranges[1:] %}<div><span class="l">{{ r.label }}</span><span class="v {{ r.pct|tone }}">{{ r.pct|pct }}</span></div>{% endfor %}
     </div>
   </div>
-  {% elif quote_widget %}
-  <div class="tv-quote">{{ quote_widget|safe }}</div>
   {% elif alternate_chart_label %}
   <div class="eyebrow">{{ chart_symbol }} · {{ alternate_chart_label }}</div>
   {% else %}
