@@ -24,6 +24,11 @@
   </div>
 </section>
 
+{% if closing_news %}
+  {% set closing_title = "U.S. market close" %}
+  {% include "_closing_news.html" %}
+{% endif %}
+
 {% if note %}
 <section class="card hl move">
   {{ logo(note_stock, "sm") }}
@@ -31,7 +36,7 @@
     <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline">
       <a href="/stock/{{ note_stock.ticker }}" style="font-size: 16px; font-weight: 700; color: var(--text)">{{ note_stock.name }}</a>
       <span class="mono {{ note.return_pct|tone }}">{{ note.return_pct|pct }}</span>
-      <span class="chip">{{ note.scope_label }}</span>
+      <span class="chip">Past session · {{ note.scope_label }}</span>
       <span class="faint" style="font-size: 12.5px">{{ note.date|nice_date }}</span>
     </div>
     <p>{{ note.summary }}</p>

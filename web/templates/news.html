@@ -9,6 +9,14 @@
 
 <div class="cols">
   <div class="col-main">
+    {% if closing_news %}
+      {% set closing_title = "U.S. market close" %}
+      {% include "_closing_news.html" %}
+    {% endif %}
+    {% for stock, closing_news in stock_closing_news %}
+      {% set closing_title = stock.name ~ " closing coverage" %}
+      {% include "_closing_news.html" %}
+    {% endfor %}
     <section class="card" id="weekly-brief">
       <h2 class="h2">Weekly market &amp; tech brief</h2>
       {% if weekly_brief %}
@@ -29,7 +37,7 @@
     </section>
     <section class="card">
       <div class="row-between" style="align-items: center">
-        <div class="eyebrow">Market today</div>
+        <div class="eyebrow">Market headlines</div>
         {% if market %}<span class="mono {{ market.index_return_pct|tone }}">S&amp;P 500 {{ market.index_return_pct|pct }} · {{ market.date|short_date }}</span>{% endif %}
       </div>
       {% if market and market.note %}

@@ -102,7 +102,7 @@ def portfolio(request: Request):
     quotes = {stock.ticker: tv.quote_html(stock.tv_symbol) for stock in stocks if stock.quote_embeddable}
     return page(request, "portfolio.html", stocks=stocks, market=services.get_market_status(me.email),
                 summary=services.get_watchlist_change(stocks), tiingo_configured=bool(config.TIINGO_API_KEY), note=note, note_stock=note_stock,
-                exposure=views.exposure_breakdown(stocks),
+                exposure=views.exposure_breakdown(stocks), closing_news=services.get_closing_news(),
                 market_quote=tv.quote_html("AMEX:SPY"),
                 quotes=quotes,
                 max_stocks=services.watchlist_max(), nav="portfolio")
@@ -169,6 +169,7 @@ def _stock_page(request: Request, ticker: str, search_coverage: bool = False):
     chart_symbol = stock.chart_symbol
     return page(
         request, "stock.html", s=stock, m=model, following=following, move=move, nav="stocks",
+        closing_news=services.get_closing_news(stock.ticker),
         chart_widget=tv.chart_widget_html(chart_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID)
         if not chart and chart_symbol else None,
         quote_widget=tv.quote_html(stock.tv_symbol) if stock.quote_embeddable else None,

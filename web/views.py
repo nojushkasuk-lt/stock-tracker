@@ -261,4 +261,5 @@ def prefs_from_form(form, *, email_ready: bool, alerts_only: bool = False) -> di
 
 def news_model(p) -> dict:
     return {"market": p.market, "moves": p.moves, "live": p.live, "searches_left": p.searches_left,
-            "outlets": p.outlets, "weekly_brief": p.weekly_brief}
+            "outlets": p.outlets, "weekly_brief": p.weekly_brief,
+            "closing_news": p.closing_news, "stock_closing_news": p.stock_closing_news}

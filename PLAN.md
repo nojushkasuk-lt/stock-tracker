@@ -212,3 +212,6 @@
 
 - [x] Show a qualitative notable move from Tiingo on stock pages and search recent coverage for that direction and session on demand.
 - Codex: historical move notes are dated and labeled. Scheduled alerts and automatic cause summaries remain separate.
+
+- [x] Add scheduled close-of-session news for the market and the largest tracked movers, with date-specific backfills.
+- Codex: publish the closing-news workflow and the web views, then verify the first run against Tiingo and Brave. Email and intraday notifications remain separate.

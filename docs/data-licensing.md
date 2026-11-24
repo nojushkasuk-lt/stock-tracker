@@ -21,8 +21,8 @@ multiple stocks, with “Data sourced by Tiingo” linked to Tiingo. The 24x5 fe
 15-minute intervals on demand. Tiingo prices and single-stock returns are private to the backend
 and never written to durable storage. Single-stock watchlists show a fallback. The existing
 daily-return job does not use this feed. Tiingo also allows internal closing-news triggers if
-resulting summaries omit raw Tiingo prices and exact moves. This integration only updates the
-portfolio aggregate.
+resulting summaries omit raw Tiingo prices and exact moves. The closing-news job uses official
+end-of-day closes to select subjects in memory and persists only sourced descriptions and links.
 
 ### What the terms say (read 2026-11-23)
 

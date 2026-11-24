@@ -227,7 +227,7 @@ def test_alerts_page_and_bell(client):
 def test_news_page_shows_without_searching(client):
     client.get("/demo")
     r = client.get("/news")
-    assert r.status_code == 200 and "Market today" in r.text and "Load latest" not in r.text
+    assert r.status_code == 200 and "Market headlines" in r.text and "Load latest" not in r.text
 
 
 def test_link_mode_closes_the_site_except_for_shared_links(client, monkeypatch):
@@ -622,3 +622,46 @@ def test_stock_coverage_uses_latest_notable_move_without_showing_exact_return(cl
     assert len(searches) == 1
     assert "(rose OR rallied OR jumped)" in searches[0][0]
     assert searches[0][1] == "2026-11-20to2026-11-23"
+
+
+def test_scheduled_closing_news_publishes_market_and_movers_without_price_data(client, monkeypatch):
+    from jobs import closing_news
+    from tracker.ai import llm
+
+    day = date(2026, 11, 23)
+    monkeypatch.setattr(config, "TIINGO_API_KEY", "test-token")
+    monkeypatch.setattr(config, "BRAVE_SEARCH_API_KEY", "test-key")
+    monkeypatch.setattr(closing_news, "session_scope", services.session_scope)
+    monkeypatch.setattr(closing_news.tiingo, "closing_changes",
+                        lambda tickers, day: {"AAPL": 7.32, "MSFT": 0.1, "SPY": 1.2})
+    urls = {"market": "https://www.reuters.com/markets/market-close",
+            "AAPL": "https://www.reuters.com/markets/apple-close"}
+    searches = []
+
+    def search(session, brave, query, freshness, job):
+        searches.append(query)
+        assert freshness == "2026-11-22to2026-11-23"
+        return [{"url": urls["AAPL" if "AAPL" in query else "market"],
+                 "title": "Shares rose after new guidance", "published": datetime(2026, 11, 23, 20)}]
+
+    def model(*args, **kwargs):
+        raise llm.BudgetExceeded("test budget exhausted")
+
+    monkeypatch.setattr(closing_news.news, "cached_search", search)
+    monkeypatch.setattr(closing_news.outputs, "generate", model)
+    closing_news.main(day)
+    closing_news.main(day)
+    assert len(searches) == 2
+
+    client.get("/demo")
+    page = client.get("/news").text
+    assert "U.S. market close" in page and "Apple closing coverage" in page
+    assert urls["market"] in page and urls["AAPL"] in page
+    assert "7.32%" not in page and "Shares rose after new guidance" not in page
+    assert "Apple closing coverage" in client.get("/stock/AAPL").text
+    with services.session_scope() as session:
+        from sqlalchemy import select
+
+        notes = session.scalars(select(AiOutput).where(AiOutput.kind == "closing_news")).all()
+        assert len(notes) == 2
+        assert all(set(note.content) == {"claims", "date", "dropped"} for note in notes)

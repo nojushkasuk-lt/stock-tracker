@@ -1,0 +1,22 @@
+<section class="card">
+  <div class="row-between">
+    <h2 class="h2">{{ closing_title }}</h2>
+    <span class="note-small">{{ closing_news.date|nice_date }}</span>
+  </div>
+  {% if closing_news.points %}
+    <ul class="points">
+      {% for point in closing_news.points %}
+      <li><span class="dot"></span><span>{{ point.text }}{% for source in point.sources %}
+        <a class="note-small" href="{{ source.url }}" target="_blank" rel="noopener nofollow">{{ source.label }}</a>{% endfor %}
+      </span></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">Coverage is available below. The sources did not establish a clear explanation.</p>
+  {% endif %}
+  <div class="link-row">
+    {% for source in closing_news.links[:4] %}
+    <a class="chip" href="{{ source.url }}" target="_blank" rel="noopener nofollow">{{ source.label }} ↗</a>
+    {% endfor %}
+  </div>
+</section>

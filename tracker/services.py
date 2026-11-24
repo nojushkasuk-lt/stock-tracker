@@ -4,7 +4,7 @@ Demo mode is read-only (rule 7): everything in this file reads, nothing writes.
 """
 
 from contextvars import ContextVar
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 
 from sqlalchemy import select
@@ -455,6 +455,39 @@ def _note_view(row: AiOutput, return_pct: float, domains: set[str] | None) -> Mo
     return MoveNote(row.content.get("date", ""), scope, SCOPE_LABELS.get(scope, scope), return_pct,
                     row.content.get("market_return_pct"), row.content.get("summary", ""), points, ranked,
                     row.confidence, not primary, f"{row.created_at:%Y-%m-%d %H:%M} UTC")
+
+
+@dataclass(frozen=True)
+class ClosingNews:
+    date: str
+    points: list[NotePoint]
+    links: list[SourceLink]
+
+
+def _closing_news_for(tickers: list[str]) -> dict[str, ClosingNews]:
+    try:
+        with session_scope() as session:
+            rows = session.scalars(select(AiOutput).where(
+                AiOutput.kind == "closing_news", AiOutput.scope_key.in_(tickers),
+            ).order_by(AiOutput.content["date"].as_string().desc(), AiOutput.id.desc()))
+            result: dict[str, ClosingNews] = {}
+            for row in rows:
+                if row.scope_key in result:
+                    continue
+                by_id = {src["id"]: SourceLink(src["outlet"] or "Source", src["url"])
+                         for src in row.sources if src["url"]}
+                points = [NotePoint(claim["text"], [by_id[i] for i in claim["source_ids"] if i in by_id])
+                          for claim in row.content["claims"]]
+                result[row.scope_key] = ClosingNews(row.content["date"], points, list(by_id.values()))
+                if len(result) == len(tickers):
+                    break
+            return result
+    except OperationalError:
+        return {}
+
+
+def get_closing_news(ticker: str = "market") -> ClosingNews | None:
+    return _closing_news_for([ticker]).get(ticker)
 
 
 def _domain_of(url: str | None) -> str | None:
@@ -1012,6 +1045,8 @@ class NewsPage:
     searches_left: int
     outlets: str
     weekly_brief: WeeklyBrief | None = None
+    closing_news: ClosingNews | None = None
+    stock_closing_news: list[tuple[Stock, ClosingNews]] = field(default_factory=list)
 
 
 class _Hidden(Exception):
@@ -1047,8 +1082,13 @@ def get_news_page(email: str | None, live: bool = False, days: int = 30) -> News
     if live:
         coverage = _market_coverage(email, domains or None)
     names = [o.name for o in news.load_outlets() if o.domain in domains]
+    closing_by_ticker = _closing_news_for(["market", *by])
+    closing = closing_by_ticker.get("market")
+    stock_closing = [(stock, note) for stock in stocks if (note := closing_by_ticker.get(stock.ticker))
+                     and (closing is None or note.date >= closing.date)]
     return NewsPage(get_market_status(email), moves, coverage,
-                    coverage_searches_left(email) if email else 0, ", ".join(names) if names else "all outlets", get_weekly_brief())
+                    coverage_searches_left(email) if email else 0, ", ".join(names) if names else "all outlets",
+                    get_weekly_brief(), closing, stock_closing)
 
 
 def _market_coverage(email: str | None, domains: set[str] | None) -> Coverage:

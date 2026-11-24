@@ -133,3 +133,31 @@ def watchlist_change(tickers: list[str]) -> WatchlistChange | None:
         return None
     return WatchlistChange(math.fsum(move.percent / len(latest) for move in latest),
                            min(move.timestamp for move in latest), len(latest))
+
+
+def closing_changes(tickers: list[str], session: date) -> dict[str, float]:
+    """Fetch official split-adjusted closes for an internal, transient news trigger."""
+    changes = {}
+    with httpx.Client(headers={"Authorization": f"Token {config.TIINGO_API_KEY}"}, timeout=8) as client:
+        for ticker in dict.fromkeys(tickers):
+            symbol = ticker.replace(".", "-")
+            response = client.get(
+                f"https://api.tiingo.com/tiingo/daily/{symbol}/prices",
+                params={"startDate": (session - timedelta(days=10)).isoformat(), "endDate": session.isoformat()},
+            )
+            if response.status_code in (400, 404):
+                continue
+            response.raise_for_status()
+            try:
+                closes = sorted((date.fromisoformat(row["date"][:10]), float(row["adjClose"]))
+                                for row in response.json())
+            except (KeyError, TypeError, ValueError):
+                continue
+            if len(closes) < 2 or closes[-1][0] != session or closes[-2][0] >= session:
+                continue
+            previous, latest = closes[-2][1], closes[-1][1]
+            if 0 < previous < math.inf and 0 < latest < math.inf:
+                change = (latest / previous - 1) * 100
+                if math.isfinite(change):
+                    changes[ticker] = change
+    return changes

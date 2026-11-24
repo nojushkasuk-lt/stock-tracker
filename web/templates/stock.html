@@ -42,6 +42,11 @@
 </section>
 {% endif %}
 
+{% if closing_news %}
+  {% set closing_title = s.name ~ " closing coverage" %}
+  {% include "_closing_news.html" %}
+{% endif %}
+
 {% if m.note %}
 {% set n = m.note.n %}
 <section class="card hl">
