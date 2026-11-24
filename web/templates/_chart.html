@@ -49,7 +49,7 @@
   {# Our figures, in our type: the day's change large, the longer ranges beside it. #}
   <div class="perf-head">
     <div>
-      <div class="eyebrow">Last session · {{ perf.as_of|short_date }}</div>
+      <div class="eyebrow">Saved close · {{ perf.as_of|short_date }}</div>
       <div class="perf-num big-num {{ perf.ranges[0].pct|tone }}">{{ perf.ranges[0].pct|pct }}</div>
     </div>
     <div class="range-strip">

@@ -11,7 +11,7 @@
     </div>
   </div>
   <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
-    {% if perf %}<div class="last"><div class="mono faint" style="font-size: 13px">Last session · {{ perf.as_of|short_date }}</div>
+    {% if perf and not quote_widget %}<div class="last"><div class="mono faint" style="font-size: 13px">Saved close · {{ perf.as_of|short_date }}</div>
       <div class="big {{ perf.ranges[0].pct|tone }}">{{ perf.ranges[0].pct|pct }}</div></div>{% endif %}
     {% if me.email %}
     <form method="post" action="/etf/{{ f.ticker }}/follow"><button class="btn {{ 'primary' if f.followed }}" type="submit" aria-pressed="{{ 'true' if f.followed else 'false' }}">{{ "Following" if f.followed else "Follow" }}</button></form>

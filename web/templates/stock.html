@@ -16,9 +16,9 @@
     </div>
   </div>
   <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
-    {% if perf %}
+    {% if perf and not quote_widget %}
     <div class="last">
-      <div class="mono faint" style="font-size: 13px">Last session · {{ perf.as_of|short_date }}</div>
+      <div class="mono faint" style="font-size: 13px">Saved close · {{ perf.as_of|short_date }}</div>
       <div class="big {{ perf.ranges[0].pct|tone }}">{{ perf.ranges[0].pct|pct }}</div>
     </div>
     {% endif %}

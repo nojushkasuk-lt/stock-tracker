@@ -197,3 +197,6 @@
 
 - [x] Show delayed TradingView quotes for supported watchlist symbols and on stock and fund detail pages, alongside dated saved returns.
 - Codex: updated route coverage for watchlists with saved returns. Cloud Run publication requires network access to Google Cloud.
+
+- [x] Put delayed prices and day changes directly on each supported portfolio stock card for demo visitors and signed-in users.
+- Codex: saved returns remain dated in the performance view. Publish the card changes to Cloud Run.

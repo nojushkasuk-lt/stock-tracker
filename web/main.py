@@ -101,12 +101,12 @@ def portfolio(request: Request):
     cards = [views.stock_card(s, moves.get(s.ticker)) for s in stocks]
     pairs = [(s, n) for s in stocks if (n := services.get_move_note(s.ticker, me.email))]
     note_stock, note = views.latest_note(pairs)
-    quote_symbols = [stock.tv_symbol for stock in stocks if stock.quote_embeddable]
+    quotes = {stock.ticker: tv.quote_html(stock.tv_symbol) for stock in stocks if stock.quote_embeddable}
     return page(request, "portfolio.html", cards=cards, market=services.get_market_status(me.email),
                 summary=views.day_summary(cards), note=note, note_stock=note_stock,
                 exposure=views.exposure_breakdown(stocks),
                 market_quote=tv.quote_html("AMEX:SPY"),
-                ticker_tape=tv.ticker_tape_html(quote_symbols) if quote_symbols else None,
+                quotes=quotes,
                 max_stocks=services.watchlist_max(), nav="portfolio")
 
 

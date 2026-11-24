@@ -13,7 +13,7 @@
       </div>
       <div class="note-small" style="margin-top: 6px">{{ summary.up }} up, {{ summary.down }} down at that close. Equal weight.</div>
     {% else %}
-      <p class="muted" style="margin: 8px 0 0">See the delayed quotes below for prices and daily changes.</p>
+      <p class="muted" style="margin: 8px 0 0">Prices and daily changes below are delayed.</p>
     {% endif %}
   </div>
   <div class="card">
@@ -30,11 +30,6 @@
     {% endif %}
   </div>
 </section>
-
-{% if ticker_tape %}<section class="card" aria-label="Delayed stock quotes">
-  <div class="eyebrow">Delayed stock quotes</div>
-  {{ ticker_tape|safe }}
-</section>{% endif %}
 
 {% if note %}
 <section class="card hl move">
@@ -65,14 +60,14 @@
 {% else %}
 <div class="grid">
   {% for c in cards %}
-  <a class="stock-card" href="/stock/{{ c.s.ticker }}">
-    <span class="top">{{ logo(c.s, "sm") }}<span style="flex: 1; min-width: 0"><span class="nm">{{ c.s.name }}</span><span class="sub">{{ c.s.ticker }} · {{ c.s.industry }}</span></span></span>
-    {% if c.day is none %}<span class="nums">View daily change</span>{% else %}
-    <span class="nums">
-      <span>Saved close<span class="mono {{ c.day|tone }}">{{ c.day|pct }}</span></span>
-      <span style="text-align: right">{{ c.date|short_date }}</span>
-    </span>{% endif %}
-  </a>
+  <article class="stock-card">
+    <a class="top" href="/stock/{{ c.s.ticker }}">{{ logo(c.s, "sm") }}<span style="flex: 1; min-width: 0"><span class="nm">{{ c.s.name }}</span><span class="sub">{{ c.s.ticker }} · {{ c.s.industry }}</span></span></a>
+    {% if c.s.ticker in quotes %}
+      {{ quotes[c.s.ticker]|safe }}
+    {% else %}
+      <a class="note-small" href="/stock/{{ c.s.ticker }}">View price on the stock page</a>
+    {% endif %}
+  </article>
   {% endfor %}
   {% if not me.demo and cards|length < max_stocks %}<a class="add-card" href="/settings">+ Add a stock</a>{% endif %}
 </div>

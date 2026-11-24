@@ -83,16 +83,6 @@ def quote_html(symbol: str, theme: str = "dark") -> str:
     return _widget("single-quote", config, f"{symbol.split(':')[-1]} quote", symbol, QUOTE_HEIGHT)
 
 
-def ticker_tape_html(symbols: list[str]) -> str:
-    """TradingView prices and daily changes for the watchlist."""
-    config = {
-        "symbols": [{"proName": symbol} for symbol in symbols],
-        "colorTheme": "dark", "isTransparent": True, "displayMode": "regular", "locale": "en",
-    }
-    return _widget("ticker-tape", config, "Market quotes", None, 68,
-                   link="https://www.tradingview.com/markets/stocks-usa/")
-
-
 HEATMAP_HEIGHT = 520
 CALENDAR_HEIGHT = 520
 

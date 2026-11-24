@@ -319,7 +319,8 @@ def test_tradingview_quote_is_shown_even_with_saved_returns(client, monkeypatch)
     sign_in(client, "owner@example.com")
     services.save_watchlist("owner@example.com", ["AAPL"])
     portfolio = client.get("/portfolio").text
-    assert "embed-widget-ticker-tape" in portfolio and "Saved close" in portfolio
+    assert '"symbol": "AAPL"' in portfolio and "embed-widget-single-quote" in portfolio
+    assert "Saved close" not in portfolio
     page = client.get("/stock/AAPL").text
     assert 'class="perf-head"' in page and "embed-widget-single-quote" in page and "advanced-chart" in page
     client.get("/logout")
@@ -359,7 +360,7 @@ def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
     bmw = client.get("/stock/XETR:BMW")
     assert bmw.status_code == 200
     assert "embed-widget-single-quote" in bmw.text and '"symbol": "XETR:BMW"' in bmw.text
-    assert "embed-widget-ticker-tape" in client.get("/portfolio").text
+    assert "embed-widget-single-quote" in client.get("/portfolio").text
 
     client.get("/logout")
     sign_in(client)
