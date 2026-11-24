@@ -206,3 +206,6 @@
 
 - [x] Distinguish a missing Tiingo configuration from missing quotes and show how much of the watchlist is represented when a comparable subset is available.
 - Codex: the local environment has no Starter token. Validate the demo after configuring it.
+
+- [x] Handle Tiingo snapshot redirects on the same HTTPS API origin and log feed errors without credentials.
+- Codex: reproduced the reported HTTP 301 in a test. The live redirect destination and subsequent response still need verification.

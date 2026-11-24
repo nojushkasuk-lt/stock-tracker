@@ -563,3 +563,32 @@ def test_tiingo_aggregate_refresh_and_single_stock_fallback(client, monkeypatch)
     clock[0] += tiingo.REFRESH_SECONDS
     snapshots.pop()
     assert "currently unavailable" in client.get("/portfolio/change").text
+
+
+@pytest.mark.parametrize("location, follows", [
+    ("/tiingo/equity/intraday/", True),
+    ("https://example.com/collect", False),
+    ("http://api.tiingo.com/tiingo/equity/intraday/", False),
+])
+def test_tiingo_snapshot_redirect_keeps_token_on_api_origin(monkeypatch, location, follows):
+    import httpx
+
+    from tracker.data.providers import tiingo
+
+    calls = []
+
+    def get(url, *, headers, timeout):
+        assert headers["Authorization"] == "Token test-token"
+        calls.append(url)
+        request = httpx.Request("GET", url)
+        if len(calls) == 1:
+            return httpx.Response(301, headers={"Location": location}, request=request)
+        return httpx.Response(200, json=[
+            {"ticker": "AAPL", "tngoLast": 104, "prevClose": 100,
+             "timestamp": "2026-11-23T20:00:00Z", "prevDate": "2026-11-20"},
+        ], request=request)
+
+    monkeypatch.setattr(tiingo.httpx, "get", get)
+    moves = tiingo._fetch("test-token")
+    assert calls == [tiingo.SNAPSHOT_URL] + ([tiingo.SNAPSHOT_URL + "/"] if follows else [])
+    assert ("AAPL" in moves) is follows

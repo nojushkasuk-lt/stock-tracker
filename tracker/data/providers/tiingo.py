@@ -1,5 +1,6 @@
 """Transient Tiingo Starter snapshots for the licensed watchlist aggregate."""
 
+import logging
 import math
 import threading
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ from tracker import config
 SNAPSHOT_URL = "https://api.tiingo.com/tiingo/equity/intraday"
 REFRESH_SECONDS = 15 * 60
 NEW_YORK = ZoneInfo("America/New_York")
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -52,10 +54,24 @@ def _parse_move(row: dict) -> _Move | None:
 
 def _fetch(token: str) -> dict[str, _Move]:
     try:
-        response = httpx.get(SNAPSHOT_URL, headers={"Authorization": f"Token {token}"}, timeout=8)
+        url = httpx.URL(SNAPSHOT_URL)
+        headers = {"Authorization": f"Token {token}"}
+        for _ in range(3):
+            response = httpx.get(str(url), headers=headers, timeout=8)
+            if not response.has_redirect_location:
+                break
+            target = url.join(response.headers["Location"])
+            if target.scheme != "https" or target.host != url.host or target.port != url.port:
+                logger.warning("Tiingo snapshot redirected outside its API origin")
+                return {}
+            url = target
         response.raise_for_status()
         rows = response.json()
-    except (httpx.HTTPError, ValueError):
+    except httpx.HTTPStatusError as exc:
+        logger.warning("Tiingo snapshot returned HTTP %s", exc.response.status_code)
+        return {}
+    except (httpx.HTTPError, httpx.InvalidURL, ValueError) as exc:
+        logger.warning("Tiingo snapshot failed (%s)", type(exc).__name__)
         return {}
     if not isinstance(rows, list):
         return {}
