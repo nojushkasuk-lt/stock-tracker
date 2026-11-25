@@ -373,7 +373,10 @@ def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
     bmw = client.get("/stock/XETR:BMW")
     assert bmw.status_code == 200
     assert "embed-widget-single-quote" in bmw.text and '"symbol": "XETR:BMW"' in bmw.text
-    assert "embed-widget-single-quote" in client.get("/portfolio").text
+    portfolio = client.get("/portfolio").text
+    assert "embed-widget-single-quote" in portfolio
+    assert "embed-widget-ticker-tape.js" in portfolio and '{"proName": "AAPL"}' in portfolio
+    assert "tradingview.com/markets/stocks-usa" in portfolio  # TradingView link kept (rule 12)
 
     client.get("/logout")
     sign_in(client)
@@ -722,3 +725,4 @@ def test_logos_are_curated_symbols_or_a_monogram(client):
     apple, small = services.get_stock("AAPL"), services.get_stock("ZZZ")
     assert apple.logo.startswith("https://commons.wikimedia.org/wiki/Special:FilePath/") and apple.logo_source
     assert small.logo is None  # no curated symbol: the page shows the initial
+

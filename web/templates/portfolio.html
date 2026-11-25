@@ -24,6 +24,10 @@
   </div>
 </section>
 
+{% if ticker_tape %}<section class="card tape" aria-label="Delayed stock quotes">
+  {{ ticker_tape|safe }}
+</section>{% endif %}
+
 {% if closing_news %}
   {% set closing_title = "U.S. market close" %}
   {% include "_closing_news.html" %}

@@ -344,3 +344,6 @@ input[type="date"], select, .input { background: var(--card); border: 1px solid 
 .card-figs > span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .card-figs .day { font-size: 24px; font-weight: 500; }
 .card-figs .spark { width: 120px; height: 36px; flex: none; }
+
+/* Scrolling TradingView ticker tape above the portfolio cards */
+.card.tape { padding: 6px 10px 2px; }

@@ -107,6 +107,7 @@ def portfolio(request: Request):
                 exposure=views.exposure_breakdown(stocks), closing_news=services.get_closing_news(),
                 market_quote=tv.quote_html("AMEX:SPY"),
                 quotes=quotes, figures=figures,
+                ticker_tape=tv.ticker_tape_html(tape) if (tape := [st.tv_symbol for st in stocks if st.quote_embeddable]) else None,
                 max_stocks=services.watchlist_max(), nav="portfolio")
 
 
