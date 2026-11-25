@@ -23,7 +23,7 @@ SELECT ?key ?item
   (SAMPLE(?article) AS ?wiki)
   (GROUP_CONCAT(DISTINCT STR(?logo); separator="{sep}") AS ?logos)
   (GROUP_CONCAT(DISTINCT CONCAT(COALESCE(?ceoEn, ?ceoAny, ""), "|", COALESCE(STR(?ceoStart), "")); separator="{sep}") AS ?ceos)
-  (SAMPLE(COALESCE(?hqEn, "")) AS ?hq) (SAMPLE(?countryEn) AS ?country)
+  (SAMPLE(COALESCE(?hqEn, "")) AS ?hq) (COALESCE(SAMPLE(?hqCountryEn), SAMPLE(?countryEn)) AS ?country)
   (MIN(?inception) AS ?founded) (MAX(?employees) AS ?staff) (SAMPLE(?site) AS ?website)
 WHERE {{
   {match}
@@ -34,6 +34,8 @@ WHERE {{
              OPTIONAL {{ ?ceo rdfs:label ?ceoEn FILTER(LANG(?ceoEn) = "en") }}
              OPTIONAL {{ ?ceo rdfs:label ?ceoAny FILTER(LANG(?ceoAny) IN ("mul", "de", "fr", "es")) }} }}
   OPTIONAL {{ ?item wdt:P159 ?hqi . ?hqi rdfs:label ?hqEn FILTER(LANG(?hqEn) = "en") }}
+  # P17 often lists every country a large company operates in; the headquarters' country is the home country.
+  OPTIONAL {{ ?item wdt:P159/wdt:P17 ?hqc . ?hqc rdfs:label ?hqCountryEn FILTER(LANG(?hqCountryEn) = "en") }}
   OPTIONAL {{ ?item wdt:P17 ?c . ?c rdfs:label ?countryEn FILTER(LANG(?countryEn) = "en") }}
   OPTIONAL {{ ?item wdt:P571 ?inception }}
   OPTIONAL {{ ?item wdt:P1128 ?employees }}

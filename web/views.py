@@ -119,7 +119,7 @@ def key_facts(stock, facts) -> list[tuple[str, str, str | None]]:
         if facts.ceo:
             rows.append(("CEO", facts.ceo + (f" · {_since(facts.ceo_since)}" if facts.ceo_since else ""), None))
         if facts.headquarters:
-            rows.append(("Headquarters", facts.headquarters + (f", {facts.country}" if facts.country and facts.country != "United States" else ""), None))
+            rows.append(("Headquarters", facts.headquarters + (f", {stock.country}" if stock.country != "United States" else ""), None))
         if facts.founded:
             rows.append(("Founded", str(facts.founded), None))
         if facts.employees:

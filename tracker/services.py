@@ -120,7 +120,8 @@ def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None, co
         u.ticker, u.name, u.industry, u.market_cap_rank,
         u.ticker if u.ticker in listings() else tv_symbol(u.ticker, exchange),
         logo_thumb(logo_url, 128) if logo_url else curated_logo,
-        u.country or country or "United States", segment,
+        # US seats are SEC domestic filers; Wikidata lists several countries for big companies.
+        u.country or (country if segment != "US" else None) or "United States", segment,
         demo_visible=u.active and (u.is_demo or segment in config.INTL_REGIONS),
         logo_source=logo_source,
     )

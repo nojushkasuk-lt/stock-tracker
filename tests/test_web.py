@@ -677,3 +677,16 @@ def test_saved_daily_change_only_replaces_the_chart_day_of_the_same_session():
     same = views.stock_model(**common, chart=services.PriceChart(110.0, [_range("1D", -5.9)], "2026-11-20"))
     assert stale["chart"].ranges[0].pct == -5.9
     assert same["chart"].ranges[0].pct == -14.0
+
+
+def test_us_seat_stays_in_the_us_whatever_wikidata_lists(client, monkeypatch):
+    from tracker.models import CompanyFacts
+
+    with services.session_scope() as s:
+        s.add(CompanyFacts(ticker="MSFT", qid="Q2283", headquarters="Redmond", country="United Kingdom",
+                           fetched_at=datetime(2026, 11, 1)))
+    msft = services.get_stock("MSFT")
+    assert msft.country == "United States" and msft.region == "North America"
+    page = client.get("/demo", follow_redirects=False)
+    page = client.get("/stock/MSFT")
+    assert "United Kingdom" not in page.text and "Redmond" in page.text
