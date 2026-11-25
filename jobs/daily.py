@@ -5,7 +5,7 @@ python -m jobs.daily --recheck   only recheck moves that had no catalyst (rule 1
 """
 
 import argparse
-from datetime import date, timedelta
+from datetime import date
 
 from sqlalchemy import func, select
 
@@ -18,7 +18,7 @@ from tracker.data.filing_text import FilingFetcher
 from tracker.data.filings import check_filings, needs_new_figures
 from tracker.data.fundamentals import refresh_fundamentals
 from tracker.data.markets import tickers as market_tickers
-from tracker.data.prices import MARKET_TICKER, get_provider, store_returns
+from tracker.data.prices import MARKET_TICKER, fetch_plan, get_provider, store_returns
 from tracker.data.universe import covered_tickers, load_universe
 from tracker.db import create_tables, session_scope
 from tracker.models import DailyReturn, Move, Universe
@@ -65,7 +65,7 @@ def email_alerts(s) -> None:
         print(f"email: FAILED {type(e).__name__}")
 
 
-def main(years: int = 5, recheck_only: bool = False) -> None:
+def main(recheck_only: bool = False) -> None:
     create_tables()
     with session_scope() as s:
         edgar = EdgarClient()
@@ -77,8 +77,11 @@ def main(years: int = 5, recheck_only: bool = False) -> None:
         n = load_universe(s)
         print(f"universe: {n} new rows")
         tickers = sorted(set(s.scalars(select(Universe.ticker).where(Universe.cik != ""))) | {MARKET_TICKER} | set(market_tickers()))
-        start = date.today() - timedelta(days=365 * years + 5)
-        returns = get_provider().daily_returns(tickers, start)
+        last = dict(s.execute(select(DailyReturn.ticker, func.max(DailyReturn.date)).group_by(DailyReturn.ticker)).all())
+        provider, returns = get_provider(), {}
+        for group, start in fetch_plan(last, tickers, date.today()):
+            print(f"daily_returns: fetching {len(group)} tickers from {start}")
+            returns.update(provider.daily_returns(group, start))
         missing = sorted(set(tickers) - set(returns))
         stored = store_returns(s, returns)
         new = check_filings(s, edgar)

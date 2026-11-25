@@ -33,6 +33,10 @@ def get_provider(name: str | None = None) -> PriceProvider:
         from tracker.data.providers.yfinance_dev import YFinanceDev
 
         return YFinanceDev()
+    if name == "marketstack":
+        from tracker.data.providers.marketstack import Marketstack
+
+        return Marketstack()
     raise ValueError(f"Unknown PRICE_PROVIDER {name!r}")
 
 
@@ -52,3 +56,22 @@ def store_returns(session: Session, returns: Returns) -> int:
     )
     session.execute(stmt, rows)
     return len(rows)
+
+
+BACKFILL_YEARS = 5
+INCREMENTAL_DAYS = 31  # tickers stored within this many days only fetch what they miss
+
+
+def fetch_plan(last: dict[str, date], tickers: list[str], today: date) -> list[tuple[list[str], date]]:
+    """Which tickers to fetch from which date: recent ones together from their oldest last date, the rest
+    (new or long stale) from BACKFILL_YEARS back. Paid providers bill per symbol and day, so never refetch history."""
+    from datetime import timedelta
+
+    recent = [t for t in tickers if t in last and (today - last[t]).days <= INCREMENTAL_DAYS]
+    full = [t for t in tickers if t not in recent]
+    plan = []
+    if recent:
+        plan.append((recent, min(last[t] for t in recent)))
+    if full:
+        plan.append((full, today - timedelta(days=365 * BACKFILL_YEARS + 5)))
+    return plan

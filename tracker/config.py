@@ -35,6 +35,7 @@ MONTHLY_SEARCH_CAP = _int("MONTHLY_SEARCH_CAP", 900)
 
 PRICE_PROVIDER = os.environ.get("PRICE_PROVIDER") or "yfinance_dev"
 TIINGO_API_KEY = os.environ.get("TIINGO_API_KEY", "")
+MARKETSTACK_API_KEY = os.environ.get("MARKETSTACK_API_KEY", "")
 
 # Universe refresh
 UNIVERSE_SIZE = _int("UNIVERSE_SIZE", 100)

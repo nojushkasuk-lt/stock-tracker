@@ -13,6 +13,28 @@ daily percent changes (stocks and SPY), stored in `daily_returns`.
 | yfinance | Personal use only. Local development only; blocked when `APP_ENV=prod`. | n/a (dev only) |
 | Alpha Vantage | Free key is personal use. Written permission requested for a small, private (link-only), non-commercial portfolio site. | Asked 2026-11-23 (see below) |
 | Tiingo | Free plan is internal use only. Redistribution licence requested. | Asked 2026-11-23 (see below) |
+| Marketstack | Basic ($9.99/month): "Commercial Use", EOD data, 10,000 requests a month. Daily job provider (`PRICE_PROVIDER=marketstack`). | See below; written confirmation of public display requested |
+
+### Marketstack Basic (researched 2026-11-25)
+
+Chosen by the owner as the only option at about $10/month that may cover public display. What the pages say:
+
+- Pricing page: Free is "Non-Commercial Use"; Basic ($9.99/month, $8.99 billed yearly) and up are "Commercial Use".
+  No page states a display or redistribution restriction, and none states attribution.
+- Governing terms: the apilayer Master SaaS Subscription Agreement (marketstack.com/terms redirects there). It grants a
+  "limited, non-exclusive and non-transferable right and license ... to access and use the Licensed Material" under the
+  restrictions of the plan bought. It has no clause on displaying data to third parties.
+- FAQ: US exchange data "is licensed and sourced from Tiingo, Inc." Each symbol in a request counts as one request.
+- Not confirmed in writing yet. Ask Marketstack support to confirm that the Basic plan may show daily % changes
+  (no prices) to visitors of a free, non-commercial site with a "Data by Marketstack" credit. Record the reply here.
+
+Comparison (2026-11-25): Alpha Vantage, Twelve Data (free = "internal non-display usage"; display from $499/month),
+FMP (display needs a separate agreement), EODHD, Massive/Polygon (display on Business plans), MarketData.app
+(display only on Commercial, from $333/month) and Tiingo (redistribution from about $250/month) were all ruled out.
+IEX historical files are no longer downloadable.
+
+How we use it: the daily job fetches end-of-day adjusted closes and stores only daily % changes (`daily_returns`).
+Requests are sized to one page each and only missing days are fetched (about 183 a weekday, 366 for a full backfill).
 
 ### Tiingo Starter watchlist aggregate
 
