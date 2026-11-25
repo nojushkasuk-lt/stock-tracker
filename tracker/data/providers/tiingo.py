@@ -96,6 +96,11 @@ _cached_moves: dict[str, _Move] = {}
 _refresh_at = 0.0
 
 
+def _symbol(ticker: str) -> str:
+    """Tiingo writes share classes with a dash (BRK-B), like our universe; never with a dot."""
+    return ticker.upper().replace(".", "-")
+
+
 def _snapshot_moves(symbols: set[str]) -> list[_Move]:
     token = config.TIINGO_API_KEY
     if not symbols or not token:
@@ -110,7 +115,7 @@ def _snapshot_moves(symbols: set[str]) -> list[_Move]:
 
 def notable_move(ticker: str) -> NotableMove | None:
     """Expose only the direction and session of a move that meets the coverage threshold."""
-    moves = _snapshot_moves({ticker.upper().replace("-", ".")})
+    moves = _snapshot_moves({_symbol(ticker)})
     if moves and abs(moves[0].percent) >= config.MOVE_THRESHOLD_PCT:
         move = moves[0]
         return NotableMove("rose" if move.percent > 0 else "fell", move.session, move.previous_session)
@@ -119,7 +124,7 @@ def notable_move(ticker: str) -> NotableMove | None:
 
 def watchlist_change(tickers: list[str]) -> WatchlistChange | None:
     """Return only the aggregate, and only for two or more comparable quotes."""
-    symbols = {ticker.upper().replace("-", ".") for ticker in tickers}
+    symbols = {_symbol(ticker) for ticker in tickers}
     if len(symbols) < 2:
         return None
     moves = _snapshot_moves(symbols)
@@ -140,7 +145,7 @@ def closing_changes(tickers: list[str], session: date) -> dict[str, float]:
     changes = {}
     with httpx.Client(headers={"Authorization": f"Token {config.TIINGO_API_KEY}"}, timeout=8) as client:
         for ticker in dict.fromkeys(tickers):
-            symbol = ticker.replace(".", "-")
+            symbol = _symbol(ticker)
             response = client.get(
                 f"https://api.tiingo.com/tiingo/daily/{symbol}/prices",
                 params={"startDate": (session - timedelta(days=10)).isoformat(), "endDate": session.isoformat()},
