@@ -150,8 +150,10 @@ def valuation(metrics, price: float | None) -> dict | None:
 
 def stock_model(*, stock, perf, profile, financials, note, filings, coverage, facts=None, chart=None) -> dict:
     refs = Refs(labels={f.url: f"{f.label} ({f.form}) · SEC EDGAR" for f in filings})
-    if chart and perf and perf.ranges and chart.ranges and chart.ranges[0].label == "1D":
+    if (chart and perf and perf.ranges and chart.ranges and chart.ranges[0].label == "1D"
+            and chart.session == perf.as_of):
         # Same 1D number everywhere on the page: the stored daily change, not the intraday estimate.
+        # Only for the same session: a stale saved close must not label a newer chart.
         chart = replace(chart, ranges=[replace(chart.ranges[0], pct=perf.ranges[0].pct), *chart.ranges[1:]])
     m: dict = {"refs": refs, "filings": filings, "coverage": coverage, "perf": perf, "chart": chart}
 

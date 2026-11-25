@@ -665,3 +665,15 @@ def test_scheduled_closing_news_publishes_market_and_movers_without_price_data(c
         notes = session.scalars(select(AiOutput).where(AiOutput.kind == "closing_news")).all()
         assert len(notes) == 2
         assert all(set(note.content) == {"claims", "date", "dropped"} for note in notes)
+
+
+def test_saved_daily_change_only_replaces_the_chart_day_of_the_same_session():
+    from web import views
+
+    perf = services.Performance("2026-11-20", [services.RangeView("1D", -14.0, "Nov 20, last session", "")], None)
+    stock = services.Stock("NVDA", "NVIDIA", "Semiconductors", 4, "NASDAQ:NVDA")
+    common = dict(stock=stock, perf=perf, profile=None, financials=None, note=None, filings=[], coverage=None)
+    stale = views.stock_model(**common, chart=services.PriceChart(110.0, [_range("1D", -5.9)], "2026-11-24"))
+    same = views.stock_model(**common, chart=services.PriceChart(110.0, [_range("1D", -5.9)], "2026-11-20"))
+    assert stale["chart"].ranges[0].pct == -5.9
+    assert same["chart"].ranges[0].pct == -14.0

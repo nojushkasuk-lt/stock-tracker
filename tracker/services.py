@@ -689,6 +689,7 @@ class ChartRange:
 class PriceChart:
     last_close: float
     ranges: list[ChartRange]
+    session: str | None = None  # YYYY-MM-DD of the 1D range's session
 
 
 _CHART_RANGES = [("1M", 21, "past month"), ("6M", 126, "past 6 months"), ("1Y", 252, "past year"), ("5Y", 1260, "past 5 years")]
@@ -724,8 +725,10 @@ def get_price_chart(ticker: str) -> PriceChart | None:
         last_day = datetime.fromtimestamp(d[-1][0], UTC).date()
         caption = f"{last_day:%b} {last_day.day}"
         out.append(_chart_range("1D", caption, d, clock, (d[-1][1] / prev - 1) * 100))
+        session = last_day
     else:
         out.append(_chart_range("1D", f"{closes[-1][0]:%b} {closes[-1][0].day}", closes[-2:], day))
+        session = closes[-1][0]
     if len(intra.get("1W", [])) >= 2:
         out.append(_chart_range("1W", "past week", intra["1W"], clock))
     else:
@@ -735,7 +738,7 @@ def get_price_chart(ticker: str) -> PriceChart | None:
             out.append(_chart_range(label, caption, closes[-(n + 1):], day))
     first = closes[0][0]
     out.append(_chart_range("MAX", f"since {first:%b} {first.year}", closes, day))
-    return PriceChart(closes[-1][1], out)
+    return PriceChart(closes[-1][1], out, session.isoformat())
 
 
 # ---- markets: index funds and ETFs -----------------------------------------------------------------
