@@ -13,7 +13,7 @@ daily percent changes (stocks and SPY), stored in `daily_returns`.
 | yfinance | Personal use only. Local development only; blocked when `APP_ENV=prod`. | n/a (dev only) |
 | Alpha Vantage | Free key is personal use. Written permission requested for a small, private (link-only), non-commercial portfolio site. | Asked 2026-11-23 (see below) |
 | Tiingo | Free plan is internal use only. Redistribution licence requested. | Asked 2026-11-23 (see below) |
-| Marketstack | Basic ($9.99/month): "Commercial Use", EOD data, 10,000 requests a month. Daily job provider (`PRICE_PROVIDER=marketstack`). | See below; written confirmation of public display requested |
+| Marketstack | Basic ($9.99/month): "Commercial Use", but apilayer's standard terms prohibit displaying the data. Provider code kept, not used. | **Dropped by the owner 2026-11-25** (no display rights without writing to them) |
 
 ### Marketstack Basic (researched 2026-11-25)
 
@@ -27,6 +27,14 @@ Chosen by the owner as the only option at about $10/month that may cover public 
 - FAQ: US exchange data "is licensed and sourced from Tiingo, Inc." Each symbol in a request counts as one request.
 - Not confirmed in writing yet. Ask Marketstack support to confirm that the Basic plan may show daily % changes
   (no prices) to visitors of a free, non-commercial site with a "Data by Marketstack" credit. Record the reply here.
+
+Dropped 2026-11-25: the apilayer terms used by its sibling APIs (mediastack, positionstack, ipapi, vatlayer, ...) list
+"distribute, market, display" of the data among prohibited uses, and the owner will not ask for an exception.
+
+Also checked 2026-11-25: Databento says its US Equities Mini feed has "free redistribution rights" "with any active
+subscription plan" (cheapest live plan Standard, $199/month; "External distribution" is listed only on Plus, $1,500/month).
+Alpaca's public pages state no display rights for the Trading API (personal use framing).
+Until a licensed provider is chosen, saved figures older than 5 days give way to TradingView quotes (`services.figures_fresh`).
 
 Comparison (2026-11-25): Alpha Vantage, Twelve Data (free = "internal non-display usage"; display from $499/month),
 FMP (display needs a separate agreement), EODHD, Massive/Polygon (display on Business plans), MarketData.app

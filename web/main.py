@@ -175,7 +175,8 @@ def _stock_page(request: Request, ticker: str, search_coverage: bool = False):
         closing_news=services.get_closing_news(stock.ticker),
         chart_widget=tv.chart_widget_html(chart_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID)
         if not chart and chart_symbol else None,
-        quote_widget=tv.quote_html(stock.tv_symbol) if stock.quote_embeddable and not perf else None,  # our own figures first
+        quote_widget=tv.quote_html(stock.tv_symbol)
+        if stock.quote_embeddable and not (perf and services.figures_fresh(perf.as_of)) else None,  # fresh own figures first
         quote_url=tv.symbol_url(stock.tv_symbol) if stock.global_listing else None,
         chart_url=tv.chart_url(stock.tv_symbol), alternate_chart_label=stock.alternate_chart_label,
         chart_symbol=chart_symbol,

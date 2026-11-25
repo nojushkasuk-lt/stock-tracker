@@ -5,7 +5,7 @@ Demo mode is read-only (rule 7): everything in this file reads, nothing writes.
 
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
@@ -786,6 +786,17 @@ class CardFigures:
     spark: str | None       # 3-month growth line (SVG points, 120 x 36)
 
 
+STALE_AFTER_DAYS = 5  # a long weekend plus a holiday; older saved figures give way to TradingView's live quote
+
+
+def figures_fresh(as_of, today: date | None = None) -> bool:
+    """True when saved daily figures are recent enough to show instead of a live TradingView quote."""
+    if as_of is None:
+        return False
+    as_of = date.fromisoformat(as_of) if isinstance(as_of, str) else as_of
+    return (today or date.today()) - as_of <= timedelta(days=STALE_AFTER_DAYS)
+
+
 def get_card_figures(stocks: list[Stock]) -> dict[str, CardFigures]:
     """Our own last-close figures for portfolio cards (empty when the viewer may not see provider figures)."""
     from tracker.analysis import performance as pf
@@ -798,7 +809,7 @@ def get_card_figures(stocks: list[Stock]) -> dict[str, CardFigures]:
         with session_scope() as s:
             for stock in stocks:
                 rows = _returns(s, stock.ticker, 70)
-                if not rows:
+                if not rows or not figures_fresh(rows[-1][0]):
                     continue
                 rets = [r for _, r in rows]
                 month = (pf.compound(rets[-21:]) if len(rets) >= 21 else None)

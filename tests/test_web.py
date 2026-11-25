@@ -318,6 +318,7 @@ def test_own_figures_replace_tradingview_quotes_for_viewers_who_may_see_them(cli
     monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "owner")
     monkeypatch.setattr(config, "OWNER_EMAIL", "owner@example.com")
     monkeypatch.setattr(services, "get_price_chart", lambda t: None)  # prod: TradingView chart
+    monkeypatch.setattr(services, "STALE_AFTER_DAYS", 10_000)  # test data ends in 2026-10
     sign_in(client, "owner@example.com")
     services.save_watchlist("owner@example.com", ["AAPL", "MSFT"])
     portfolio = client.get("/portfolio").text
@@ -333,7 +334,19 @@ def test_own_figures_replace_tradingview_quotes_for_viewers_who_may_see_them(cli
     assert 'class="perf-head"' not in page and "embed-widget-single-quote" in page and "advanced-chart" in page
 
 
+def test_stale_own_figures_give_way_to_live_tradingview_quotes(client, monkeypatch):
+    monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "all")
+    monkeypatch.setattr(services, "get_price_chart", lambda t: None)
+    client.get("/demo")
+    portfolio = client.get("/portfolio").text  # saved figures end months ago (no price provider running)
+    assert 'class="card-figs"' not in portfolio and "embed-widget-single-quote" in portfolio
+    assert "embed-widget-single-quote" in client.get("/stock/AAPL").text
+    assert services.figures_fresh("2026-11-20", date(2026, 11, 25))
+    assert not services.figures_fresh("2026-11-20", date(2026, 11, 26)) and not services.figures_fresh(None)
+
+
 def test_own_figures_are_shown_to_everyone_once_display_is_allowed(client, monkeypatch):
+    monkeypatch.setattr(services, "STALE_AFTER_DAYS", 10_000)
     monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "all")
     monkeypatch.setattr(config, "CHART_PROVIDER", "none")
     client.get("/demo")
