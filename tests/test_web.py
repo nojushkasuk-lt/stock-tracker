@@ -334,6 +334,44 @@ def test_own_figures_replace_tradingview_quotes_for_viewers_who_may_see_them(cli
     assert 'class="perf-head"' not in page and "embed-widget-single-quote" in page and "advanced-chart" in page
 
 
+def test_display_none_shows_tradingview_to_everyone_including_the_owner(client, monkeypatch):
+    monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "none")
+    monkeypatch.setattr(config, "OWNER_EMAIL", "owner@example.com")
+    monkeypatch.setattr(services, "get_price_chart", lambda t: None)
+    monkeypatch.setattr(services, "STALE_AFTER_DAYS", 10_000)  # even fresh saved figures stay hidden
+    sign_in(client, "owner@example.com")
+    services.save_watchlist("owner@example.com", ["AAPL", "MSFT"])
+    portfolio = client.get("/portfolio").text
+    assert 'class="card-figs"' not in portfolio and '"symbol": "AAPL"' in portfolio and '"symbol": "MSFT"' in portfolio
+    page = client.get("/stock/AAPL").text
+    assert "Saved close" not in page and "embed-widget-single-quote" in page and "Write a session note" not in page
+    assert not services.price_data_visible("owner@example.com")
+
+
+def test_logo_sources_link_the_file_page_not_our_copy(client):
+    from types import SimpleNamespace
+
+    from web import views
+
+    client.get("/demo")
+    page = client.get("/stock/AAPL").text
+    assert 'Logo source and license' in page and 'href="https://commons.wikimedia.org/wiki/File:' in page
+    class Facts(SimpleNamespace):  # only the Wikidata link; every other fact missing
+        def __getattr__(self, name):
+            return None
+
+    facts = Facts(wikidata_url="https://www.wikidata.org/wiki/Q312")
+    from dataclasses import replace
+
+    apple = services.get_stock("AAPL")
+    from_wikipedia = replace(apple, logo_source="https://en.wikipedia.org/wiki/File:Example_logo.svg")
+    for stock, where in ((apple, "Wikimedia Commons"), (from_wikipedia, "Wikipedia")):
+        m = views.stock_model(stock=stock, perf=None, profile=None, financials=None, note=None, filings=[],
+                              coverage=None, facts=facts)
+        links = {i["label"]: i["url"] for i in m["refs"].items}
+        assert links[f"Logo · {where}"] == stock.logo_source and not stock.logo_source.startswith("/static/")
+
+
 def test_stale_own_figures_give_way_to_live_tradingview_quotes(client, monkeypatch):
     monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "all")
     monkeypatch.setattr(services, "get_price_chart", lambda t: None)

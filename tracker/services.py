@@ -91,10 +91,13 @@ def set_viewer(email: str | None) -> None:
 
 
 def price_data_visible(email: str | None = None) -> bool:
-    """Daily % changes and everything made from them are provider data. Until a provider allows showing them to
-    others (config.PRICE_DATA_DISPLAY = "all"), only the owner sees them: that is personal use."""
+    """Daily % changes and everything made from them are provider data. "all": everyone (a licensed provider);
+    "owner": the owner only (personal use); "none": nobody, every price figure comes from TradingView. Prod uses
+    "none" while no daily-returns provider runs, so nobody sees saved closes going stale."""
     if config.PRICE_DATA_DISPLAY == "all":
         return True
+    if config.PRICE_DATA_DISPLAY == "none":
+        return False
     e = (email if email is not None else _viewer_email.get()) or ""
     return bool(config.OWNER_EMAIL) and e.strip().lower() == config.OWNER_EMAIL.strip().lower()
 

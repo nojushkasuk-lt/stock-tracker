@@ -221,3 +221,6 @@
 
 - [x] Sudden-move alerts: Tiingo 15-minute snapshot as an internal trigger (direction only), follower alerts and emails every 15 minutes in the session (`jobs/intraday_alerts.py`, move-alerts workflow), a Movers page and "moving sharply" chips on portfolio cards; TradingView quotes carry the numbers. Ticker tape back; stale saved figures fall back to TradingView; Marketstack dropped (no display rights).
 - Claude Code (2026-11-25): add SMTP_USER / SMTP_APP_PASSWORD secrets and EMAIL_PROVIDER / BASE_URL variables on GitHub so the alerts job can email; watch the first session's runs. A licensed price provider (Databento Standard or similar) is the only route to our own figures for everyone.
+
+- [x] Logos v2 (owner rules): the company's own symbol without words, otherwise its name in its lettering (first word of long names, brand initials), wide tiles for names, no single letters. Prices: prod `PRICE_DATA_DISPLAY=none`, so everyone, the owner included, sees TradingView quotes; the saved Nov 20 closes are hidden (no daily-returns provider runs, so they could never update).
+- Claude Code (2026-11-25): push and deploy. The daily workflow stays gated (`JOBS_ENABLED` unset); closing news, earnings and move alerts keep running on their own workflows.

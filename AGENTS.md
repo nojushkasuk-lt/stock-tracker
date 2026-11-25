@@ -125,7 +125,7 @@ The universe is the 100 largest US companies by market cap **as reported by the 
     - `yfinance_dev.py` is for local development only. It must raise an error when `APP_ENV=prod`.
     - Do not use Finnhub. Its free plan is personal-use.
     - Brave results must not be stored or cached beyond transient use: keep them in a short in-memory cache (under 1 hour). What we do store is our own note plus the URL and outlet it cites (gray area; revisit if Brave objects).
-    - Public visitors see prices and daily changes through TradingView. Keep `PRICE_DATA_DISPLAY=owner` until permission to share provider-derived figures is recorded.
+    - Everyone, the owner included, sees prices and daily changes through TradingView. Prod runs `PRICE_DATA_DISPLAY=none` (owner decision, 2026-11-25): no daily-returns provider runs, so saved closes would only go stale. `owner` shows them to the owner only; `all` needs recorded permission to share provider-derived figures.
 14. **Attribution ladder** (`analysis/moves.py`). Thresholds live in config:
     - Market: S&P 500 (SPY) daily move of at least `MARKET_ALERT_PCT` (2.0) raises an alert; at least `MARKET_MAJOR_PCT` (3.0) is "major". One shared market note per day (rule 6).
     - A stock is a candidate when its move is at least `MOVE_THRESHOLD_PCT` (5.0). Demo stocks use `DEMO_MOVE_THRESHOLD_PCT` (3.0) so the demo is not empty.

@@ -215,8 +215,9 @@ def stock_model(*, stock, perf, profile, financials, note, filings, coverage, fa
     m["groups"] = groups
     if facts:
         refs.number(services.SourceLink("Key facts · Wikidata", facts.wikidata_url))
-        if stock.logo:
-            refs.number(services.SourceLink("Logo · Wikimedia Commons", stock.logo.split("?", 1)[0].replace("Special:FilePath/", "File:")))
+        if stock.logo_source:
+            where = "Wikimedia Commons" if "commons.wikimedia.org" in stock.logo_source else "Wikipedia"
+            refs.number(services.SourceLink(f"Logo · {where}", stock.logo_source))
     return m
 
 
