@@ -374,7 +374,8 @@ def alerts(request: Request):
 @app.get("/news", response_class=HTMLResponse)
 def news(request: Request):
     me = require_viewer(request)
-    return page(request, "news.html", nav="news", **views.news_model(services.get_news_page(me.email)))
+    return page(request, "news.html", nav="news", figures_visible=services.price_data_visible(me.email),
+                **views.news_model(services.get_news_page(me.email)))
 
 
 @app.get("/earnings", response_class=HTMLResponse)
@@ -389,7 +390,8 @@ def news_search(request: Request):
     me = require_viewer(request)
     if not me.email:
         raise HTTPException(403, "Live coverage is for signed-in users.")
-    return page(request, "news.html", nav="news", **views.news_model(services.get_news_page(me.email, live=True)))
+    return page(request, "news.html", nav="news", figures_visible=services.price_data_visible(me.email),
+                **views.news_model(services.get_news_page(me.email, live=True)))
 
 
 # ---- shared links (owner only) ---------------------------------------------------------------------------

@@ -227,7 +227,8 @@ def test_alerts_page_and_bell(client):
 def test_news_page_shows_without_searching(client):
     client.get("/demo")
     r = client.get("/news")
-    assert r.status_code == 200 and "Market headlines" in r.text and "Load latest" not in r.text
+    assert r.status_code == 200 and "Weekly market" in r.text and "Load latest" not in r.text
+    assert "Market headlines" not in r.text  # no market data yet: no empty card
 
 
 def test_link_mode_closes_the_site_except_for_shared_links(client, monkeypatch):
@@ -700,3 +701,12 @@ def test_us_seat_stays_in_the_us_whatever_wikidata_lists(client, monkeypatch):
     page = client.get("/demo", follow_redirects=False)
     page = client.get("/stock/MSFT")
     assert "United Kingdom" not in page.text and "Redmond" in page.text
+
+
+def test_news_page_hides_empty_sections_from_visitors_without_figures(client, monkeypatch):
+    monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "owner")
+    client.get("/demo")
+    page = client.get("/news").text
+    assert "Market headlines" not in page and "No big moves" not in page
+    monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "all")
+    assert "Moves in demo stocks" in client.get("/news").text

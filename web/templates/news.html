@@ -35,6 +35,7 @@
       <p class="muted">The first weekly brief has yet to be published.</p>
       {% endif %}
     </section>
+    {% if market or live or me.email %}
     <section class="card">
       <div class="row-between" style="align-items: center">
         <div class="eyebrow">Market headlines</div>
@@ -62,7 +63,9 @@
         </form>
       {% endif %}
     </section>
+    {% endif %}
 
+    {% if moves or figures_visible %}
     <section>
       <h2 style="font-size: 20px">Moves in {% if me.demo %}demo stocks{% else %}your stocks{% endif %} <span class="faint" style="font-weight: 500; font-size: 14px">· past 30 days</span></h2>
       {% for st, n in moves %}
@@ -81,6 +84,7 @@
       <div class="card"><p class="muted" style="margin: 0">No big moves in the past 30 days. Notes are written when a stock moves 5% or more in a day.</p></div>
       {% endfor %}
     </section>
+    {% endif %}
   </div>
   <div class="col-side">
     <section class="card">
