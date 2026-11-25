@@ -215,3 +215,6 @@
 
 - [x] Add scheduled close-of-session news for the market and the largest tracked movers, with date-specific backfills.
 - Codex: publish the closing-news workflow and the web views, then verify the first run against Tiingo and Brave. Email and intraday notifications remain separate.
+
+- [x] Review pass and fixes: chart 1D override only for the same session, US seats keep the US as country, no empty financials or news cards, Tiingo BRK-B symbols. Marketstack EOD provider (incremental daily job), own last-close figures on cards, symbol-only logos (`config/logo_icons.csv`).
+- Claude Code (2026-11-25): owner to subscribe to Marketstack Basic, add the `MARKETSTACK_API_KEY` secret, set `PRICE_PROVIDER=marketstack` and `JOBS_ENABLED=true`, run the daily job once to backfill, then ask Marketstack to confirm public display before setting `PRICE_DATA_DISPLAY=all`. Push and deploy after review.

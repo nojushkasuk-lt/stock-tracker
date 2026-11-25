@@ -114,12 +114,14 @@ def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None, co
     from tracker.data.wikidata import commons_logo, logo_thumb
 
     segment = u.region or "US"
-    logo_file = logo_files().get(u.ticker) if not logo_url else None
-    curated_logo, logo_source = commons_logo(logo_file) if logo_file else (None, None)
+    # Symbols only (config/logo_icons.csv): the name is always shown next to the logo, so a wordmark repeats it
+    # and is unreadable at icon size. Companies without a clean symbol get a monogram tile.
+    logo_file = logo_files().get(u.ticker)
+    file_url, logo_source = commons_logo(logo_file) if logo_file else (None, None)
     return Stock(
         u.ticker, u.name, u.industry, u.market_cap_rank,
         u.ticker if u.ticker in listings() else tv_symbol(u.ticker, exchange),
-        logo_thumb(logo_url, 128) if logo_url else curated_logo,
+        logo_thumb(file_url, 128) if file_url else None,
         # US seats are SEC domestic filers; Wikidata lists several countries for big companies.
         u.country or (country if segment != "US" else None) or "United States", segment,
         demo_visible=u.active and (u.is_demo or segment in config.INTL_REGIONS),

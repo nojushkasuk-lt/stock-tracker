@@ -356,7 +356,8 @@ def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
     client.get("/demo")
     directory = client.get("/international").text
     assert all(name in directory for name in ("Samsung Electronics", "ASML", "TSMC", "Toyota"))
-    assert "upload.wikimedia.org/wikipedia/commons/" in directory
+    assert "Special:FilePath/Tabler-icons_brand-toyota.svg" in directory  # Toyota: its symbol
+    assert "TSMC_wordmark" not in directory and "ASML_Holding" not in directory  # wordmark brands: monogram
     assert {"ASML", "TSM", "TM", "KRX:005930"} <= {i["t"] for i in client.get("/search.json").json()}
     assert client.get("/stock/TSM").status_code == 200
     samsung = client.get("/stock/KRX:005930")
@@ -710,3 +711,14 @@ def test_news_page_hides_empty_sections_from_visitors_without_figures(client, mo
     assert "Market headlines" not in page and "No big moves" not in page
     monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "all")
     assert "Moves in demo stocks" in client.get("/news").text
+
+
+def test_logos_are_curated_symbols_or_a_monogram(client):
+    from tracker.data.global_listings import logo_files
+
+    files = logo_files()
+    assert files["AAPL"] == "Apple logo black.svg" and "MSFT" in files
+    assert all(f.lower().endswith((".svg", ".png")) for f in files.values())
+    apple, small = services.get_stock("AAPL"), services.get_stock("ZZZ")
+    assert apple.logo.startswith("https://commons.wikimedia.org/wiki/Special:FilePath/") and apple.logo_source
+    assert small.logo is None  # no curated symbol: the page shows the initial

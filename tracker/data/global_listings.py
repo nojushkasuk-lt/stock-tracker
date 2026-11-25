@@ -17,8 +17,8 @@ def listings() -> dict[str, dict]:
 
 @lru_cache(maxsize=1)
 def logo_files() -> dict[str, str]:
-    """Wikimedia Commons files used when there is no saved company logo."""
-    return {row["ticker"]: row["file"] for row in read_csv(CONFIG_DIR / "international_logos.csv")}
+    """Curated Wikimedia Commons symbol files (no wordmarks), for every kind of listing."""
+    return {row["ticker"]: row["file"] for row in read_csv(CONFIG_DIR / "logo_icons.csv")}
 
 
 def seed_global_listings(session) -> None:
