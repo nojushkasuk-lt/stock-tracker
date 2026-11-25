@@ -54,6 +54,10 @@ daily-return job does not use this feed. Tiingo also allows internal closing-new
 resulting summaries omit raw Tiingo prices and exact moves. The closing-news job uses official
 end-of-day closes to select subjects in memory and persists only sourced descriptions and links.
 
+Move alerts (added 2026-11-25) use the same snapshot as an internal trigger: `jobs/intraday_alerts.py` and the
+Movers page show only the direction ("moving sharply lower"), never a Tiingo price or percentage. The numbers
+visitors see beside them are TradingView quotes. Stored: our own alert text (direction and time spotted).
+
 ### What the terms say (read 2026-11-23)
 
 **Alpha Vantage** (Terms of Service PDF; support and premium pages)

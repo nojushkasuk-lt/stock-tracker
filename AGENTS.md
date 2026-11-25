@@ -73,6 +73,7 @@ tracker/
     digests.py          # Monday/Thursday market summary (Haiku)
 jobs/
   daily.py              # daily returns, filings check, move detection, notes
+  intraday_alerts.py    # every 15 min in the session: follower alerts for sharp moves (Tiingo direction only)
   digest.py             # Monday/Thursday market summary
   universe.py           # weekly: re-rank by market cap (entries, exits, demo top 20)
   facts.py              # weekly: Wikidata key facts and logos (python -m jobs.facts)

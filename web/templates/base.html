@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v={{ asset_v }}">
 </head>
 <body>
 {% block body %}
@@ -22,6 +22,7 @@
       <a href="/portfolio" {% if nav == "portfolio" %}aria-current="page"{% endif %}>Portfolio</a>
       <a href="/international" {% if nav == "international" %}aria-current="page"{% endif %}>International</a>
       <a href="/market" {% if nav == "market" %}aria-current="page"{% endif %}>Markets</a>
+      <a href="/movers" {% if nav == "movers" %}aria-current="page"{% endif %}>Movers</a>
       <a href="/news" {% if nav == "news" %}aria-current="page"{% endif %}>News</a>
       {% if me.email %}<a href="/settings" {% if nav == "settings" %}aria-current="page"{% endif %}>Settings</a>{% endif %}
     </nav>
@@ -56,6 +57,6 @@
 </main>
 {% include "_footer.html" %}
 {% endblock %}
-<script src="/static/app.js" defer></script>
+<script src="/static/app.js?v={{ asset_v }}" defer></script>
 </body>
 </html>

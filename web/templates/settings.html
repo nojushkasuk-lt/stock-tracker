@@ -92,7 +92,7 @@
       <h2 class="h2">Alerts</h2>
       <p class="muted sect-intro">Alerts appear under the bell at the top of every page, with a short note and coverage links.</p>
       <div class="form-rows">
-        <label class="switch-row"><span><span class="nm">Big moves in my stocks</span><span class="sub">When a stock you follow moves more than the threshold in a day</span></span>
+        <label class="switch-row"><span><span class="nm">Big moves in my stocks</span><span class="sub">When a stock you follow moves more than the threshold: during the session (checked every 15 minutes) and at the close</span></span>
           <input type="checkbox" name="stock_alerts" value="1" {% if prefs.stock_alerts %}checked{% endif %} class="switch"></label>
         <label class="field-row"><span><span class="nm">Threshold</span><span class="sub">Daily move that raises a stock alert</span></span>
           <select name="alert_threshold_pct">{% for t in thresholds %}<option value="{{ t }}" {% if t == prefs.alert_threshold_pct %}selected{% endif %}>{{ "%g"|format(t) }}% or more</option>{% endfor %}</select></label>

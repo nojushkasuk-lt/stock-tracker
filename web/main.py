@@ -6,6 +6,7 @@ tracker.services, widgets come from ui.tradingview. Jinja autoescapes all text, 
 Run locally:  uvicorn web.main:app --reload   (then open http://localhost:8000)
 """
 
+import hashlib
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -42,6 +43,9 @@ app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
 templates = Jinja2Templates(directory=HERE / "templates")
 views.register_filters(templates.env)
 templates.env.globals.update(credit=config.OWNER_CREDIT)
+# Content hash on asset links, so a deploy never leaves visitors on a cached old stylesheet or script.
+templates.env.globals["asset_v"] = hashlib.sha256(
+    b"".join((HERE / "static" / f).read_bytes() for f in ("style.css", "app.js"))).hexdigest()[:10]
 auth.register(app)
 
 
@@ -100,13 +104,14 @@ def portfolio(request: Request):
     pairs = [(s, n) for s in stocks if (n := services.get_move_note(s.ticker, me.email))]
     note_stock, note = views.latest_note(pairs)
     figures = services.get_card_figures(stocks)  # our own last-close figures, where the viewer may see them
+    moving = services.get_card_moves(stocks, me.email)  # direction only, from the 15-minute snapshot
     quotes = {stock.ticker: tv.quote_html(stock.tv_symbol) for stock in stocks
               if stock.quote_embeddable and stock.ticker not in figures}
     return page(request, "portfolio.html", stocks=stocks, market=services.get_market_status(me.email),
                 summary=services.get_watchlist_change(stocks), tiingo_configured=bool(config.TIINGO_API_KEY), note=note, note_stock=note_stock,
                 exposure=views.exposure_breakdown(stocks), closing_news=services.get_closing_news(),
                 market_quote=tv.quote_html("AMEX:SPY"),
-                quotes=quotes, figures=figures,
+                quotes=quotes, figures=figures, moving=moving,
                 ticker_tape=tv.ticker_tape_html(tape) if (tape := [st.tv_symbol for st in stocks if st.quote_embeddable]) else None,
                 max_stocks=services.watchlist_max(), nav="portfolio")
 
@@ -140,6 +145,16 @@ def search_index(request: Request):
 def international(request: Request):
     require_viewer(request)
     return page(request, "international.html", stocks=services.get_international_stocks(), nav="international")
+
+
+@app.get("/movers", response_class=HTMLResponse)
+def movers(request: Request):
+    me = require_viewer(request)
+    m = services.get_movers(me.email)
+    quotes = {mv.stock.ticker: tv.quote_html(mv.stock.tv_symbol) for mv in m.stocks if mv.stock.quote_embeddable}
+    return page(request, "movers.html", movers=m, quotes=quotes, closing_news=services.get_closing_news(),
+                market_quote=tv.quote_html("AMEX:SPY"), tiingo_configured=bool(config.TIINGO_API_KEY),
+                threshold=config.MOVE_THRESHOLD_PCT, nav="movers")
 
 
 # ---- stock page -----------------------------------------------------------------------------------

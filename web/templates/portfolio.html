@@ -62,8 +62,9 @@
 {% else %}
 <div class="grid">
   {% for stock in stocks %}
-  <article class="stock-card">
+  <article class="stock-card{% if stock.ticker in moving %} is-moving{% endif %}">
     <a class="top" href="/stock/{{ stock.ticker }}">{{ logo(stock, "sm") }}<span style="flex: 1; min-width: 0"><span class="nm">{{ stock.name }}</span><span class="sub">{{ stock.ticker }} · {{ stock.industry }}</span></span></a>
+    {% if stock.ticker in moving %}{% set mv = moving[stock.ticker] %}<a class="moving {{ 'up' if mv.direction == 'rose' else 'down' }}" href="/movers">{{ mv.label }}</a>{% endif %}
     {% if stock.ticker in figures %}{% set f = figures[stock.ticker] %}
       <a class="card-figs" href="/stock/{{ stock.ticker }}">
         <span><span class="mono day {{ f.day|tone }}">{{ f.day|pct }}</span>

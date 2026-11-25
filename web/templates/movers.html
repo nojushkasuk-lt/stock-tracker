@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import logo %}
+{% block title %}Movers · Stock Tracker{% endblock %}
+{% block content %}
+<h1>Movers</h1>
+<p class="muted sect-intro">Stocks moving sharply since the previous close: {{ "%g"|format(threshold) }}% or more{% if me.email %}, or your own alert threshold for stocks you follow{% endif %}.
+  Checked every 15 minutes during the US session.{% if me.email %} Stocks you follow raise an alert, and an email if turned on in <a href="/settings#alerts">Settings</a>.{% endif %}
+  The closing news explains the moves after the close.</p>
+
+<section class="summary">
+  <div class="card">
+    <div class="eyebrow">Right now</div>
+    {% if movers.as_of %}
+      <div class="movers-count">{% if movers.stocks %}{{ movers.stocks|length }} {{ "stock" if movers.stocks|length == 1 else "stocks" }} moving sharply{% else %}No sharp moves{% endif %}</div>
+      <div class="muted">Checked {{ movers.as_of.strftime('%b %d, %H:%M %Z') }} · {{ movers.checked }} stocks</div>
+      {% if movers.when == "before the open" %}<div class="note-small">Pre-market trading. TradingView quotes show the last regular session until 9:30 New York time.</div>
+      {% elif movers.when == "after the close" %}<div class="note-small">Includes after-hours trading. TradingView quotes show the regular session.</div>{% endif %}
+      <div class="note-small"><a href="https://www.tiingo.com/" target="_blank" rel="noopener">Data sourced by Tiingo</a></div>
+    {% elif not tiingo_configured %}
+      <p class="muted">The move feed is not configured.</p>
+    {% else %}
+      <p class="muted">The move feed is unavailable right now. Moves appear here during the US session (9:30–16:00 New York time).</p>
+    {% endif %}
+  </div>
+  <div class="card">
+    <div class="eyebrow">S&amp;P 500</div>
+    {% if movers.market %}<div class="moving {{ 'up' if movers.market.direction == 'rose' else 'down' }}" style="margin-top: 10px">{{ movers.market.label }}</div>{% endif %}
+    {{ market_quote|safe }}
+  </div>
+</section>
+
+{% if movers.stocks %}
+<div class="grid">
+  {% for m in movers.stocks %}
+  <article class="stock-card is-moving">
+    <a class="top" href="/stock/{{ m.stock.ticker }}">{{ logo(m.stock, "sm") }}<span style="flex: 1; min-width: 0"><span class="nm">{{ m.stock.name }}</span><span class="sub">{{ m.stock.ticker }} · {{ m.stock.industry }}</span></span></a>
+    <div class="moving-row">
+      <span class="moving {{ 'up' if m.direction == 'rose' else 'down' }}">{{ m.label }}</span>
+      {% if m.followed %}<span class="chip">You follow</span>{% endif %}
+    </div>
+    {% if m.stock.ticker in quotes %}{{ quotes[m.stock.ticker]|safe }}{% endif %}
+    <a class="note-small" href="/stock/{{ m.stock.ticker }}">Coverage and chart on the stock page</a>
+  </article>
+  {% endfor %}
+</div>
+{% elif movers.as_of %}
+<section class="card"><p class="muted" style="margin: 0">No stock in the top 100 or the international list is moving {{ "%g"|format(threshold) }}% or more right now.
+  {% if closing_news %}The latest closing news is below.{% endif %}</p></section>
+{% endif %}
+
+{% if closing_news %}
+  {% set closing_title = "Latest U.S. market close" %}
+  {% include "_closing_news.html" %}
+{% endif %}
+{% endblock %}

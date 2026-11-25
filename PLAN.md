@@ -218,3 +218,6 @@
 
 - [x] Review pass and fixes: chart 1D override only for the same session, US seats keep the US as country, no empty financials or news cards, Tiingo BRK-B symbols. Marketstack EOD provider (incremental daily job), own last-close figures on cards, symbol-only logos (`config/logo_icons.csv`).
 - Claude Code (2026-11-25): owner to subscribe to Marketstack Basic, add the `MARKETSTACK_API_KEY` secret, set `PRICE_PROVIDER=marketstack` and `JOBS_ENABLED=true`, run the daily job once to backfill, then ask Marketstack to confirm public display before setting `PRICE_DATA_DISPLAY=all`. Push and deploy after review.
+
+- [x] Sudden-move alerts: Tiingo 15-minute snapshot as an internal trigger (direction only), follower alerts and emails every 15 minutes in the session (`jobs/intraday_alerts.py`, move-alerts workflow), a Movers page and "moving sharply" chips on portfolio cards; TradingView quotes carry the numbers. Ticker tape back; stale saved figures fall back to TradingView; Marketstack dropped (no display rights).
+- Claude Code (2026-11-25): add SMTP_USER / SMTP_APP_PASSWORD secrets and EMAIL_PROVIDER / BASE_URL variables on GitHub so the alerts job can email; watch the first session's runs. A licensed price provider (Databento Standard or similar) is the only route to our own figures for everyone.

@@ -101,16 +101,57 @@ def _symbol(ticker: str) -> str:
     return ticker.upper().replace(".", "-")
 
 
-def _snapshot_moves(symbols: set[str]) -> list[_Move]:
+def _snapshot(symbols: set[str]) -> dict[str, _Move]:
     token = config.TIINGO_API_KEY
     if not symbols or not token:
-        return []
+        return {}
     global _cached_moves, _refresh_at
     with _lock:
         if monotonic() >= _refresh_at:
             _cached_moves = _fetch(token)
             _refresh_at = monotonic() + REFRESH_SECONDS
-        return [_cached_moves[symbol] for symbol in symbols if symbol in _cached_moves]
+        return {symbol: _cached_moves[symbol] for symbol in symbols if symbol in _cached_moves}
+
+
+def _snapshot_moves(symbols: set[str]) -> list[_Move]:
+    return list(_snapshot(symbols).values())
+
+
+@dataclass(frozen=True)
+class SharpMoves:
+    """Qualitative view of one snapshot: which stocks are moving sharply and which way. No prices or percentages."""
+    as_of: datetime | None
+    session: date | None
+    moves: dict[str, NotableMove]
+
+
+def _current(moves: dict[str, _Move]) -> dict[str, _Move]:
+    """Keep only quotes from the latest session in the snapshot (a stale symbol never counts as today's move)."""
+    if not moves:
+        return {}
+    latest = max(move.session for move in moves.values())
+    return {symbol: move for symbol, move in moves.items() if move.session == latest}
+
+
+def sharp_moves(thresholds: dict[str, float]) -> SharpMoves:
+    """Directions of stocks whose move since the previous close is at least their threshold (ticker -> percent)."""
+    by_symbol = {_symbol(ticker): ticker for ticker in thresholds}
+    current = _current(_snapshot(set(by_symbol)))
+    moves = {}
+    for symbol, move in current.items():
+        ticker = by_symbol[symbol]
+        if abs(move.percent) >= thresholds[ticker]:
+            moves[ticker] = NotableMove("rose" if move.percent > 0 else "fell", move.session, move.previous_session)
+    return SharpMoves(max((m.timestamp for m in current.values()), default=None),
+                      next(iter(current.values())).session if current else None, moves)
+
+
+def intraday_changes(tickers: list[str]) -> dict[str, tuple[float, datetime, date]]:
+    """Internal trigger only (alerts job): percent change since the previous close, quote time and session.
+    Never display, email or store these numbers (Tiingo Starter is internal use)."""
+    by_symbol = {_symbol(ticker): ticker for ticker in tickers}
+    return {by_symbol[symbol]: (move.percent, move.timestamp, move.session)
+            for symbol, move in _current(_snapshot(set(by_symbol))).items()}
 
 
 def notable_move(ticker: str) -> NotableMove | None:

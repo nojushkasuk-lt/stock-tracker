@@ -5,7 +5,7 @@ Demo mode is read-only (rule 7): everything in this file reads, nothing writes.
 
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
@@ -253,6 +253,82 @@ class Coverage:
 
 def get_notable_move(stock: Stock) -> tiingo.NotableMove | None:
     return None if stock.global_listing else tiingo.notable_move(stock.ticker)
+
+
+@dataclass(frozen=True)
+class Mover:
+    stock: Stock
+    direction: str  # "rose" / "fell": qualitative only (Tiingo figures are never shown)
+    followed: bool
+    when: str = "today"  # "today", "before the open" or "after the close"
+
+    @property
+    def label(self) -> str:
+        return f"Moving sharply {'higher' if self.direction == 'rose' else 'lower'} {self.when}"
+
+
+@dataclass(frozen=True)
+class Movers:
+    as_of: datetime | None
+    session: date | None
+    market: Mover | None  # the S&P 500 when it is moving sharply
+    stocks: list[Mover]
+    checked: int
+    when: str = "today"
+
+
+def session_phase(as_of: datetime | None) -> str:
+    """Where a snapshot sits in the US session: TradingView quotes show the last regular session outside it."""
+    if as_of is None:
+        return "today"
+    t = as_of.astimezone(tiingo.NEW_YORK).time()
+    if t < time(9, 30):
+        return "before the open"
+    return "after the close" if t >= time(16, 0) else "today"
+
+
+def _thresholds(stocks: list[Stock], mine: set[str], my_pct: float | None) -> dict[str, float]:
+    out = {"SPY": config.MARKET_ALERT_PCT}
+    for st in stocks:
+        if st.global_listing:
+            continue  # home-market listings are not in the Tiingo feed
+        out[st.ticker] = my_pct if (st.ticker in mine and my_pct) else config.MOVE_THRESHOLD_PCT
+    return out
+
+
+def get_movers(email: str | None = None) -> Movers:
+    """Stocks in the universe moving sharply right now (15-minute Tiingo snapshot), largest companies first.
+    Followed stocks use the viewer's alert threshold. Directions only; the numbers come from TradingView quotes."""
+    stocks = get_followable_stocks(email)
+    mine, my_pct = set(), None
+    if email:
+        with session_scope() as s:
+            mine = set(accounts.watchlist(s, email))
+            my_pct = float(accounts.prefs(s, email).alert_threshold_pct)
+    thresholds = _thresholds(stocks, mine, my_pct)
+    snap = tiingo.sharp_moves(thresholds)
+    when = session_phase(snap.as_of)
+    spy = snap.moves.pop("SPY", None)
+    market = Mover(Stock("SPY", "S&P 500", "Index fund", None, "AMEX:SPY"), spy.direction, False, when) if spy else None
+    movers = [Mover(st, snap.moves[st.ticker].direction, st.ticker in mine, when)
+              for st in stocks if st.ticker in snap.moves]
+    movers.sort(key=lambda m: (not m.followed, m.stock.rank is None, m.stock.rank or 0))
+    return Movers(snap.as_of, snap.session, market, movers, len(thresholds) - 1, when)
+
+
+def get_card_moves(stocks: list[Stock], email: str | None = None) -> dict[str, Mover]:
+    """Direction of each card's stock when it is moving sharply now (for a chip on the portfolio)."""
+    if not stocks:
+        return {}
+    my_pct = None
+    if email:
+        with session_scope() as s:
+            my_pct = float(accounts.prefs(s, email).alert_threshold_pct)
+    thresholds = _thresholds(stocks, {st.ticker for st in stocks} if email else set(), my_pct)
+    thresholds.pop("SPY")
+    snap = tiingo.sharp_moves(thresholds)
+    by_ticker = {st.ticker: st for st in stocks}
+    return {t: Mover(by_ticker[t], m.direction, bool(email), session_phase(snap.as_of)) for t, m in snap.moves.items()}
 
 
 def get_coverage(ticker: str, domains: set[str] | None = None, email: str | None = None,

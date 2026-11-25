@@ -1,0 +1,36 @@
+name: move alerts
+
+# Every 15 minutes during the US session: alert followers when a stock (or the S&P 500) moves sharply.
+# The Tiingo snapshot is an internal trigger only; alerts carry the direction, never Tiingo prices or percentages.
+on:
+  schedule:
+    - cron: "45 9 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "*/15 10-15 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "0 16 * * 1-5"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+concurrency: { group: move-alerts, cancel-in-progress: true }
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APP_ENV: prod
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
+      BASE_URL: ${{ vars.BASE_URL }}
+      EMAIL_PROVIDER: ${{ vars.EMAIL_PROVIDER }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_APP_PASSWORD: ${{ secrets.SMTP_APP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - run: |
+          test -n "$DATABASE_URL" || { echo "DATABASE_URL is required."; exit 1; }
+          python -m jobs.intraday_alerts
