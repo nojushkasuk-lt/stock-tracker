@@ -358,6 +358,8 @@ a.moving:hover { text-decoration: none; filter: brightness(1.15); }
 .moving-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .movers-count { font-size: 24px; font-weight: 700; margin: 8px 0 2px; }
 
-/* Short wordmarks shown whole get more room inside the tile */
-.logo.logo-word img { padding: 5px; }
-.logo.sm.logo-word img { padding: 3px; }
+/* Name logos (the company's name in its own lettering) get a wide tile sized to the image */
+.logo.logo-word { width: clamp(64px, calc(var(--r, 3) * 32px + 22px), 196px); }
+.logo.logo-word img { padding: 16px 11px; }
+.logo.sm.logo-word { width: clamp(40px, calc(var(--r, 3) * 21px + 16px), 124px); }
+.logo.sm.logo-word img { padding: 10px 8px; }

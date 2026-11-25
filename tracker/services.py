@@ -38,7 +38,8 @@ class Stock:
     segment: str = "US"
     demo_visible: bool = False
     logo_source: str | None = None
-    logo_kind: str | None = None  # symbol, word (short wordmark) or mark (emblem / first letter)
+    logo_kind: str | None = None  # symbol (square tile) or word (the name in the brand's lettering, wide tile)
+    logo_ratio: float | None = None  # image width / height, sizes the wide tile
 
     @property
     def global_listing(self) -> bool:
@@ -123,21 +124,19 @@ def _logo_version() -> str:
     return hashlib.sha256((Path(__file__).resolve().parents[1] / "config" / "logo_icons.csv").read_bytes()).hexdigest()[:8]
 
 
-def _logo(ticker: str) -> tuple[str | None, str | None, str | None]:
-    """(image URL, Commons source page, kind) from config/logo_icons.csv; (None, None, None) = show the initial.
-    Long wordmarks are cut to the brand's emblem or first letter (the name is always printed next to the logo)."""
-    from tracker.data.wikidata import commons_logo
-
+def _logo(ticker: str) -> tuple[str | None, str | None, str | None, float | None]:
+    """(image URL, source file page, kind, width/height) from config/logo_icons.csv; all None = show the initial.
+    A company's own symbol when it has one (without the words), otherwise its name in its own lettering."""
     row = logo_files().get(ticker)
     name = ticker.replace(":", "_") + ".png"
     if not row or not (LOGO_DIR / name).exists():
-        return None, None, None
-    return f"/static/logos/{name}?v={_logo_version()}", commons_logo(row["file"])[1], row["kind"]
+        return None, None, None, None
+    return f"/static/logos/{name}?v={_logo_version()}", row["source"], row["kind"], float(row["ratio"])
 
 
 def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None, country: str | None = None) -> Stock:
     segment = u.region or "US"
-    logo, logo_source, logo_kind = _logo(u.ticker)
+    logo, logo_source, logo_kind, logo_ratio = _logo(u.ticker)
     return Stock(
         u.ticker, u.name, u.industry, u.market_cap_rank,
         u.ticker if u.ticker in listings() else tv_symbol(u.ticker, exchange),
@@ -145,7 +144,7 @@ def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None, co
         # US seats are SEC domestic filers; Wikidata lists several countries for big companies.
         u.country or (country if segment != "US" else None) or "United States", segment,
         demo_visible=u.active and (u.is_demo or segment in config.INTL_REGIONS),
-        logo_source=logo_source, logo_kind=logo_kind,
+        logo_source=logo_source, logo_kind=logo_kind, logo_ratio=logo_ratio,
     )
 
 

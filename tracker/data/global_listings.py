@@ -17,9 +17,8 @@ def listings() -> dict[str, dict]:
 
 @lru_cache(maxsize=1)
 def logo_files() -> dict[str, dict]:
-    """Curated logos (config/logo_icons.csv): the Wikimedia Commons source file and its kind. symbol = the brand's
-    symbol; word = a short wordmark shown whole; mark = the emblem or first letter cut from a long wordmark.
-    The images are served from web/static/logos/<ticker>.png (':' becomes '_')."""
+    """Curated logos (config/logo_icons.csv): kind (symbol or word), width/height ratio and the source file page
+    (Wikimedia Commons, or Wikipedia for logos Commons does not host). Images: web/static/logos/<ticker>.png."""
     return {row["ticker"]: row for row in read_csv(CONFIG_DIR / "logo_icons.csv")}
 
 

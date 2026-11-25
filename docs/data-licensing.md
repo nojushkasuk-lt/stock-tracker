@@ -120,13 +120,18 @@ Added 2026-11-23 (owner approved Wikidata / Wikipedia as sources for company fac
   Fetched weekly by `python -m jobs.facts` into `company_facts`. Shown with "From Wikidata, checked <date>".
   Facts can be edited by anyone; spot-checked 2026-11-23: Apple CEO John Ternus (from Sep 1, 2026) and NVIDIA
   interim CEO Colette Kress (from Nov 12, 2026) both match the companies' own announcements.
-- **Logos** come from Wikimedia Commons files listed in `config/logo_icons.csv` (ticker, Commons file, kind):
-  `symbol` (the brand's symbol), `word` (a short wordmark shown whole, e.g. IBM, TSMC) or `mark` (the emblem or
-  first letter cut from a long wordmark, in the brand's own lettering). The cut PNGs are served from
-  `web/static/logos/` (no hotlinking, so Commons rate limits never reach visitors). Companies without a usable
-  file show their initial. Most company logos on
-  Commons are public-domain text logos; each file page states its licence and they remain trademarks of their
-  owners (used only to identify the company). The stock page's sources list links the logo's file page.
+- **Logos** are listed in `config/logo_icons.csv` (ticker, kind, width/height ratio, source file page). Owner rule
+  (2026-11-25): a company with its own symbol shows the symbol without the words (Starbucks siren, Porsche crest,
+  Mickey for Disney); otherwise its name in its own lettering, shown whole when short (Tencent, Hermès), the first
+  word of a long two-word name (Berkshire) or the initials the brand itself uses (GS, LVMH, S&P); never a single
+  cut-out letter. `symbol` logos sit in a square tile, `word` logos in a wider tile sized by the ratio. The PNGs are
+  cut once and served from `web/static/logos/` (no hotlinking). Companies without a usable file (ASE, Reliance)
+  show their initial.
+- Sources: most files are on Wikimedia Commons (public-domain text logos or freely licensed). Logos Commons does
+  not host (e.g. the Starbucks siren, Porsche crest, Kering, Gilead, Anthropic) come from English or German
+  Wikipedia, where they are non-free files used to identify the company. We use them the same way: small, unaltered
+  apart from cropping, next to the company name, never as our own branding. All remain trademarks of their owners.
+  The stock page links each logo's file page ("Logo source and license").
 - Requests send a generic User-Agent ("StockTracker/0.1 (personal portfolio project)"), no personal data.
 
 The international catalog uses TradingView embeds on exchanges listed in their widget coverage and direct symbol links

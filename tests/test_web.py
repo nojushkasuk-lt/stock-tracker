@@ -370,7 +370,7 @@ def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
     directory = client.get("/international").text
     assert all(name in directory for name in ("Samsung Electronics", "ASML", "TSMC", "Toyota"))
     assert "/static/logos/TM.png" in directory and "logo-symbol" in directory  # Toyota: its symbol
-    assert "/static/logos/TSM.png" in directory and "logo-word" in directory  # TSMC: short wordmark, whole
+    assert "/static/logos/TSM.png" in directory and 'logo-word" style="--r:' in directory  # TSMC: its name, wide tile
     assert {"ASML", "TSM", "TM", "KRX:005930"} <= {i["t"] for i in client.get("/search.json").json()}
     assert client.get("/stock/TSM").status_code == 200
     samsung = client.get("/stock/KRX:005930")
@@ -729,17 +729,22 @@ def test_news_page_hides_empty_sections_from_visitors_without_figures(client, mo
     assert "Moves in demo stocks" in client.get("/news").text
 
 
-def test_logos_are_symbols_short_wordmarks_or_marks_served_by_us(client):
+def test_logos_are_symbols_or_names_in_the_brands_lettering(client):
     from pathlib import Path
 
     from tracker.data.global_listings import logo_files
 
     rows = logo_files()
-    assert rows["AAPL"]["kind"] == "symbol" and rows["IBM"]["kind"] == "word" and rows["JNJ"]["kind"] == "mark"
+    assert rows["AAPL"]["kind"] == "symbol" and rows["SBUX"]["kind"] == "symbol" and rows["DIS"]["kind"] == "symbol"
+    assert rows["IBM"]["kind"] == "word" and rows["HKEX:700"]["kind"] == "word" and rows["BRK-B"]["kind"] == "word"
     static = Path(__file__).resolve().parents[1] / "web/static/logos"
-    for t, row in rows.items():  # every listed logo has its image and a Commons source file
+    for t, row in rows.items():  # every listed logo has its image, a known kind, a ratio and a source page
         assert (static / f"{t.replace(':', '_')}.png").exists(), t
-        assert row["kind"] in {"symbol", "word", "mark"} and row["file"].lower().endswith((".svg", ".png", ".jpg", ".jpeg", ".gif"))
+        assert row["kind"] in {"symbol", "word"} and float(row["ratio"]) > 0
+        assert row["source"].startswith(("https://commons.wikimedia.org/wiki/File:", "https://en.wikipedia.org/wiki/File:",
+                                         "https://de.wikipedia.org/wiki/Datei:"))
+    words = [float(r["ratio"]) for r in rows.values() if r["kind"] == "word"]
+    assert min(words) > 0.5 and len(words) > 50
     apple, small = services.get_stock("AAPL"), services.get_stock("ZZZ")
     assert apple.logo.startswith("/static/logos/AAPL.png?v=") and apple.logo_kind == "symbol"
     assert apple.logo_source.startswith("https://commons.wikimedia.org/wiki/File:")

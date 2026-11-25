@@ -1,192 +1,199 @@
-ticker,file,kind
-AAPL,Apple logo black.svg,symbol
-ABBV,AbbVie logo.svg,mark
-ABT,Abbott Laboratories 2025 logo.svg,mark
-ADI,Analog Devices Logo.svg,mark
-ADP,Automatic-Data-Processing-Logo.svg,word
-AMAT,Applied Materials Logo.svg,mark
-AMD,AMD Logo.svg,word
-AMGN,Amgen.svg,word
-AMZN,Tabler-icons brand-amazon.svg,symbol
-ANET,Arista-networks-logo.svg,mark
-ANT,Anthropic logo.svg,mark
-APH,Logo Amphenol.svg,mark
-APP,AppLovin-Logo.gif,mark
-ARM,Arm logo 2025.svg,word
-ASML,ASML Holding N.V. logo.svg,word
-AVGO,Broadcom logo (2016-present).svg,mark
-AXP,American Express logo (2018).svg,word
-AZN,Astrazeneca text logo.svg,mark
-BA,Boeing full logo.svg,mark
-BABA,Alibaba en logo.svg,mark
-BAC,Bank of America logo.svg,mark
-BBVA,BBVA logo 2025.svg,word
-BEKE,KE Holdings.png,mark
-BIDU,Cib-baidu (CoreUI Icons v1.0.0).svg,symbol
-BKNG,Tabler-icons brand-booking.svg,symbol
-BLK,BlackRock wordmark.svg,mark
-BME:IBE,Logo Iberdrola (2023).svg,mark
-BME:ITX,Inditex.svg,word
-BMY,Bristol-Myers Squibb logo (2020).svg,mark
-BP,Bp textlogo.svg,word
-BRK-B,Berkshire-Hathaway-Logo.svg,mark
-BTI,Bat logo20.svg,word
-BUD,"Anheuser-Busch InBev - logo (Belgium, 2022-).svg",mark
-C,Citi logo March 2023.svg,word
-CAT,Caterpillar logo.svg,mark
-CHT,Chunghwa Telecom.svg,mark
-CME,CME Group Logo.svg,mark
-COF,Capital One logo.svg,word
-COP,ConocoPhillips Logo.svg,mark
-COST,Costco Wholesale logo 2010-10-26.svg,word
-CRM,Salesforce.com logo.svg,word
-CRWD,CrowdStrike logo.svg,mark
-CSCO,Cisco logo blue 2016.svg,word
-CVX,Chevron Logo.svg,word
-DE,John Deere text only.png,mark
-DELL,Dell logo 2016.svg,word
-DHR,Danaher Corporation logo.svg,mark
-DIS,The Walt Disney Company Logo.svg,mark
-E,Eni wordmark.svg,word
-EQNR,Equinor.svg,word
-EURONEXT:AIR,Airbus Logo 2017.svg,mark
-EURONEXT:KER,Kering-logo.svg,mark
-EURONEXT:MC,LVMH logo.svg,mark
-EURONEXT:OR,L'Oréal logo.svg,mark
-EURONEXT:RMS,Hermes wordmark.svg,mark
-EURONEXT:RNO,Renault 2021.svg,symbol
-EURONEXT:SAF,Safran 2016 logo.svg,mark
-EURONEXT:SU,SchneiderElectric Logo.svg,word
-GE,General Electric logo.svg,symbol
-GEV,General Electric logo.svg,symbol
-GOOGL,Alphabet Inc Logo 2015.svg,word
-GS,Goldman Sachs logo.svg,word
-GSK,GSK Logo PNG5.png,word
-HD,The Home Depot logo.svg,word
-HDB,HDFC-Bank-Logo.svg,mark
-HKEX:1810,Xiaomi logo (2021-).svg,symbol
-HKEX:3690,Meituan English Logo.png,word
-HKEX:700,Tencent Logo.svg,mark
-HMC,Logo Honda F1.svg,symbol
-HSBC,HSBC 滙豐 (logo only).svg,symbol
-IBM,IBM logo.svg,word
-IBN,ICICI Bank Logo.svg,mark
-INFY,Infosys logo.svg,word
-ING,ING Group (wordmark).svg,word
-INTC,Intel logo 2023.svg,word
-ISRG,Intuitive Surgical logo.svg,word
-IX,ORIX Logo.svg,word
-JD,JD Group logo.svg,mark
-JNJ,JNJ Logo New.svg,mark
-JPM,Logo of JPMorganChase 2024.svg,mark
-KB,KB logo.svg,word
-KLAC,KLA Corp. logo.svg,mark
-KO,The Coca-Cola Company (2020).svg,mark
-KRX:000270,KIA logo3.svg,word
-KRX:000660,SK Hynix.svg,word
-KRX:005380,Hyundai Motor Company logo.svg,mark
-KRX:005930,Samsung Electronics logo (english).svg,word
-KRX:006400,Samsung SDI logo (english).svg,mark
-KRX:012450,Hanwha Aerospace Logo.svg,word
-KRX:035420,Naver Logotype.svg,mark
-KRX:068270,Celltrion CI.svg,mark
-KRX:207940,Samsung Biologics Logo.svg,word
-KRX:373220,LG Energy Solution logo EN.svg,mark
-LLY,Eli Lilly and Company.svg,word
-LMT,Lockheed Martin logo (2011–2022).svg,mark
-LOW,Lowes Companies Logo.svg,word
-LRCX,Lam-Research-Logo.svg,mark
-LYG,Lloyds Banking Group Plc.png,word
-MA,Mastercard 2019 logo.svg,symbol
-MCD,McDonald's Golden Arches.svg,symbol
-MCK,Mck logo pos col rgb.svg,mark
-META,Meta Platforms Inc. logo (cropped).svg,symbol
-MFG,Mizuho logo.svg,word
-MIL:PRY,Prysmian Logo.svg,mark
-MO,Altria Group.svg,word
-MRK,Merck Logo.svg,mark
-MRVL,Marvell Logo.svg,mark
-MS,Morgan Stanley Logo 2024.png,mark
-MSFT,Microsoft icon.svg,symbol
-MU,Micron Technology logo 2024.svg,mark
-MUFG,Mitsubishi UFJ Financial Group.svg,mark
-NEE,NextEra Energy logo (1).svg,word
-NFLX,Netflix icon.svg,symbol
-NGG,Nattygridlogo.svg,mark
-NVDA,NVIDIA logo.svg,mark
-NVS,Novartis-Logo-2023.svg,mark
-OMXSTO:ATCO_A,Atlas Copco Group logo.svg,word
-OMXSTO:VOLV_B,Volvo-Spread-Word-Mark-Black.svg,mark
-ORCL,Oracle Corporation logo.svg,symbol
-PANW,PaloAltoNetworks 2020 Logo.svg,mark
-PEP,"PepsiCo (2025, wordmark).svg",mark
-PFE,Pfizer (2021).svg,word
-PG,Procter & Gamble logo.svg,word
-PGR,Logo of the Progressive Corporation.svg,mark
-PH,Parker Hannifin.svg,word
-PLD,Prologis Logo Current.svg,mark
-PLTR,Cib-palantir (CoreUI Icons v1.0.0).svg,symbol
-PM,Pmi logo text only.svg,word
-QCOM,Qualcomm-Logo.svg,mark
-RIO,Rio Tinto.svg,mark
-RTX,RTX Raytheon Technologies logo.svg,word
-SAN,Banco Santander Logotipo.svg,mark
-SAP,SAP 2011 logo.svg,word
-SBUX,Starbucks coffee wordmark.png,mark
-SCHW,Charles Schwab Corporation logo.svg,word
-SE,Sea Group logo.svg,word
-SHEL,Shell wordmark 2019.svg,word
-SHG,Mini shinhan.jpg,mark
-SIX:ABBN,ABB logo.svg,word
-SIX:CFR,Richemont.svg,mark
-SIX:NESN,Nestle textlogo red.svg,word
-SIX:ROG,Roche Logo.svg,word
-SMFG,Sumitomo Mitsui Financial Group logo.svg,mark
-SNY,Sanofi-2022.svg,word
-SO,Southern Company newer logo.svg,mark
-SONY,Sony Group logo.svg,mark
-SPCX,SpaceX logo black.svg,mark
-SPGI,S&P Global logo.svg,mark
-SPOT,Spotify icon.svg,symbol
-SYK,Stryker logo.svg,word
-SZSE:002594,"BYD Company, Ltd. - Logo.svg",word
-SZSE:300750,Contemporary Amperex Technology logo.svg,word
-T,AT&T Globe 2016.svg,symbol
-TCOM,Trip.com Group Ltd. logo.jpg,mark
-TJX,TJX Logo.svg,word
-TM,Tabler-icons brand-toyota.svg,symbol
-TMO,Thermo Fisher Scientific logo.svg,word
-TMUS,Telekom Logo 2013.svg,symbol
-TSE:6501,Hitachi logo.svg,mark
-TSE:6752,Panasonic Group logo.svg,mark
-TSE:6861,Keyence.svg,mark
-TSE:7974,Nintendo red logo.svg,word
-TSE:8035,Tokyo Electron logo.svg,word
-TSE:9984,SoftBank Group logo.svg,mark
-TSLA,Tesla T symbol.svg,symbol
-TSM,TSMC wordmark.svg,word
-TTE,TotalEnergies wordmark (2021-present).svg,mark
-TXN,TexasInstruments-Logo.svg,mark
-UBER,Uber logo 2018.svg,word
-UBS,UBS Logo.png,word
-UL,Unilever text logo.svg,mark
-UMC,UMC-Logo.svg,word
-UNH,UnitedHealth Group logo.svg,mark
-UNP,Union pacific railroad logo.svg,word
-V,Visa Inc. logo (2021–present).svg,word
-VRTX,VertexPharma-logo2.png,word
-VZ,Verizon 2024 (symbol).svg,symbol
-WELL,Welltower Logo 2025.svg,word
-WFC,Wells Fargo Logo (2020).svg,word
-WIT,Wipro new logo.svg,word
-WMT,Walmart spark (2025).svg,symbol
-XETR:ALV,Allianz vector.svg,word
-XETR:BMW,BMW logo (gray).svg,symbol
-XETR:CON,Continental wordmark.svg,mark
-XETR:ENR,Siemens Energy logo.svg,word
-XETR:MBG,Mercedes-Benz free logo.svg,symbol
-XETR:P911,Porsche Wortmarke.svg,mark
-XETR:RHM,Rheinmetall AG Logo.svg,mark
-XETR:SIE,Siemens-logo.svg,mark
-XETR:VOW3,Volkswagen logo 2019.svg,symbol
-XOM,Exxon Mobil Logo.svg,mark
+ticker,kind,ratio,source
+AAPL,symbol,0.81,https://commons.wikimedia.org/wiki/File:Apple_logo_black.svg
+ABBV,word,5.54,https://commons.wikimedia.org/wiki/File:AbbVie_logo.svg
+ABT,symbol,1.24,https://commons.wikimedia.org/wiki/File:Abbott_Laboratories_2025_logo.svg
+ADI,symbol,0.68,https://commons.wikimedia.org/wiki/File:Analog_Devices_Logo.svg
+ADP,word,2.2,https://commons.wikimedia.org/wiki/File:Automatic-Data-Processing-Logo.svg
+AMAT,symbol,1.0,https://commons.wikimedia.org/wiki/File:Applied_Materials_Logo.svg
+AMD,word,4.19,https://commons.wikimedia.org/wiki/File:AMD_Logo.svg
+AMGN,word,3.91,https://commons.wikimedia.org/wiki/File:Amgen.svg
+AMZN,symbol,2.5,https://commons.wikimedia.org/wiki/File:Tabler-icons_brand-amazon.svg
+ANET,word,6.43,https://commons.wikimedia.org/wiki/File:Arista-networks-logo.svg
+ANT,word,8.78,https://commons.wikimedia.org/wiki/File:Anthropic_logo.svg
+APH,word,5.22,https://commons.wikimedia.org/wiki/File:Logo_Amphenol.svg
+APP,symbol,1.15,https://commons.wikimedia.org/wiki/File:AppLovin-Logo.gif
+ARM,word,3.29,https://commons.wikimedia.org/wiki/File:Arm_logo_2025.svg
+ASML,word,3.56,https://commons.wikimedia.org/wiki/File:ASML_Holding_N.V._logo.svg
+AVGO,symbol,1.0,https://commons.wikimedia.org/wiki/File:Broadcom_logo_(2016-present).svg
+AXP,word,1.0,https://commons.wikimedia.org/wiki/File:American_Express_logo_(2018).svg
+AZN,word,7.35,https://commons.wikimedia.org/wiki/File:Astrazeneca_text_logo.svg
+BA,symbol,0.88,https://commons.wikimedia.org/wiki/File:Boeing_full_logo.svg
+BABA,symbol,1.55,https://en.wikipedia.org/wiki/File:Alibaba-Group-Logo.svg
+BAC,symbol,1.4,https://commons.wikimedia.org/wiki/File:Bank_of_America_logo.svg
+BBVA,word,3.33,https://commons.wikimedia.org/wiki/File:BBVA_logo_2025.svg
+BEKE,symbol,1.0,https://commons.wikimedia.org/wiki/File:KE_Holdings.png
+BIDU,symbol,0.92,https://commons.wikimedia.org/wiki/File:Cib-baidu_(CoreUI_Icons_v1.0.0).svg
+BKNG,symbol,1.0,https://commons.wikimedia.org/wiki/File:Tabler-icons_brand-booking.svg
+BLK,word,7.06,https://commons.wikimedia.org/wiki/File:BlackRock_wordmark.svg
+BME:IBE,symbol,1.09,https://commons.wikimedia.org/wiki/File:Logo_Iberdrola_(2023).svg
+BME:ITX,word,7.83,https://commons.wikimedia.org/wiki/File:Inditex.svg
+BMY,symbol,0.39,https://commons.wikimedia.org/wiki/File:Bristol-Myers_Squibb_logo_(2020).svg
+BP,word,1.16,https://commons.wikimedia.org/wiki/File:Bp_textlogo.svg
+BRK-B,word,5.54,https://commons.wikimedia.org/wiki/File:Berkshire-Hathaway-Logo.svg
+BTI,word,2.93,https://commons.wikimedia.org/wiki/File:Bat_logo20.svg
+BUD,symbol,1.01,"https://commons.wikimedia.org/wiki/File:Anheuser-Busch_InBev_-_logo_(Belgium,_2022-).svg"
+C,word,1.74,https://commons.wikimedia.org/wiki/File:Citi_logo_March_2023.svg
+CAT,word,6.1,https://commons.wikimedia.org/wiki/File:Caterpillar_logo.svg
+CHT,symbol,1.0,https://commons.wikimedia.org/wiki/File:Chunghwa_Telecom.svg
+CME,symbol,0.99,https://commons.wikimedia.org/wiki/File:CME_Group_Logo.svg
+COF,word,2.78,https://commons.wikimedia.org/wiki/File:Capital_One_logo.svg
+COP,word,4.44,https://commons.wikimedia.org/wiki/File:ConocoPhillips_Logo.svg
+COST,word,3.6,https://commons.wikimedia.org/wiki/File:Costco_Wholesale_logo_2010-10-26.svg
+CRM,word,1.43,https://commons.wikimedia.org/wiki/File:Salesforce.com_logo.svg
+CRWD,word,5.71,https://commons.wikimedia.org/wiki/File:CrowdStrike_logo.svg
+CSCO,word,1.9,https://commons.wikimedia.org/wiki/File:Cisco_logo_blue_2016.svg
+CVX,word,0.9,https://commons.wikimedia.org/wiki/File:Chevron_Logo.svg
+DE,symbol,1.1,https://en.wikipedia.org/wiki/File:John_Deere_Logo_%E2%80%93_Flat_2_Color.svg
+DELL,word,1.0,https://commons.wikimedia.org/wiki/File:Dell_logo_2016.svg
+DHR,symbol,1.74,https://commons.wikimedia.org/wiki/File:Danaher_Corporation_logo.svg
+DIS,symbol,1.21,https://commons.wikimedia.org/wiki/File:Mickey_Mouse_head_and_ears.svg
+E,word,1.83,https://commons.wikimedia.org/wiki/File:Eni_wordmark.svg
+EQNR,word,1.22,https://commons.wikimedia.org/wiki/File:Equinor.svg
+EURONEXT:AIR,word,5.37,https://commons.wikimedia.org/wiki/File:Airbus_Logo_2017.svg
+EURONEXT:KER,symbol,1.83,https://en.wikipedia.org/wiki/File:Kering_logo.svg
+EURONEXT:MC,word,4.82,https://commons.wikimedia.org/wiki/File:LVMH_logo.svg
+EURONEXT:OR,word,5.54,https://commons.wikimedia.org/wiki/File:L'Oréal_logo.svg
+EURONEXT:RMS,word,5.71,https://commons.wikimedia.org/wiki/File:Hermes_wordmark.svg
+EURONEXT:RNO,symbol,0.76,https://commons.wikimedia.org/wiki/File:Renault_2021.svg
+EURONEXT:SAF,symbol,0.9,https://commons.wikimedia.org/wiki/File:Safran_2016_logo.svg
+EURONEXT:SU,word,2.42,https://commons.wikimedia.org/wiki/File:SchneiderElectric_Logo.svg
+GE,symbol,1.0,https://commons.wikimedia.org/wiki/File:General_Electric_logo.svg
+GEV,symbol,1.0,https://commons.wikimedia.org/wiki/File:General_Electric_logo.svg
+GILD,symbol,0.75,https://en.wikipedia.org/wiki/File:Gilead_Sciences_Logo.svg
+GOOGL,word,4.14,https://commons.wikimedia.org/wiki/File:Alphabet_Inc_Logo_2015.svg
+GS,symbol,1.0,https://commons.wikimedia.org/wiki/File:Goldman_Sachs.svg
+GSK,word,3.31,https://commons.wikimedia.org/wiki/File:GSK_Logo_PNG5.png
+HD,word,1.0,https://commons.wikimedia.org/wiki/File:The_Home_Depot_logo.svg
+HDB,symbol,1.0,https://commons.wikimedia.org/wiki/File:HDFC-Bank-Logo.svg
+HKEX:1810,symbol,1.0,https://commons.wikimedia.org/wiki/File:Xiaomi_logo_(2021-).svg
+HKEX:3690,symbol,1.0,https://commons.wikimedia.org/wiki/File:Meituan_English_Logo.png
+HKEX:700,word,5.62,https://commons.wikimedia.org/wiki/File:Tencent_Logo.svg
+HMC,symbol,1.21,https://commons.wikimedia.org/wiki/File:Logo_Honda_F1.svg
+HSBC,symbol,1.99,https://commons.wikimedia.org/wiki/File:HSBC_滙豐_(logo_only).svg
+IBM,word,2.67,https://commons.wikimedia.org/wiki/File:IBM_logo.svg
+IBN,symbol,0.66,https://commons.wikimedia.org/wiki/File:ICICI_Bank_Logo.svg
+INFY,word,2.55,https://commons.wikimedia.org/wiki/File:Infosys_logo.svg
+ING,word,2.96,https://commons.wikimedia.org/wiki/File:ING_Group_(wordmark).svg
+INTC,word,2.57,https://commons.wikimedia.org/wiki/File:Intel_logo_2023.svg
+ISRG,word,2.52,https://commons.wikimedia.org/wiki/File:Intuitive_Surgical_logo.svg
+IX,word,0.82,https://commons.wikimedia.org/wiki/File:ORIX_Logo.svg
+JD,symbol,1.0,https://commons.wikimedia.org/wiki/File:JD_Group_logo.svg
+JNJ,word,10.59,https://commons.wikimedia.org/wiki/File:JNJ_Logo_New.svg
+JPM,word,4.5,https://commons.wikimedia.org/wiki/File:Logo_of_JPMorganChase_2024.svg
+KB,word,3.06,https://commons.wikimedia.org/wiki/File:KB_logo.svg
+KLAC,word,4.5,https://commons.wikimedia.org/wiki/File:KLA_Corp._logo.svg
+KO,word,2.94,https://commons.wikimedia.org/wiki/File:The_Coca-Cola_Company_(2020).svg
+KRX:000270,word,4.24,https://commons.wikimedia.org/wiki/File:KIA_logo3.svg
+KRX:000660,word,1.91,https://commons.wikimedia.org/wiki/File:SK_Hynix.svg
+KRX:005380,symbol,1.96,https://commons.wikimedia.org/wiki/File:Hyundai_Motor_Company_logo.svg
+KRX:005930,word,3.75,https://commons.wikimedia.org/wiki/File:Samsung_Electronics_logo_(english).svg
+KRX:006400,symbol,3.01,https://commons.wikimedia.org/wiki/File:Samsung_SDI_logo_(english).svg
+KRX:012450,word,1.24,https://commons.wikimedia.org/wiki/File:Hanwha_Aerospace_Logo.svg
+KRX:035420,word,5.22,https://commons.wikimedia.org/wiki/File:Naver_Logotype.svg
+KRX:068270,symbol,0.46,https://commons.wikimedia.org/wiki/File:Celltrion_CI.svg
+KRX:207940,word,2.81,https://commons.wikimedia.org/wiki/File:Samsung_Biologics_Logo.svg
+KRX:373220,symbol,1.0,https://commons.wikimedia.org/wiki/File:LG_Energy_Solution_logo_EN.svg
+LLY,word,1.83,https://commons.wikimedia.org/wiki/File:Eli_Lilly_and_Company.svg
+LMT,symbol,1.16,https://commons.wikimedia.org/wiki/File:Lockheed_Martin_logo_(2011–2022).svg
+LOW,word,2.18,https://commons.wikimedia.org/wiki/File:Lowes_Companies_Logo.svg
+LRCX,symbol,1.16,https://commons.wikimedia.org/wiki/File:Lam-Research-Logo.svg
+LYG,word,2.7,https://commons.wikimedia.org/wiki/File:Lloyds_Banking_Group_Plc.png
+MA,symbol,1.61,https://commons.wikimedia.org/wiki/File:Mastercard_2019_logo.svg
+MCD,symbol,1.15,https://commons.wikimedia.org/wiki/File:McDonald's_Golden_Arches.svg
+MCK,word,7.35,https://commons.wikimedia.org/wiki/File:Mck_logo_pos_col_rgb.svg
+META,symbol,1.5,https://commons.wikimedia.org/wiki/File:Meta_Platforms_Inc._logo_(cropped).svg
+MFG,word,3.36,https://commons.wikimedia.org/wiki/File:Mizuho_logo.svg
+MIL:MONC,word,4.29,https://commons.wikimedia.org/wiki/File:Logo_Moncler_Group.svg
+MIL:PRY,symbol,1.0,https://commons.wikimedia.org/wiki/File:Prysmian_Logo.svg
+MO,word,2.62,https://commons.wikimedia.org/wiki/File:Altria_Group.svg
+MRK,symbol,1.0,https://commons.wikimedia.org/wiki/File:Merck_Logo.svg
+MRVL,symbol,0.85,https://commons.wikimedia.org/wiki/File:Marvell_Logo.svg
+MS,word,6.92,https://commons.wikimedia.org/wiki/File:Morgan_Stanley_Logo_2024.png
+MSFT,symbol,1.0,https://commons.wikimedia.org/wiki/File:Microsoft_icon.svg
+MU,word,4.68,https://commons.wikimedia.org/wiki/File:Micron_Technology_logo_2024.svg
+MUFG,symbol,1.4,https://commons.wikimedia.org/wiki/File:Mitsubishi_UFJ_Financial_Group.svg
+NEE,word,2.28,https://commons.wikimedia.org/wiki/File:NextEra_Energy_logo_(1).svg
+NFLX,symbol,1.0,https://commons.wikimedia.org/wiki/File:Netflix_icon.svg
+NGG,word,4.86,https://commons.wikimedia.org/wiki/File:Nattygridlogo.svg
+NTES,word,5.71,https://en.wikipedia.org/wiki/File:Netease_logo_2.svg
+NVDA,symbol,1.51,https://commons.wikimedia.org/wiki/File:NVIDIA_logo.svg
+NVO,symbol,0.93,https://en.wikipedia.org/wiki/File:Novo_-_Logo.png
+NVS,symbol,0.89,https://commons.wikimedia.org/wiki/File:Novartis-Logo-2023.svg
+OMXSTO:ATCO_A,word,3.43,https://commons.wikimedia.org/wiki/File:Atlas_Copco_Group_logo.svg
+OMXSTO:VOLV_B,symbol,1.0,https://commons.wikimedia.org/wiki/File:Volvo_Iron_Mark_-_black.svg
+ORCL,symbol,1.6,https://commons.wikimedia.org/wiki/File:Oracle_Corporation_logo.svg
+PANW,symbol,1.39,https://commons.wikimedia.org/wiki/File:PaloAltoNetworks_2020_Logo.svg
+PDD,symbol,1.1,https://en.wikipedia.org/wiki/File:Pinduoduo_logo.svg
+PEP,word,5.45,"https://commons.wikimedia.org/wiki/File:PepsiCo_(2025,_wordmark).svg"
+PFE,word,2.44,https://commons.wikimedia.org/wiki/File:Pfizer_(2021).svg
+PG,word,1.0,https://commons.wikimedia.org/wiki/File:Procter_&_Gamble_logo.svg
+PGR,word,8.37,https://commons.wikimedia.org/wiki/File:Logo_of_the_Progressive_Corporation.svg
+PH,word,2.6,https://commons.wikimedia.org/wiki/File:Parker_Hannifin.svg
+PLD,symbol,1.03,https://commons.wikimedia.org/wiki/File:Prologis_Logo_Current.svg
+PLTR,symbol,0.79,https://commons.wikimedia.org/wiki/File:Cib-palantir_(CoreUI_Icons_v1.0.0).svg
+PM,word,3.79,https://commons.wikimedia.org/wiki/File:Pmi_logo_text_only.svg
+QCOM,word,5.45,https://commons.wikimedia.org/wiki/File:Qualcomm-Logo.svg
+RIO,word,4.86,https://commons.wikimedia.org/wiki/File:Rio_Tinto.svg
+RTX,word,2.61,https://commons.wikimedia.org/wiki/File:RTX_Raytheon_Technologies_logo.svg
+SAN,symbol,1.05,https://commons.wikimedia.org/wiki/File:Banco_Santander_Logotipo.svg
+SAP,word,2.02,https://commons.wikimedia.org/wiki/File:SAP_2011_logo.svg
+SBUX,symbol,0.99,https://en.wikipedia.org/wiki/File:Starbucks_Corporation_Logo_2011.svg
+SCCO,symbol,0.98,https://en.wikipedia.org/wiki/File:Southern_Copper_Corporation_logo.svg
+SCHW,word,1.0,https://commons.wikimedia.org/wiki/File:Charles_Schwab_Corporation_logo.svg
+SE,word,0.7,https://commons.wikimedia.org/wiki/File:Sea_Group_logo.svg
+SHEL,word,2.76,https://commons.wikimedia.org/wiki/File:Shell_wordmark_2019.svg
+SHG,symbol,1.0,https://commons.wikimedia.org/wiki/File:Mini_shinhan.jpg
+SIX:ABBN,word,2.61,https://commons.wikimedia.org/wiki/File:ABB_logo.svg
+SIX:CFR,word,7.5,https://commons.wikimedia.org/wiki/File:Richemont.svg
+SIX:NESN,word,3.71,https://commons.wikimedia.org/wiki/File:Nestle_textlogo_red.svg
+SIX:ROG,word,1.93,https://commons.wikimedia.org/wiki/File:Roche_Logo.svg
+SMFG,symbol,0.67,https://commons.wikimedia.org/wiki/File:Sumitomo_Mitsui_Financial_Group_logo.svg
+SNY,word,3.87,https://commons.wikimedia.org/wiki/File:Sanofi-2022.svg
+SO,symbol,1.15,https://commons.wikimedia.org/wiki/File:Southern_Company_newer_logo.svg
+SONY,word,5.62,https://commons.wikimedia.org/wiki/File:Sony_Group_logo.svg
+SPCX,word,8.0,https://commons.wikimedia.org/wiki/File:SpaceX_logo_black.svg
+SPGI,word,4.62,https://commons.wikimedia.org/wiki/File:S&P_Global_logo.svg
+SPOT,symbol,1.0,https://commons.wikimedia.org/wiki/File:Spotify_icon.svg
+SSE:600519,symbol,1.0,https://en.wikipedia.org/wiki/File:Kweichow_Moutai_Logo.png
+SYK,word,3.96,https://commons.wikimedia.org/wiki/File:Stryker_logo.svg
+SZSE:002594,word,1.67,"https://commons.wikimedia.org/wiki/File:BYD_Company,_Ltd._-_Logo.svg"
+SZSE:300750,word,5.0,https://commons.wikimedia.org/wiki/File:Contemporary_Amperex_Technology_logo.svg
+T,symbol,1.0,https://commons.wikimedia.org/wiki/File:AT&T_Globe_2016.svg
+TCOM,word,3.91,https://commons.wikimedia.org/wiki/File:Trip.com_Group_Ltd._logo.jpg
+TJX,word,1.7,https://commons.wikimedia.org/wiki/File:TJX_Logo.svg
+TM,symbol,1.38,https://commons.wikimedia.org/wiki/File:Tabler-icons_brand-toyota.svg
+TMO,word,4.68,https://commons.wikimedia.org/wiki/File:Thermo_Fisher_Scientific_logo.svg
+TMUS,symbol,2.03,https://commons.wikimedia.org/wiki/File:Telekom_Logo_2013.svg
+TSE:6501,word,6.32,https://commons.wikimedia.org/wiki/File:Hitachi_logo.svg
+TSE:6752,word,6.55,https://commons.wikimedia.org/wiki/File:Panasonic_Group_logo.svg
+TSE:6861,word,5.54,https://commons.wikimedia.org/wiki/File:Keyence.svg
+TSE:7974,word,4.04,https://commons.wikimedia.org/wiki/File:Nintendo_red_logo.svg
+TSE:8035,word,1.68,https://commons.wikimedia.org/wiki/File:Tokyo_Electron_logo.svg
+TSE:9984,symbol,1.36,https://commons.wikimedia.org/wiki/File:SoftBank_Group_logo.svg
+TSLA,symbol,1.01,https://commons.wikimedia.org/wiki/File:Tesla_T_symbol.svg
+TSM,word,3.96,https://commons.wikimedia.org/wiki/File:TSMC_wordmark.svg
+TTE,symbol,2.06,https://en.wikipedia.org/wiki/File:TotalEnergies_logo.svg
+TXN,symbol,0.78,https://commons.wikimedia.org/wiki/File:TexasInstruments-Logo.svg
+UBER,word,2.88,https://commons.wikimedia.org/wiki/File:Uber_logo_2018.svg
+UBS,word,2.76,https://commons.wikimedia.org/wiki/File:UBS_Logo.png
+UL,symbol,0.96,https://en.wikipedia.org/wiki/File:Unilever.svg
+UMC,word,5.22,https://commons.wikimedia.org/wiki/File:UMC-Logo.svg
+UNH,word,9.23,https://commons.wikimedia.org/wiki/File:UnitedHealth_Group_logo.svg
+UNP,word,0.89,https://commons.wikimedia.org/wiki/File:Union_pacific_railroad_logo.svg
+V,word,3.08,https://commons.wikimedia.org/wiki/File:Visa_Inc._logo_(2021–present).svg
+VRTX,word,1.93,https://commons.wikimedia.org/wiki/File:VertexPharma-logo2.png
+VZ,symbol,1.1,https://commons.wikimedia.org/wiki/File:Verizon_2024_(symbol).svg
+WELL,word,1.43,https://commons.wikimedia.org/wiki/File:Welltower_Logo_2025.svg
+WFC,word,1.0,https://commons.wikimedia.org/wiki/File:Wells_Fargo_Logo_(2020).svg
+WIT,word,2.49,https://commons.wikimedia.org/wiki/File:Wipro_new_logo.svg
+WMT,symbol,0.89,https://commons.wikimedia.org/wiki/File:Walmart_spark_(2025).svg
+XETR:ALV,word,2.1,https://commons.wikimedia.org/wiki/File:Allianz_vector.svg
+XETR:BMW,symbol,1.0,https://commons.wikimedia.org/wiki/File:BMW_logo_(gray).svg
+XETR:CON,symbol,0.92,https://commons.wikimedia.org/wiki/File:Continental_logo.svg
+XETR:ENR,word,2.91,https://commons.wikimedia.org/wiki/File:Siemens_Energy_logo.svg
+XETR:MBG,symbol,1.0,https://commons.wikimedia.org/wiki/File:Mercedes-Benz_free_logo.svg
+XETR:P911,symbol,0.75,https://de.wikipedia.org/wiki/Datei:Porsche_crest_color_m_rgb.png
+XETR:RHM,symbol,0.89,https://commons.wikimedia.org/wiki/File:Rheinmetall_AG_Logo.svg
+XETR:SIE,word,6.32,https://commons.wikimedia.org/wiki/File:Siemens-logo.svg
+XETR:VOW3,symbol,1.0,https://commons.wikimedia.org/wiki/File:Volkswagen_logo_2019.svg
+XOM,word,5.29,https://commons.wikimedia.org/wiki/File:Exxon_Mobil_Logo.svg
