@@ -313,21 +313,31 @@ def test_alerts_go_to_the_owner_only_until_licensed(tmp_path, monkeypatch):
         assert accounts.unread_count(s, "owner@example.com") == 2 and accounts.unread_count(s, "guest@example.com") == 0
 
 
-def test_tradingview_quote_is_shown_even_with_saved_returns(client, monkeypatch):
+def test_own_figures_replace_tradingview_quotes_for_viewers_who_may_see_them(client, monkeypatch):
     monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "owner")
     monkeypatch.setattr(config, "OWNER_EMAIL", "owner@example.com")
     monkeypatch.setattr(services, "get_price_chart", lambda t: None)  # prod: TradingView chart
     sign_in(client, "owner@example.com")
-    services.save_watchlist("owner@example.com", ["AAPL"])
+    services.save_watchlist("owner@example.com", ["AAPL", "MSFT"])
     portfolio = client.get("/portfolio").text
-    assert '"symbol": "AAPL"' in portfolio and "embed-widget-single-quote" in portfolio
-    assert "Saved close" not in portfolio
+    assert 'class="card-figs"' in portfolio and '"symbol": "AAPL"' not in portfolio  # our own AAPL figures
+    assert '"symbol": "MSFT"' in portfolio  # no stored figures for MSFT: TradingView quote
     page = client.get("/stock/AAPL").text
-    assert 'class="perf-head"' in page and "embed-widget-single-quote" in page and "advanced-chart" in page
+    assert 'class="perf-head"' in page and "embed-widget-single-quote" not in page and "advanced-chart" in page
     client.get("/logout")
     sign_in(client, "guest@example.com")
+    services.save_watchlist("guest@example.com", ["AAPL", "MSFT"])
+    assert 'class="card-figs"' not in client.get("/portfolio").text
     page = client.get("/stock/AAPL").text
     assert 'class="perf-head"' not in page and "embed-widget-single-quote" in page and "advanced-chart" in page
+
+
+def test_own_figures_are_shown_to_everyone_once_display_is_allowed(client, monkeypatch):
+    monkeypatch.setattr(config, "PRICE_DATA_DISPLAY", "all")
+    monkeypatch.setattr(config, "CHART_PROVIDER", "none")
+    client.get("/demo")
+    portfolio = client.get("/portfolio").text
+    assert 'class="card-figs"' in portfolio and '<svg class="spark' in portfolio
 
 
 def test_international_stocks_are_browsable_and_followable(client, monkeypatch):

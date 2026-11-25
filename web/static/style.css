@@ -337,3 +337,10 @@ input[type="date"], select, .input { background: var(--card); border: 1px solid 
 @media (max-width: 760px) { .qs { flex: 1 1 100%; order: 5; } }
 
 .exposure-bar { display: block; width: 100%; height: 8px; margin: 5px 0 12px; accent-color: var(--accent); }
+
+/* Portfolio card: our own last-close figures */
+.card-figs { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; color: var(--text); }
+.card-figs:hover { color: var(--text); }
+.card-figs > span { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.card-figs .day { font-size: 24px; font-weight: 500; }
+.card-figs .spark { width: 120px; height: 36px; flex: none; }

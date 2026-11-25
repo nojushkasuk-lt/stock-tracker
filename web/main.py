@@ -99,12 +99,14 @@ def portfolio(request: Request):
     stocks = services.get_watchlist(me.email) if me.email else services.get_demo_stocks()
     pairs = [(s, n) for s in stocks if (n := services.get_move_note(s.ticker, me.email))]
     note_stock, note = views.latest_note(pairs)
-    quotes = {stock.ticker: tv.quote_html(stock.tv_symbol) for stock in stocks if stock.quote_embeddable}
+    figures = services.get_card_figures(stocks)  # our own last-close figures, where the viewer may see them
+    quotes = {stock.ticker: tv.quote_html(stock.tv_symbol) for stock in stocks
+              if stock.quote_embeddable and stock.ticker not in figures}
     return page(request, "portfolio.html", stocks=stocks, market=services.get_market_status(me.email),
                 summary=services.get_watchlist_change(stocks), tiingo_configured=bool(config.TIINGO_API_KEY), note=note, note_stock=note_stock,
                 exposure=views.exposure_breakdown(stocks), closing_news=services.get_closing_news(),
                 market_quote=tv.quote_html("AMEX:SPY"),
-                quotes=quotes,
+                quotes=quotes, figures=figures,
                 max_stocks=services.watchlist_max(), nav="portfolio")
 
 
@@ -172,7 +174,7 @@ def _stock_page(request: Request, ticker: str, search_coverage: bool = False):
         closing_news=services.get_closing_news(stock.ticker),
         chart_widget=tv.chart_widget_html(chart_symbol, theme="dark", background=tv.MIDNIGHT_BG, grid=tv.MIDNIGHT_GRID)
         if not chart and chart_symbol else None,
-        quote_widget=tv.quote_html(stock.tv_symbol) if stock.quote_embeddable else None,
+        quote_widget=tv.quote_html(stock.tv_symbol) if stock.quote_embeddable and not perf else None,  # our own figures first
         quote_url=tv.symbol_url(stock.tv_symbol) if stock.global_listing else None,
         chart_url=tv.chart_url(stock.tv_symbol), alternate_chart_label=stock.alternate_chart_label,
         chart_symbol=chart_symbol,

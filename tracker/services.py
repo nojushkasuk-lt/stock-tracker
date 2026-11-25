@@ -772,7 +772,40 @@ def _tile(fund, rets: list[float], followed: bool, spark: bool) -> MarketTile:
 
 
 def _sparklines_allowed() -> bool:
-    return config.CHART_PROVIDER != "none"  # same gate as the custom chart (rule 13)
+    # Growth lines from our stored daily changes: locally, or wherever the provider's figures may be shown.
+    return config.CHART_PROVIDER != "none" or config.PRICE_DATA_DISPLAY == "all"
+
+
+@dataclass(frozen=True)
+class CardFigures:
+    date: str               # YYYY-MM-DD of the last stored close
+    day: float              # % change on that day
+    month: float | None     # % over the last 21 sessions
+    spark: str | None       # 3-month growth line (SVG points, 120 x 36)
+
+
+def get_card_figures(stocks: list[Stock]) -> dict[str, CardFigures]:
+    """Our own last-close figures for portfolio cards (empty when the viewer may not see provider figures)."""
+    from tracker.analysis import performance as pf
+
+    if not stocks or not price_data_visible():
+        return {}
+    spark = _sparklines_allowed()
+    out = {}
+    try:
+        with session_scope() as s:
+            for stock in stocks:
+                rows = _returns(s, stock.ticker, 70)
+                if not rows:
+                    continue
+                rets = [r for _, r in rows]
+                month = (pf.compound(rets[-21:]) if len(rets) >= 21 else None)
+                line = pf.svg_points(pf.index_line(rets[-63:]), width=120, height=36, pad=3, max_points=63) \
+                    if spark and len(rets) > 10 else None
+                out[stock.ticker] = CardFigures(rows[-1][0].isoformat(), rets[-1], month, line)
+    except OperationalError:
+        return {}
+    return out
 
 
 def get_markets(email: str | None = None) -> list[tuple[str, list[MarketTile]]]:

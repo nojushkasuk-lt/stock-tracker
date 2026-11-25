@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import logo %}
+{% from "_macros.html" import logo, spark %}
 {% block title %}Portfolio · Stock Tracker{% endblock %}
 {% block content %}
 <section class="summary">
@@ -60,7 +60,13 @@
   {% for stock in stocks %}
   <article class="stock-card">
     <a class="top" href="/stock/{{ stock.ticker }}">{{ logo(stock, "sm") }}<span style="flex: 1; min-width: 0"><span class="nm">{{ stock.name }}</span><span class="sub">{{ stock.ticker }} · {{ stock.industry }}</span></span></a>
-    {% if stock.ticker in quotes %}
+    {% if stock.ticker in figures %}{% set f = figures[stock.ticker] %}
+      <a class="card-figs" href="/stock/{{ stock.ticker }}">
+        <span><span class="mono day {{ f.day|tone }}">{{ f.day|pct }}</span>
+          <span class="note-small">{{ f.date|short_date }} close{% if f.month is not none %} · 1M <span class="{{ f.month|tone }}">{{ f.month|pct }}</span>{% endif %}</span></span>
+        {{ spark(f.spark, f.month|tone if f.month is not none else "") }}
+      </a>
+    {% elif stock.ticker in quotes %}
       {{ quotes[stock.ticker]|safe }}
     {% else %}
       <a class="note-small" href="/stock/{{ stock.ticker }}">View price on the stock page</a>
