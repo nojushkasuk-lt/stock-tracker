@@ -3,8 +3,11 @@
 Demo mode is read-only (rule 7): everything in this file reads, nothing writes.
 """
 
+import hashlib
 from contextvars import ContextVar
 from dataclasses import dataclass, field
+from functools import lru_cache
+from pathlib import Path
 from datetime import UTC, date, datetime, time, timedelta
 
 from sqlalchemy import select
@@ -30,11 +33,12 @@ class Stock:
     industry: str
     rank: int | None
     tv_symbol: str  # e.g. NASDAQ:AAPL
-    logo: str | None = None  # small PNG thumbnail URL (Wikimedia Commons), None = show the initial
+    logo: str | None = None  # our PNG cut from a Wikimedia Commons logo (/static/logos/...), None = show the initial
     country: str = "United States"
     segment: str = "US"
     demo_visible: bool = False
     logo_source: str | None = None
+    logo_kind: str | None = None  # symbol, word (short wordmark) or mark (emblem / first letter)
 
     @property
     def global_listing(self) -> bool:
@@ -110,22 +114,38 @@ def _query():
             .join(CompanyFacts, CompanyFacts.ticker == Universe.ticker, isouter=True))
 
 
-def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None, country: str | None = None) -> Stock:
-    from tracker.data.wikidata import commons_logo, logo_thumb
+LOGO_DIR = Path(__file__).resolve().parents[1] / "web" / "static" / "logos"
 
+
+@lru_cache(maxsize=1)
+def _logo_version() -> str:
+    """Changes whenever the logo list changes, so browsers fetch the new images."""
+    return hashlib.sha256((Path(__file__).resolve().parents[1] / "config" / "logo_icons.csv").read_bytes()).hexdigest()[:8]
+
+
+def _logo(ticker: str) -> tuple[str | None, str | None, str | None]:
+    """(image URL, Commons source page, kind) from config/logo_icons.csv; (None, None, None) = show the initial.
+    Long wordmarks are cut to the brand's emblem or first letter (the name is always printed next to the logo)."""
+    from tracker.data.wikidata import commons_logo
+
+    row = logo_files().get(ticker)
+    name = ticker.replace(":", "_") + ".png"
+    if not row or not (LOGO_DIR / name).exists():
+        return None, None, None
+    return f"/static/logos/{name}?v={_logo_version()}", commons_logo(row["file"])[1], row["kind"]
+
+
+def _to_stock(u: Universe, exchange: str | None, logo_url: str | None = None, country: str | None = None) -> Stock:
     segment = u.region or "US"
-    # Symbols only (config/logo_icons.csv): the name is always shown next to the logo, so a wordmark repeats it
-    # and is unreadable at icon size. Companies without a clean symbol get a monogram tile.
-    logo_file = logo_files().get(u.ticker)
-    file_url, logo_source = commons_logo(logo_file) if logo_file else (None, None)
+    logo, logo_source, logo_kind = _logo(u.ticker)
     return Stock(
         u.ticker, u.name, u.industry, u.market_cap_rank,
         u.ticker if u.ticker in listings() else tv_symbol(u.ticker, exchange),
-        logo_thumb(file_url, 128) if file_url else None,
+        logo,
         # US seats are SEC domestic filers; Wikidata lists several countries for big companies.
         u.country or (country if segment != "US" else None) or "United States", segment,
         demo_visible=u.active and (u.is_demo or segment in config.INTL_REGIONS),
-        logo_source=logo_source,
+        logo_source=logo_source, logo_kind=logo_kind,
     )
 
 

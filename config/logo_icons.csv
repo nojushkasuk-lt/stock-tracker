@@ -1,28 +1,192 @@
-ticker,file
-AAPL,Apple logo black.svg
-AMZN,Tabler-icons brand-amazon.svg
-BIDU,Cib-baidu (CoreUI Icons v1.0.0).svg
-BKNG,Tabler-icons brand-booking.svg
-EURONEXT:RNO,Renault 2021.svg
-GE,General Electric logo.svg
-GEV,General Electric logo.svg
-HKEX:1810,Xiaomi logo (2021-).svg
-HMC,Logo Honda F1.svg
-HSBC,HSBC 滙豐 (logo only).svg
-MA,Mastercard 2019 logo.svg
-MCD,McDonald's Golden Arches.svg
-META,Meta Platforms Inc. logo (cropped).svg
-MSFT,Microsoft icon.svg
-NFLX,Netflix icon.svg
-ORCL,Oracle Corporation logo.svg
-PLTR,Cib-palantir (CoreUI Icons v1.0.0).svg
-SPOT,Spotify icon.svg
-T,AT&T Globe 2016.svg
-TM,Tabler-icons brand-toyota.svg
-TMUS,Telekom Logo 2013.svg
-TSLA,Tesla T symbol.svg
-VZ,Verizon 2024 (symbol).svg
-WMT,Walmart spark (2025).svg
-XETR:BMW,BMW logo (gray).svg
-XETR:MBG,Mercedes-Benz free logo.svg
-XETR:VOW3,Volkswagen logo 2019.svg
+ticker,file,kind
+AAPL,Apple logo black.svg,symbol
+ABBV,AbbVie logo.svg,mark
+ABT,Abbott Laboratories 2025 logo.svg,mark
+ADI,Analog Devices Logo.svg,mark
+ADP,Automatic-Data-Processing-Logo.svg,word
+AMAT,Applied Materials Logo.svg,mark
+AMD,AMD Logo.svg,word
+AMGN,Amgen.svg,word
+AMZN,Tabler-icons brand-amazon.svg,symbol
+ANET,Arista-networks-logo.svg,mark
+ANT,Anthropic logo.svg,mark
+APH,Logo Amphenol.svg,mark
+APP,AppLovin-Logo.gif,mark
+ARM,Arm logo 2025.svg,word
+ASML,ASML Holding N.V. logo.svg,word
+AVGO,Broadcom logo (2016-present).svg,mark
+AXP,American Express logo (2018).svg,word
+AZN,Astrazeneca text logo.svg,mark
+BA,Boeing full logo.svg,mark
+BABA,Alibaba en logo.svg,mark
+BAC,Bank of America logo.svg,mark
+BBVA,BBVA logo 2025.svg,word
+BEKE,KE Holdings.png,mark
+BIDU,Cib-baidu (CoreUI Icons v1.0.0).svg,symbol
+BKNG,Tabler-icons brand-booking.svg,symbol
+BLK,BlackRock wordmark.svg,mark
+BME:IBE,Logo Iberdrola (2023).svg,mark
+BME:ITX,Inditex.svg,word
+BMY,Bristol-Myers Squibb logo (2020).svg,mark
+BP,Bp textlogo.svg,word
+BRK-B,Berkshire-Hathaway-Logo.svg,mark
+BTI,Bat logo20.svg,word
+BUD,"Anheuser-Busch InBev - logo (Belgium, 2022-).svg",mark
+C,Citi logo March 2023.svg,word
+CAT,Caterpillar logo.svg,mark
+CHT,Chunghwa Telecom.svg,mark
+CME,CME Group Logo.svg,mark
+COF,Capital One logo.svg,word
+COP,ConocoPhillips Logo.svg,mark
+COST,Costco Wholesale logo 2010-10-26.svg,word
+CRM,Salesforce.com logo.svg,word
+CRWD,CrowdStrike logo.svg,mark
+CSCO,Cisco logo blue 2016.svg,word
+CVX,Chevron Logo.svg,word
+DE,John Deere text only.png,mark
+DELL,Dell logo 2016.svg,word
+DHR,Danaher Corporation logo.svg,mark
+DIS,The Walt Disney Company Logo.svg,mark
+E,Eni wordmark.svg,word
+EQNR,Equinor.svg,word
+EURONEXT:AIR,Airbus Logo 2017.svg,mark
+EURONEXT:KER,Kering-logo.svg,mark
+EURONEXT:MC,LVMH logo.svg,mark
+EURONEXT:OR,L'Oréal logo.svg,mark
+EURONEXT:RMS,Hermes wordmark.svg,mark
+EURONEXT:RNO,Renault 2021.svg,symbol
+EURONEXT:SAF,Safran 2016 logo.svg,mark
+EURONEXT:SU,SchneiderElectric Logo.svg,word
+GE,General Electric logo.svg,symbol
+GEV,General Electric logo.svg,symbol
+GOOGL,Alphabet Inc Logo 2015.svg,word
+GS,Goldman Sachs logo.svg,word
+GSK,GSK Logo PNG5.png,word
+HD,The Home Depot logo.svg,word
+HDB,HDFC-Bank-Logo.svg,mark
+HKEX:1810,Xiaomi logo (2021-).svg,symbol
+HKEX:3690,Meituan English Logo.png,word
+HKEX:700,Tencent Logo.svg,mark
+HMC,Logo Honda F1.svg,symbol
+HSBC,HSBC 滙豐 (logo only).svg,symbol
+IBM,IBM logo.svg,word
+IBN,ICICI Bank Logo.svg,mark
+INFY,Infosys logo.svg,word
+ING,ING Group (wordmark).svg,word
+INTC,Intel logo 2023.svg,word
+ISRG,Intuitive Surgical logo.svg,word
+IX,ORIX Logo.svg,word
+JD,JD Group logo.svg,mark
+JNJ,JNJ Logo New.svg,mark
+JPM,Logo of JPMorganChase 2024.svg,mark
+KB,KB logo.svg,word
+KLAC,KLA Corp. logo.svg,mark
+KO,The Coca-Cola Company (2020).svg,mark
+KRX:000270,KIA logo3.svg,word
+KRX:000660,SK Hynix.svg,word
+KRX:005380,Hyundai Motor Company logo.svg,mark
+KRX:005930,Samsung Electronics logo (english).svg,word
+KRX:006400,Samsung SDI logo (english).svg,mark
+KRX:012450,Hanwha Aerospace Logo.svg,word
+KRX:035420,Naver Logotype.svg,mark
+KRX:068270,Celltrion CI.svg,mark
+KRX:207940,Samsung Biologics Logo.svg,word
+KRX:373220,LG Energy Solution logo EN.svg,mark
+LLY,Eli Lilly and Company.svg,word
+LMT,Lockheed Martin logo (2011–2022).svg,mark
+LOW,Lowes Companies Logo.svg,word
+LRCX,Lam-Research-Logo.svg,mark
+LYG,Lloyds Banking Group Plc.png,word
+MA,Mastercard 2019 logo.svg,symbol
+MCD,McDonald's Golden Arches.svg,symbol
+MCK,Mck logo pos col rgb.svg,mark
+META,Meta Platforms Inc. logo (cropped).svg,symbol
+MFG,Mizuho logo.svg,word
+MIL:PRY,Prysmian Logo.svg,mark
+MO,Altria Group.svg,word
+MRK,Merck Logo.svg,mark
+MRVL,Marvell Logo.svg,mark
+MS,Morgan Stanley Logo 2024.png,mark
+MSFT,Microsoft icon.svg,symbol
+MU,Micron Technology logo 2024.svg,mark
+MUFG,Mitsubishi UFJ Financial Group.svg,mark
+NEE,NextEra Energy logo (1).svg,word
+NFLX,Netflix icon.svg,symbol
+NGG,Nattygridlogo.svg,mark
+NVDA,NVIDIA logo.svg,mark
+NVS,Novartis-Logo-2023.svg,mark
+OMXSTO:ATCO_A,Atlas Copco Group logo.svg,word
+OMXSTO:VOLV_B,Volvo-Spread-Word-Mark-Black.svg,mark
+ORCL,Oracle Corporation logo.svg,symbol
+PANW,PaloAltoNetworks 2020 Logo.svg,mark
+PEP,"PepsiCo (2025, wordmark).svg",mark
+PFE,Pfizer (2021).svg,word
+PG,Procter & Gamble logo.svg,word
+PGR,Logo of the Progressive Corporation.svg,mark
+PH,Parker Hannifin.svg,word
+PLD,Prologis Logo Current.svg,mark
+PLTR,Cib-palantir (CoreUI Icons v1.0.0).svg,symbol
+PM,Pmi logo text only.svg,word
+QCOM,Qualcomm-Logo.svg,mark
+RIO,Rio Tinto.svg,mark
+RTX,RTX Raytheon Technologies logo.svg,word
+SAN,Banco Santander Logotipo.svg,mark
+SAP,SAP 2011 logo.svg,word
+SBUX,Starbucks coffee wordmark.png,mark
+SCHW,Charles Schwab Corporation logo.svg,word
+SE,Sea Group logo.svg,word
+SHEL,Shell wordmark 2019.svg,word
+SHG,Mini shinhan.jpg,mark
+SIX:ABBN,ABB logo.svg,word
+SIX:CFR,Richemont.svg,mark
+SIX:NESN,Nestle textlogo red.svg,word
+SIX:ROG,Roche Logo.svg,word
+SMFG,Sumitomo Mitsui Financial Group logo.svg,mark
+SNY,Sanofi-2022.svg,word
+SO,Southern Company newer logo.svg,mark
+SONY,Sony Group logo.svg,mark
+SPCX,SpaceX logo black.svg,mark
+SPGI,S&P Global logo.svg,mark
+SPOT,Spotify icon.svg,symbol
+SYK,Stryker logo.svg,word
+SZSE:002594,"BYD Company, Ltd. - Logo.svg",word
+SZSE:300750,Contemporary Amperex Technology logo.svg,word
+T,AT&T Globe 2016.svg,symbol
+TCOM,Trip.com Group Ltd. logo.jpg,mark
+TJX,TJX Logo.svg,word
+TM,Tabler-icons brand-toyota.svg,symbol
+TMO,Thermo Fisher Scientific logo.svg,word
+TMUS,Telekom Logo 2013.svg,symbol
+TSE:6501,Hitachi logo.svg,mark
+TSE:6752,Panasonic Group logo.svg,mark
+TSE:6861,Keyence.svg,mark
+TSE:7974,Nintendo red logo.svg,word
+TSE:8035,Tokyo Electron logo.svg,word
+TSE:9984,SoftBank Group logo.svg,mark
+TSLA,Tesla T symbol.svg,symbol
+TSM,TSMC wordmark.svg,word
+TTE,TotalEnergies wordmark (2021-present).svg,mark
+TXN,TexasInstruments-Logo.svg,mark
+UBER,Uber logo 2018.svg,word
+UBS,UBS Logo.png,word
+UL,Unilever text logo.svg,mark
+UMC,UMC-Logo.svg,word
+UNH,UnitedHealth Group logo.svg,mark
+UNP,Union pacific railroad logo.svg,word
+V,Visa Inc. logo (2021–present).svg,word
+VRTX,VertexPharma-logo2.png,word
+VZ,Verizon 2024 (symbol).svg,symbol
+WELL,Welltower Logo 2025.svg,word
+WFC,Wells Fargo Logo (2020).svg,word
+WIT,Wipro new logo.svg,word
+WMT,Walmart spark (2025).svg,symbol
+XETR:ALV,Allianz vector.svg,word
+XETR:BMW,BMW logo (gray).svg,symbol
+XETR:CON,Continental wordmark.svg,mark
+XETR:ENR,Siemens Energy logo.svg,word
+XETR:MBG,Mercedes-Benz free logo.svg,symbol
+XETR:P911,Porsche Wortmarke.svg,mark
+XETR:RHM,Rheinmetall AG Logo.svg,mark
+XETR:SIE,Siemens-logo.svg,mark
+XETR:VOW3,Volkswagen logo 2019.svg,symbol
+XOM,Exxon Mobil Logo.svg,mark

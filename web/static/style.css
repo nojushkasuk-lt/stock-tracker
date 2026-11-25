@@ -357,3 +357,7 @@ a.moving:hover { text-decoration: none; filter: brightness(1.15); }
 .stock-card .moving { align-self: flex-start; }
 .moving-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .movers-count { font-size: 24px; font-weight: 700; margin: 8px 0 2px; }
+
+/* Short wordmarks shown whole get more room inside the tile */
+.logo.logo-word img { padding: 5px; }
+.logo.sm.logo-word img { padding: 3px; }

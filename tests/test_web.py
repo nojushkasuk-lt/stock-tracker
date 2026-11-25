@@ -369,8 +369,8 @@ def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
     client.get("/demo")
     directory = client.get("/international").text
     assert all(name in directory for name in ("Samsung Electronics", "ASML", "TSMC", "Toyota"))
-    assert "Special:FilePath/Tabler-icons_brand-toyota.svg" in directory  # Toyota: its symbol
-    assert "TSMC_wordmark" not in directory and "ASML_Holding" not in directory  # wordmark brands: monogram
+    assert "/static/logos/TM.png" in directory and "logo-symbol" in directory  # Toyota: its symbol
+    assert "/static/logos/TSM.png" in directory and "logo-word" in directory  # TSMC: short wordmark, whole
     assert {"ASML", "TSM", "TM", "KRX:005930"} <= {i["t"] for i in client.get("/search.json").json()}
     assert client.get("/stock/TSM").status_code == 200
     samsung = client.get("/stock/KRX:005930")
@@ -729,13 +729,20 @@ def test_news_page_hides_empty_sections_from_visitors_without_figures(client, mo
     assert "Moves in demo stocks" in client.get("/news").text
 
 
-def test_logos_are_curated_symbols_or_a_monogram(client):
+def test_logos_are_symbols_short_wordmarks_or_marks_served_by_us(client):
+    from pathlib import Path
+
     from tracker.data.global_listings import logo_files
 
-    files = logo_files()
-    assert files["AAPL"] == "Apple logo black.svg" and "MSFT" in files
-    assert all(f.lower().endswith((".svg", ".png")) for f in files.values())
+    rows = logo_files()
+    assert rows["AAPL"]["kind"] == "symbol" and rows["IBM"]["kind"] == "word" and rows["JNJ"]["kind"] == "mark"
+    static = Path(__file__).resolve().parents[1] / "web/static/logos"
+    for t, row in rows.items():  # every listed logo has its image and a Commons source file
+        assert (static / f"{t.replace(':', '_')}.png").exists(), t
+        assert row["kind"] in {"symbol", "word", "mark"} and row["file"].lower().endswith((".svg", ".png", ".jpg", ".jpeg", ".gif"))
     apple, small = services.get_stock("AAPL"), services.get_stock("ZZZ")
-    assert apple.logo.startswith("https://commons.wikimedia.org/wiki/Special:FilePath/") and apple.logo_source
-    assert small.logo is None  # no curated symbol: the page shows the initial
+    assert apple.logo.startswith("/static/logos/AAPL.png?v=") and apple.logo_kind == "symbol"
+    assert apple.logo_source.startswith("https://commons.wikimedia.org/wiki/File:")
+    assert small.logo is None  # no logo: the page shows the initial
+    assert client.get(apple.logo).status_code == 200
 
