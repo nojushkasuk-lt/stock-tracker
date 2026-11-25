@@ -190,13 +190,16 @@ class Financials:
 
 
 def get_financials(ticker: str) -> Financials | None:
-    """Ratios and yearly history computed from stored SEC figures, or None if the ticker is unknown."""
+    """Ratios and yearly history computed from stored SEC figures, or None if the ticker is unknown or has
+    no figures (home-market listings, new filers): the page then leaves the cards out instead of showing dashes."""
     try:
         with session_scope() as s:
             u = s.get(Universe, ticker.upper())
             if u is None:
                 return None
             rows = list(s.scalars(select(Fundamental).where(Fundamental.ticker == u.ticker)))
+            if not rows:
+                return None
             return Financials(compute_metrics(rows, u.industry), annual_history(rows))
     except OperationalError:
         return None

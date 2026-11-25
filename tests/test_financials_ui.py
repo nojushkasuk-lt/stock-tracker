@@ -63,3 +63,7 @@ def test_services_returns_financials_for_a_stored_company(tmp_path, monkeypatch)
     f = services.get_financials("x")
     assert f.metrics.revenue_ttm == 1000 and len(f.history) == 1
     assert services.get_financials("NOPE") is None
+    with Session(engine) as s:
+        s.add(Universe(ticker="Y", cik="", name="Y", industry="Software", updated_at=datetime(2026, 1, 1)))
+        s.commit()
+    assert services.get_financials("Y") is None  # no SEC figures: no empty cards
