@@ -1,6 +1,6 @@
 """Tiingo snapshot parsing and the watchlist aggregate (transient, in memory)."""
 
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 
@@ -22,6 +22,7 @@ def snapshot(monkeypatch):
     monkeypatch.setattr(config, "TIINGO_API_KEY", "test-token")
     monkeypatch.setattr(tiingo, "_fetch", fake_fetch)
     monkeypatch.setattr(tiingo, "_refresh_at", 0.0)
+    monkeypatch.setattr(tiingo, "_now", lambda: datetime(2026, 11, 25, 10, 45, tzinfo=tiingo.NEW_YORK))
     return rows
 
 
@@ -61,3 +62,14 @@ def test_notable_move_exposes_direction_and_session_only(snapshot):
     snapshot[:] = [_row("NVDA", 99.0, 100.0)]
     tiingo._refresh_at = 0.0
     assert tiingo.notable_move("NVDA") is None
+
+
+def test_quotes_from_a_stopped_session_are_not_moving_now(snapshot, monkeypatch):
+    # Thanksgiving morning: the snapshot still holds the previous evening's after-hours quotes.
+    snapshot += [_row("VRTX", 90.0, 100.0, ts="2026-11-25T20:00:00-05:00")]
+    monkeypatch.setattr(tiingo, "_now", lambda: datetime(2026, 11, 26, 10, 0, tzinfo=tiingo.NEW_YORK))
+    snap = tiingo.sharp_moves({"VRTX": 5.0})
+    assert snap.moves == {} and not snap.live and snap.as_of.hour == 20
+    assert tiingo.notable_move("VRTX") is None
+    monkeypatch.setattr(tiingo, "_now", lambda: datetime(2026, 11, 25, 20, 30, tzinfo=tiingo.NEW_YORK))
+    assert tiingo.sharp_moves({"VRTX": 5.0}).moves["VRTX"].direction == "fell"  # still live half an hour later

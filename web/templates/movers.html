@@ -9,8 +9,12 @@
 
 <section class="summary">
   <div class="card">
-    <div class="eyebrow">Right now</div>
-    {% if movers.as_of %}
+    <div class="eyebrow">{{ "Right now" if movers.live else "Latest check" }}</div>
+    {% if movers.as_of and not movers.live %}
+      <div class="movers-count">No trading right now</div>
+      <div class="muted">Last quote {{ movers.as_of.strftime('%b %d, %H:%M %Z') }}. US stocks are not trading (a weekend, a market holiday or overnight).</div>
+      <div class="note-small">Moves show here again when trading resumes. The latest closing news is below.</div>
+    {% elif movers.as_of %}
       <div class="movers-count">{% if movers.stocks %}{{ movers.stocks|length }} {{ "stock" if movers.stocks|length == 1 else "stocks" }} moving sharply{% else %}No sharp moves{% endif %}</div>
       <div class="muted">Checked {{ movers.as_of.strftime('%b %d, %H:%M %Z') }} · {{ movers.checked }} stocks</div>
       {% if movers.when == "before the open" %}<div class="note-small">Pre-market trading. TradingView quotes show the last regular session until 9:30 New York time.</div>
@@ -43,7 +47,7 @@
   </article>
   {% endfor %}
 </div>
-{% elif movers.as_of %}
+{% elif movers.as_of and movers.live %}
 <section class="card"><p class="muted" style="margin: 0">No stock in the top 100 or the international list is moving {{ "%g"|format(threshold) }}% or more right now.
   {% if closing_news %}The latest closing news is below.{% endif %}</p></section>
 {% endif %}

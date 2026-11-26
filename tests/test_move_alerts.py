@@ -81,6 +81,16 @@ def test_movers_page_and_portfolio_chips(client, snapshot):
     assert "Moving sharply lower today" in portfolio and 'href="/movers"' in portfolio
 
 
+def test_movers_page_on_a_market_holiday_says_trading_has_stopped(client, snapshot, monkeypatch):
+    snapshot += [_row("AAPL", 93.0, 100.0, ts="2026-11-25T20:00:00-05:00"), _row("SPY", 99.0, 100.0, ts="2026-11-25T20:00:00-05:00")]
+    monkeypatch.setattr(tiingo, "_now", lambda: datetime(2026, 11, 26, 10, 0, tzinfo=tiingo.NEW_YORK))
+    client.get("/demo")
+    page = client.get("/movers").text
+    assert "Latest check" in page and "No trading right now" in page and "Right now" not in page
+    assert "Moving sharply" not in page and "Apple" not in page.split("<h1>Movers</h1>")[1].split("Latest U.S. market close")[0]
+    assert "Moving sharply" not in client.get("/portfolio").text  # no stale chips on the cards
+
+
 def test_followed_stocks_use_the_viewers_threshold(client, snapshot):
     snapshot += [_row("AAPL", 100.0, 100.0), _row("MSFT", 96.5, 100.0)]
     sign_in(client, "c@example.com")

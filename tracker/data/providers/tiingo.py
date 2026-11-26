@@ -15,6 +15,9 @@ from tracker import config
 SNAPSHOT_URL = "https://api.tiingo.com/tiingo/equity/intraday"
 REFRESH_SECONDS = 15 * 60
 NEW_YORK = ZoneInfo("America/New_York")
+# A quote older than this is not "moving now": weekends, market holidays, and the hours after 20:00 New York
+# time when trading stops. The snapshot then still holds the last session's moves.
+LIVE_WINDOW = timedelta(hours=1)
 logger = logging.getLogger(__name__)
 
 
@@ -119,10 +122,20 @@ def _snapshot_moves(symbols: set[str]) -> list[_Move]:
 
 @dataclass(frozen=True)
 class SharpMoves:
-    """Qualitative view of one snapshot: which stocks are moving sharply and which way. No prices or percentages."""
+    """Qualitative view of one snapshot: which stocks are moving sharply and which way. No prices or percentages.
+    `moves` holds live moves only; when trading has stopped, `live` is False and `as_of` is the last quote's time."""
     as_of: datetime | None
     session: date | None
     moves: dict[str, NotableMove]
+    live: bool = True
+
+
+def _now() -> datetime:
+    return datetime.now(NEW_YORK)
+
+
+def _is_live(timestamp: datetime) -> bool:
+    return _now() - timestamp <= LIVE_WINDOW
 
 
 def _current(moves: dict[str, _Move]) -> dict[str, _Move]:
@@ -137,13 +150,14 @@ def sharp_moves(thresholds: dict[str, float]) -> SharpMoves:
     """Directions of stocks whose move since the previous close is at least their threshold (ticker -> percent)."""
     by_symbol = {_symbol(ticker): ticker for ticker in thresholds}
     current = _current(_snapshot(set(by_symbol)))
+    as_of = max((m.timestamp for m in current.values()), default=None)
+    live = as_of is not None and _is_live(as_of)
     moves = {}
     for symbol, move in current.items():
         ticker = by_symbol[symbol]
-        if abs(move.percent) >= thresholds[ticker]:
+        if live and _is_live(move.timestamp) and abs(move.percent) >= thresholds[ticker]:
             moves[ticker] = NotableMove("rose" if move.percent > 0 else "fell", move.session, move.previous_session)
-    return SharpMoves(max((m.timestamp for m in current.values()), default=None),
-                      next(iter(current.values())).session if current else None, moves)
+    return SharpMoves(as_of, next(iter(current.values())).session if current else None, moves, live)
 
 
 def intraday_changes(tickers: list[str]) -> dict[str, tuple[float, datetime, date]]:
@@ -157,7 +171,7 @@ def intraday_changes(tickers: list[str]) -> dict[str, tuple[float, datetime, dat
 def notable_move(ticker: str) -> NotableMove | None:
     """Expose only the direction and session of a move that meets the coverage threshold."""
     moves = _snapshot_moves({_symbol(ticker)})
-    if moves and abs(moves[0].percent) >= config.MOVE_THRESHOLD_PCT:
+    if moves and _is_live(moves[0].timestamp) and abs(moves[0].percent) >= config.MOVE_THRESHOLD_PCT:
         move = moves[0]
         return NotableMove("rose" if move.percent > 0 else "fell", move.session, move.previous_session)
     return None

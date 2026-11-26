@@ -297,6 +297,7 @@ class Movers:
     stocks: list[Mover]
     checked: int
     when: str = "today"
+    live: bool = True  # False on weekends, market holidays and overnight: as_of is then the last quote's time
 
 
 def session_phase(as_of: datetime | None) -> str:
@@ -335,7 +336,7 @@ def get_movers(email: str | None = None) -> Movers:
     movers = [Mover(st, snap.moves[st.ticker].direction, st.ticker in mine, when)
               for st in stocks if st.ticker in snap.moves]
     movers.sort(key=lambda m: (not m.followed, m.stock.rank is None, m.stock.rank or 0))
-    return Movers(snap.as_of, snap.session, market, movers, len(thresholds) - 1, when)
+    return Movers(snap.as_of, snap.session, market, movers, len(thresholds) - 1, when, snap.live)
 
 
 def get_card_moves(stocks: list[Stock], email: str | None = None) -> dict[str, Mover]:

@@ -669,6 +669,7 @@ def test_stock_coverage_uses_latest_notable_move_without_showing_exact_return(cl
         "timestamp": "2026-11-23T20:00:00Z", "prevDate": "2026-11-20",
     })
     monkeypatch.setattr(tiingo, "_snapshot_moves", lambda symbols: [move] if symbols == {"AAPL"} else [])
+    monkeypatch.setattr(tiingo, "_now", lambda: move.timestamp + timedelta(minutes=10))
     monkeypatch.setattr(config, "BRAVE_SEARCH_API_KEY", "test-key")
     searches = []
 
