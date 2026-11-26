@@ -10,7 +10,7 @@ from datetime import date
 from sqlalchemy import func, select
 
 from tracker.ai.notes import explain_day
-from tracker.alerts import notify_followers, send_emails
+from tracker.alerts import email_pending, notify_followers
 from tracker.analysis import moves
 from tracker.data import news
 from tracker.data.edgar import EdgarClient
@@ -51,20 +51,6 @@ def explain_moves(s, edgar: EdgarClient, recheck_only: bool = False) -> None:
             break
 
 
-def email_alerts(s) -> None:
-    from tracker import config
-    from tracker.emailer import GmailSender
-
-    if not config.email_ready():
-        print("email: off (not configured)")
-        return
-    try:
-        with GmailSender() as g:
-            print(f"email: {send_emails(s, g)} sent")
-    except Exception as e:  # never fail the daily job over email; alerts stay on the site
-        print(f"email: FAILED {type(e).__name__}")
-
-
 def main(recheck_only: bool = False) -> None:
     create_tables()
     with session_scope() as s:
@@ -72,7 +58,7 @@ def main(recheck_only: bool = False) -> None:
         if recheck_only:
             explain_moves(s, edgar, recheck_only=True)
             print(f"alerts: {notify_followers(s)} new")
-            email_alerts(s)
+            email_pending(s)
             return
         n = load_universe(s)
         print(f"universe: {n} new rows")
@@ -94,7 +80,7 @@ def main(recheck_only: bool = False) -> None:
         print(f"daily_returns: {stored} rows for {len(returns)}/{len(tickers)} tickers; no data for: {missing}")
         explain_moves(s, edgar)
         print(f"alerts: {notify_followers(s)} new")
-        email_alerts(s)
+        email_pending(s)
 
 
 if __name__ == "__main__":

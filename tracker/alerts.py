@@ -71,3 +71,17 @@ def send_emails(s: Session, sender, now=None, max_age_days: int = 2) -> int:
             n.emailed_at = now
         s.flush()
     return sent
+
+
+def email_pending(s: Session) -> None:
+    """Send waiting alert emails (one per user per run). Never fails the calling job: alerts stay on the site."""
+    from tracker.emailer import GmailSender
+
+    if not config.email_ready():
+        print("email: off (not configured)")
+        return
+    try:
+        with GmailSender() as g:
+            print(f"email: {send_emails(s, g)} sent")
+    except Exception as e:
+        print(f"email: FAILED {type(e).__name__}")

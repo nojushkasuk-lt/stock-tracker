@@ -1,15 +1,9 @@
 name: move alerts
 
-# Every 15 minutes during the US session: alert followers when a stock (or the S&P 500) moves sharply.
+# Manual fallback only. The 15-minute schedule runs on Google Cloud (deploy/cloudrun.sh: Cloud Scheduler ->
+# Cloud Run job "move-alerts"), because GitHub delays scheduled runs to about once an hour.
 # The Tiingo snapshot is an internal trigger only; alerts carry the direction, never Tiingo prices or percentages.
 on:
-  schedule:
-    - cron: "45 9 * * 1-5"
-      timezone: "America/New_York"
-    - cron: "*/15 10-15 * * 1-5"
-      timezone: "America/New_York"
-    - cron: "0 16 * * 1-5"
-      timezone: "America/New_York"
   workflow_dispatch:
 
 concurrency: { group: move-alerts, cancel-in-progress: true }

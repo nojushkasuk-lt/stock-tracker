@@ -1,4 +1,4 @@
-"""Sudden-move alerts during the session (every 15 minutes, GitHub Actions).
+"""Sudden-move alerts during the session (every 15 minutes: Cloud Scheduler runs this as a Cloud Run job).
 
 Uses the transient Tiingo snapshot as an internal trigger only: the alert says which way a stock is moving
 ("moving sharply lower") and links to the stock page, where TradingView shows the live quote. No Tiingo price
@@ -11,6 +11,7 @@ from datetime import date, datetime, time, timedelta
 from sqlalchemy import select
 
 from tracker import accounts, config
+from tracker.alerts import email_pending
 from tracker.data.providers import tiingo
 from tracker.db import create_tables, session_scope
 from tracker.models import Universe, UserWatchlist
@@ -71,9 +72,7 @@ def main(force: bool = False) -> None:
             return
         print(f"{now:%H:%M}: {notify(s, changes, now)} new alerts "
               f"for {len(followed)} followed stocks.")
-        from jobs.daily import email_alerts
-
-        email_alerts(s)
+        email_pending(s)
 
 
 if __name__ == "__main__":

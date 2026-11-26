@@ -9,7 +9,6 @@
 *.sqlite*
 tests/
 docs/
-jobs/
 app.py
 deploy/*.sh
 * [0-9].*

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Deploy the website to Google Cloud Run (free tier: scales to zero, 2M requests/month).
+# Deploy the website to Google Cloud Run (free tier: scales to zero, 2M requests/month), plus the
+# move-alerts Cloud Run job and its 15-minute Cloud Scheduler trigger.
 #   deploy/cloudrun.sh            build from source with Cloud Build and deploy
 # Needs: gcloud signed in with a project set (gcloud config set project ID), billing on, and in .env:
 #   NEON_DATABASE_URL, ANTHROPIC_API_KEY, BRAVE_SEARCH_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
@@ -58,6 +59,31 @@ VARS="^|^APP_ENV=prod|ACCESS_MODE=open|PRICE_DATA_DISPLAY=none|GOOGLE_CLIENT_ID=
 gcloud run deploy $SERVICE --source . --region $REGION --allow-unauthenticated \
   --min-instances 0 --max-instances 2 --memory 512Mi --cpu 1 --concurrency 40 --timeout 60 \
   --set-env-vars "$VARS" --set-secrets "$SECRETS" --quiet
+
+# Move alerts: a Cloud Run job on the image just deployed, run every 15 minutes by Cloud Scheduler.
+# (GitHub's own schedules drift to about once an hour.) The job exits at once outside 9:45-16:05 New York
+# time; holidays pass because their quotes are stale. Free tier: 3 Scheduler jobs, and the Cloud Run allowance.
+gcloud services enable cloudscheduler.googleapis.com --quiet
+IMAGE=$(gcloud run services describe $SERVICE --region $REGION --format='value(spec.template.spec.containers[0].image)')
+JOB_SECRETS="DATABASE_URL=DATABASE_URL:latest"
+[ -n "$(envval TIINGO_API_KEY)" ] && JOB_SECRETS="$JOB_SECRETS,TIINGO_API_KEY=TIINGO_API_KEY:latest"
+[ -n "$(envval SMTP_APP_PASSWORD)" ] && JOB_SECRETS="$JOB_SECRETS,SMTP_APP_PASSWORD=SMTP_APP_PASSWORD:latest"
+JOB_VARS="^|^APP_ENV=prod|PRICE_DATA_DISPLAY=none|OWNER_EMAIL=$(envval OWNER_EMAIL)|SMTP_USER=$(envval SMTP_USER)|EMAIL_PROVIDER=$(envval EMAIL_PROVIDER)|BASE_URL=$URL"
+gcloud run jobs deploy move-alerts --image "$IMAGE" --region $REGION \
+  --command python --args=-m,jobs.intraday_alerts \
+  --tasks 1 --max-retries 0 --task-timeout 5m --memory 512Mi --cpu 1 \
+  --service-account "$SA" --set-env-vars "$JOB_VARS" --set-secrets "$JOB_SECRETS" --quiet
+gcloud run jobs add-iam-policy-binding move-alerts --region $REGION \
+  --member="serviceAccount:$SA" --role=roles/run.invoker --quiet >/dev/null
+SCHEDULE=(--schedule "*/15 9-16 * * 1-5" --time-zone America/New_York
+  --uri "https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/move-alerts:run"
+  --http-method POST --oauth-service-account-email "$SA" --attempt-deadline 180s --quiet)
+if gcloud scheduler jobs describe move-alerts --location $REGION >/dev/null 2>&1; then
+  gcloud scheduler jobs update http move-alerts --location $REGION "${SCHEDULE[@]}" >/dev/null
+else
+  gcloud scheduler jobs create http move-alerts --location $REGION "${SCHEDULE[@]}" >/dev/null
+fi
+echo "Move alerts: Cloud Run job 'move-alerts', every 15 minutes 9:00-16:45 New York time on weekdays"
 
 # Keep only the two newest builds (Artifact Registry is free up to 0.5 GB).
 gcloud artifacts repositories set-cleanup-policies cloud-run-source-deploy --location "$REGION" \
