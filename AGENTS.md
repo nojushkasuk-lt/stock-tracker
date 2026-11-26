@@ -21,12 +21,13 @@ The app does not republish articles. It shows headlines, outlets, links and its 
 - Python 3.12
 - Website: FastAPI + server-rendered Jinja templates + hand-written CSS (`web/`), Google sign-in via Authlib. Replaces the Streamlit app (`app.py`, kept until the new site covers everything). Design: "Midnight" (dark navy, Manrope + IBM Plex Mono), mockups at https://claude.ai/artifact/MrZqaUub8gP6irMyBEetQo
 - SQLAlchemy 2.x; SQLite locally, Neon Postgres when deployed (only `DATABASE_URL` changes)
-- TradingView free embed widgets for all price charts, quotes, heatmap and economic calendar (embedded with `st.iframe`, since `st.components.v1.html` is deprecated; keep the TradingView link on each widget). `st.iframe` gives an HTML string same-origin access to the app, so only ever pass HTML that `ui/tradingview.py` builds from a validated ticker, never user or model text. `data:` URLs (which would isolate the widget) did not render the widgets
+- TradingView free embed widgets for every price, chart, quote, heatmap and economic calendar that anyone sees (keep the TradingView link on each widget). Only ever embed HTML that `ui/tradingview.py` builds from a validated ticker, never user or model text. (The old Streamlit app embeds them with `st.iframe`, which gives the HTML same-origin access; `data:` URLs did not render the widgets.)
 - Plotly only for charts of our own EDGAR-derived numbers (revenue, margins)
 - httpx for HTTP, pydantic for data models and LLM output validation, pytest for tests
 - Anthropic API: `claude-haiku-5-5` for routine work, `claude-sonnet-5-5` for filing-based profile updates (Batch API where results can wait)
 - Data: SEC EDGAR (filings, XBRL numbers, SIC codes), a swappable price provider (see rule 13), Brave News Search API (live queries only), outlet RSS feeds as fallback
-- Scheduling: GitHub Actions. Hosting: Streamlit Community Cloud.
+- Hosting: Google Cloud Run (europe-west1, free tier) with Neon Postgres (Frankfurt); `deploy/cloudrun.sh` deploys it. Live at https://stock-tracker-468868157964.europe-west1.run.app
+- Scheduling: GitHub Actions for the daily, weekly, closing-news, earnings and weekly-brief jobs. Move alerts run every 15 minutes as the Cloud Run job `move-alerts`, triggered by Cloud Scheduler (GitHub delays its schedules to about hourly); the deploy script sets both up.
 
 ## Folder layout
 
@@ -70,11 +71,13 @@ tracker/
     outputs.py          # ai_outputs store: input-hash cache, generate = cache -> llm -> validate -> save
     profiles.py         # filing-triggered profile updates (Sonnet)
     notes.py            # market / industry / stock notes and link ranking (Haiku)
-    digests.py          # Monday/Thursday market summary (Haiku)
+    weekly_brief.py     # Monday market and tech brief (Haiku)
 jobs/
   daily.py              # daily returns, filings check, move detection, notes
   intraday_alerts.py    # every 15 min in the session: follower alerts for sharp moves (Tiingo direction only)
-  digest.py             # Monday/Thursday market summary
+  closing_news.py       # after each close: sourced market note and notes for the largest movers (Tiingo closes as an internal trigger)
+  earnings.py           # weekdays: SEC filings for covered stocks (earnings calendar, profile queue)
+  weekly_brief.py       # Mondays: shared market and tech brief
   universe.py           # weekly: re-rank by market cap (entries, exits, demo top 20)
   facts.py              # weekly: Wikidata key facts and logos (python -m jobs.facts)
   fundamentals.py       # fetch EDGAR financial figures (python -m jobs.fundamentals [TICKER ...] [--all])
@@ -100,7 +103,7 @@ The universe is the 100 largest US companies by market cap **as reported by the 
 
 ## Rules
 
-1. **`app.py` only displays.** It imports `tracker/services.py` and `ui/`. It calls functions such as `get_watchlist(email)`, `get_profile(ticker)`, `get_move_note(ticker)`, `request_refresh(email, ticker)`. It never calls an external API, an LLM or the database directly.
+1. **The page layer only displays.** `web/` (and the old `app.py`) imports `tracker/services.py` and `ui/`. It calls functions such as `get_watchlist(email)`, `get_profile(ticker)`, `get_move_note(ticker)`, `request_refresh(email, ticker)`. It never calls an external API, an LLM or the database directly.
 2. **Every model call goes through `tracker/ai/llm.py`.** The wrapper checks the monthly budget before calling, logs tokens and cost to `usage_log`, and reads model names from config. Nothing else imports the Anthropic SDK.
 3. **Numbers never come from the model.** Ratios and filing figures are computed in Python from EDGAR. Move sizes come from the price provider. The model receives them and explains them.
 4. **Every AI claim cites a source.** Inputs carry source IDs; outputs are validated with pydantic; drop any claim whose source ID isn't in the input. Headline-based notes use cautious wording ("coverage around the move points to ...") and never state a cause as fact. Firm causal statements are allowed only when a primary source read in full supports them (an EDGAR 8-K or earnings release). If nothing explains a move, say "no clear catalyst found yet".
@@ -114,7 +117,7 @@ The universe is the 100 largest US companies by market cap **as reported by the 
 7. **Demo mode is read-only.** No database writes, no AI calls, no live searches, no refresh button. It shows notes the daily job already generated.
 8. **AI coverage only for stocks someone follows** plus the 20 demo stocks. A stock that drops out of the top 100 is soft-removed (`universe.active = FALSE`): current followers keep it, nobody new can add it.
 9. **EDGAR:** send a `User-Agent` with a name and contact email from config; stay under 10 requests per second.
-10. **Secrets** live in `.env` (local), `st.secrets` (Streamlit Cloud) and GitHub Actions secrets. Never commit them. Never put `ANTHROPIC_API_KEY` in a shell profile: Claude Code would then bill the API instead of the subscription.
+10. **Secrets** live in `.env` (local), Google Secret Manager (Cloud Run; the deploy script copies them from `.env`) and GitHub Actions secrets. Never commit them. Never put `ANTHROPIC_API_KEY` in a shell profile: Claude Code would then bill the API instead of the subscription.
 11. **Public text:** never reproduce article text. Show headline, outlet, link and our own note. Headlines come from live search results and are not stored (rule 13).
 12. **Footer:** "For information only. Not investment advice." plus "News search by Brave Search API" (Brave's free credit requires the credit line) and the owner credit "Designed and built by Nojus Šukaitis" (`config.OWNER_CREDIT`). Keep the TradingView link on every widget.
 13. **Data licensing. Read this twice.**

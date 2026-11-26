@@ -2,7 +2,7 @@
 
 ## Decisions
 
-- Public by URL, non-commercial, and noindex. Anyone can open the read-only demo or sign in with Google. Visitors get TradingView quotes, while the third-party provider figures stay owner-only until the Day 6 licensing gate is ticked.
+- Public by URL, non-commercial, and noindex. Anyone can open the read-only demo or sign in with Google. Everyone, the owner included, gets prices and daily changes from TradingView widgets.
 - Users pick up to 15 stocks from the 100 largest US companies plus 25 European and 25 Asian SEC-registered foreign filers (`universe` table, `region` column; owner decision 2026-11-23). Non-SEC companies (ESEF, DART, EDINET) later.
 - Display: TradingView free widgets for charts, quotes, heatmap and economic calendar. Fundamentals and ratios from EDGAR. No P/E, VaR or beta in v1 (P/E needs a price; the TradingView symbol-info widget shows it).
 - Moves: a daily percent change of 5% or more triggers an alert. The app decides market vs industry vs stock before searching anything (AGENTS.md rule 14).
@@ -11,7 +11,7 @@
 - Streamlit first; UI kept thin so it can move to NiceGUI later.
 - Budget: AI hard stop at $8/month (prepaid credit, auto top-up off); live searches capped at 900/month (Brave's free monthly credit).
 - Charts (owner decision 2026-11-22): build our own minimalist chart (Trading 212 / Trade Republic style) on dev-only yfinance data now; in prod it falls back to TradingView widgets until a licensed price source is confirmed. Alpha Vantage email to be rewritten to ask for permission to display daily closing prices (later).
-- Price source: undecided. Free tiers are personal-use. Plan: ask Alpha Vantage (open-source/educational key) for written permission. Development uses yfinance locally only. Do not deploy publicly before the Day 6 gate.
+- Price source (owner decision 2026-11-25, replaces the earlier plan): no paid or licensed provider. Every figure people see comes from TradingView widgets. Tiingo (free) is used only internally: its 15-minute snapshot triggers move alerts (direction only) and its closes pick the closing-news subjects. Marketstack was dropped (no display rights without written permission); the owner sends no licensing emails. yfinance stays local-only.
 
 ## Day 0 — Setup (evening)
 
@@ -76,14 +76,14 @@
 
 ## Day 6 — Deploy
 
-- [ ] **Data-licensing gate (must pass before deploying):** `docs/data-licensing.md` records one of:
+- [x] **Data-licensing gate:** resolved 2026-11-25 by showing no provider figures at all (`PRICE_DATA_DISPLAY=none`; TradingView for everything visitors see). Original options: `docs/data-licensing.md` records one of:
   - written permission from the price provider for this use, or
   - a paid provider whose terms allow display, confirmed in writing, or
   - the fallback: detect moves from news headlines instead of a price feed (build it first).
   Until one is ticked, public visitors get quotes and price changes through TradingView.
-- [ ] Neon database; switch `DATABASE_URL`
-- [ ] GitHub Actions: daily job after US close, Monday/Thursday summary, profile queue
-- [ ] Streamlit Community Cloud deploy with secrets, `APP_ENV=prod`
+- [x] Neon database; switch `DATABASE_URL`
+- [ ] GitHub Actions: closing news, earnings filings and the Monday brief run. The `daily` and `weekly` workflows are still off (`JOBS_ENABLED` unset), so new-filing profile updates, figure refreshes, the weekly re-rank and Wikidata facts don't run: they wait on a price-free split (proposal 2026-11-26).
+- [x] Deploy with secrets, `APP_ENV=prod`: Google Cloud Run instead of Streamlit Cloud (`deploy/cloudrun.sh`)
 - [ ] Google OAuth consent screen set to "In production"
 - [ ] Done when: it runs without your laptop, and a friend can sign in
 
@@ -224,3 +224,6 @@
 
 - [x] Logos v2 (owner rules): the company's own symbol without words, otherwise its name in its lettering (first word of long names, brand initials), wide tiles for names, no single letters. Prices: prod `PRICE_DATA_DISPLAY=none`, so everyone, the owner included, sees TradingView quotes; the saved Nov 20 closes are hidden (no daily-returns provider runs, so they could never update).
 - Claude Code (2026-11-25): push and deploy. The daily workflow stays gated (`JOBS_ENABLED` unset); closing news, earnings and move alerts keep running on their own workflows.
+
+- [x] Review fixes (2026-11-26): Movers says "No trading right now" on holidays, weekends and overnight instead of showing the last evening's moves as "Right now"; move alerts on Cloud Scheduler -> Cloud Run job every 15 minutes (GitHub ran them about hourly); 300 iCloud duplicate logos removed and ignored; AGENTS.md and this plan brought up to date.
+- Claude Code (2026-11-26): owner pushes and runs `deploy/cloudrun.sh` (creates the alerts job and scheduler). Next: owner decides on the price-free daily/weekly jobs (profiles on new filings, figure refreshes, re-rank).
