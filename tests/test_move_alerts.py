@@ -75,7 +75,7 @@ def test_movers_page_and_portfolio_chips(client, snapshot):
     page = client.get("/movers").text
     assert "Movers" in page and "Moving sharply lower" in page and "Apple" in page
     assert "Microsoft" not in page.split("<h1>Movers</h1>")[1].split("Latest U.S. market close")[0]
-    assert "Data sourced by Tiingo" in page and "embed-widget-single-quote" in page  # numbers from TradingView
+    assert "Data sourced by Tiingo" in page and "embed-widget/single-quote" in page  # numbers from TradingView
     assert not re.search(r"7\.0\d*\s*%|>\s*93(\.0)?\s*<", page)  # no Tiingo figures
     portfolio = client.get("/portfolio").text
     assert "Moving sharply lower today" in portfolio and 'href="/movers"' in portfolio

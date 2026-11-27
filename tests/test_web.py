@@ -322,16 +322,16 @@ def test_own_figures_replace_tradingview_quotes_for_viewers_who_may_see_them(cli
     sign_in(client, "owner@example.com")
     services.save_watchlist("owner@example.com", ["AAPL", "MSFT"])
     portfolio = client.get("/portfolio").text
-    assert 'class="card-figs"' in portfolio and '"symbol": "AAPL"' not in portfolio  # our own AAPL figures
-    assert '"symbol": "MSFT"' in portfolio  # no stored figures for MSFT: TradingView quote
+    assert 'class="card-figs"' in portfolio and 'tv-quote-AAPL' not in portfolio  # our own AAPL figures
+    assert 'tv-quote-MSFT' in portfolio  # no stored figures for MSFT: TradingView quote
     page = client.get("/stock/AAPL").text
-    assert 'class="perf-head"' in page and "embed-widget-single-quote" not in page and "advanced-chart" in page
+    assert 'class="perf-head"' in page and "embed-widget/single-quote" not in page and "advanced-chart" in page
     client.get("/logout")
     sign_in(client, "guest@example.com")
     services.save_watchlist("guest@example.com", ["AAPL", "MSFT"])
     assert 'class="card-figs"' not in client.get("/portfolio").text
     page = client.get("/stock/AAPL").text
-    assert 'class="perf-head"' not in page and "embed-widget-single-quote" in page and "advanced-chart" in page
+    assert 'class="perf-head"' not in page and "embed-widget/single-quote" in page and "advanced-chart" in page
 
 
 def test_display_none_shows_tradingview_to_everyone_including_the_owner(client, monkeypatch):
@@ -342,9 +342,9 @@ def test_display_none_shows_tradingview_to_everyone_including_the_owner(client, 
     sign_in(client, "owner@example.com")
     services.save_watchlist("owner@example.com", ["AAPL", "MSFT"])
     portfolio = client.get("/portfolio").text
-    assert 'class="card-figs"' not in portfolio and '"symbol": "AAPL"' in portfolio and '"symbol": "MSFT"' in portfolio
+    assert 'class="card-figs"' not in portfolio and "tv-quote-AAPL" in portfolio and "tv-quote-MSFT" in portfolio
     page = client.get("/stock/AAPL").text
-    assert "Saved close" not in page and "embed-widget-single-quote" in page and "Write a session note" not in page
+    assert "Saved close" not in page and "embed-widget/single-quote" in page and "Write a session note" not in page
     assert not services.price_data_visible("owner@example.com")
 
 
@@ -377,8 +377,8 @@ def test_stale_own_figures_give_way_to_live_tradingview_quotes(client, monkeypat
     monkeypatch.setattr(services, "get_price_chart", lambda t: None)
     client.get("/demo")
     portfolio = client.get("/portfolio").text  # saved figures end months ago (no price provider running)
-    assert 'class="card-figs"' not in portfolio and "embed-widget-single-quote" in portfolio
-    assert "embed-widget-single-quote" in client.get("/stock/AAPL").text
+    assert 'class="card-figs"' not in portfolio and "embed-widget/single-quote" in portfolio
+    assert "embed-widget/single-quote" in client.get("/stock/AAPL").text
     assert services.figures_fresh("2026-11-20", date(2026, 11, 25))
     assert not services.figures_fresh("2026-11-20", date(2026, 11, 26)) and not services.figures_fresh(None)
 
@@ -414,7 +414,7 @@ def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
     samsung = client.get("/stock/KRX:005930")
     assert samsung.status_code == 200
     assert "tradingview.com/symbols/KRX-005930/" in samsung.text
-    assert "embed-widget-single-quote" not in samsung.text
+    assert "embed-widget/single-quote" not in samsung.text
     assert '"symbol": "FWB:SSU"' in samsung.text
     assert "Frankfurt depositary receipt" in samsung.text
     assert "symbol=KRX%3A005930" in samsung.text
@@ -423,9 +423,9 @@ def test_international_stocks_are_browsable_and_followable(client, monkeypatch):
     assert "embed-widget-advanced-chart" not in kia.text
     bmw = client.get("/stock/XETR:BMW")
     assert bmw.status_code == 200
-    assert "embed-widget-single-quote" in bmw.text and '"symbol": "XETR:BMW"' in bmw.text
+    assert "embed-widget/single-quote" in bmw.text and "tv-quote-XETR-BMW" in bmw.text
     portfolio = client.get("/portfolio").text
-    assert "embed-widget-single-quote" in portfolio
+    assert "embed-widget/single-quote" in portfolio
     assert "embed-widget-ticker-tape.js" in portfolio and '{"proName": "AAPL"}' in portfolio
     assert "tradingview.com/markets/stocks-usa" in portfolio  # TradingView link kept (rule 12)
 

@@ -110,6 +110,9 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.015em; }
 .range-strip .v { font-family: var(--mono); font-size: 16px; font-weight: 600; }
 .tv-quote { margin: -4px -4px 0; }
 .tv .tradingview-widget-copyright a { color: var(--faint); }
+.tradingview-widget-copyright { font-size: 13px !important; color: var(--faint); }
+.tradingview-widget-copyright a { color: var(--faint); text-decoration: none; }
+.tradingview-widget-copyright a:hover { color: var(--text-3); }
 
 /* ---- text blocks ---- */
 .about { margin: 10px 0 0; font-size: 16.5px; line-height: 1.7; color: var(--text-2); }

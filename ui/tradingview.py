@@ -6,7 +6,7 @@ Pure HTML builders, no I/O. Each widget keeps its TradingView link (required by 
 import json
 import re
 from html import escape
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 _EXCHANGE = {"nasdaq": "NASDAQ", "nyse": "NYSE", "cboe": "CBOE", "amex": "AMEX"}
 _TICKER_RE = re.compile(r"^[A-Z][A-Z0-9.\-]{0,9}$")
@@ -74,13 +74,35 @@ def symbol_info_html(symbol: str, height: int = SYMBOL_INFO_HEIGHT, theme: str =
     return _widget("symbol-info", config, f"{symbol.split(':')[-1]} quote", symbol, height)
 
 
-QUOTE_HEIGHT = 96
+QUOTE_HEIGHT = 101       # TradingView fixes the single-quote widget at 101px: 69px quote + 32px credit line
+QUOTE_FRAME_HEIGHT = 69
+QUOTE_FRAME_URL = "https://www.tradingview-widget.com/embed-widget/single-quote/?locale=en#"
 
 
 def quote_html(symbol: str, theme: str = "dark") -> str:
-    """Compact TradingView quote with price and day change."""
-    config = {"symbol": symbol, "width": "100%", "isTransparent": True, "colorTheme": theme, "locale": "en"}
-    return _widget("single-quote", config, f"{symbol.split(':')[-1]} quote", symbol, QUOTE_HEIGHT)
+    """Compact TradingView quote with price and day change.
+
+    We write the widget's iframe ourselves (the same URL TradingView's embed script builds) instead of using that
+    script, and give each frame a fixed name per symbol. With the script, a page of many quotes creates its frames
+    in whatever order the async scripts finish; on Back, reload or a restored tab the browser puts each frame's
+    remembered URL back by creation order, so cards showed other companies' quotes. Named frames are restored by
+    name. The symbol is validated by tv_symbol(); the JSON goes into the URL fragment percent-encoded.
+    """
+    config = {"symbol": symbol, "width": "100%", "isTransparent": True, "colorTheme": theme,
+              "height": QUOTE_HEIGHT, "utm_medium": "widget_new", "utm_campaign": "single-quote"}
+    src = QUOTE_FRAME_URL + quote(json.dumps(config, separators=(",", ":")), safe="")
+    name = "tv-quote-" + re.sub(r"[^A-Za-z0-9]+", "-", symbol)
+    label = f"{symbol.split(':')[-1]} quote"
+    return f"""
+<div class="tradingview-widget-container" style="height:{QUOTE_HEIGHT}px;width:100%">
+  <iframe name="{escape(name)}" src="{escape(src)}" title="{escape(label)}, TradingView widget" lang="en"
+    scrolling="no" allowtransparency="true" frameborder="0" loading="lazy"
+    style="display:block;border:0;height:{QUOTE_FRAME_HEIGHT}px;width:100%;user-select:none"></iframe>
+  <div class="tradingview-widget-copyright" style="font:12px sans-serif;text-align:center;line-height:32px">
+    <a href="{escape(symbol_url(symbol))}" rel="noopener nofollow" target="_blank">{escape(label)}</a>
+    <span> by TradingView</span>
+  </div>
+</div>"""
 
 
 def ticker_tape_html(symbols: list[str]) -> str:
