@@ -82,7 +82,7 @@
   - the fallback: detect moves from news headlines instead of a price feed (build it first).
   Until one is ticked, public visitors get quotes and price changes through TradingView.
 - [x] Neon database; switch `DATABASE_URL`
-- [ ] GitHub Actions: closing news, earnings filings and the Monday brief run. The `daily` and `weekly` workflows are still off (`JOBS_ENABLED` unset), so new-filing profile updates, figure refreshes, the weekly re-rank and Wikidata facts don't run: they wait on a price-free split (proposal 2026-11-26).
+- [x] GitHub Actions: nightly (filings, figures, profile updates), weekly (listings, facts, first profiles), closing news and the Monday brief run; move alerts on Cloud Scheduler. The price-based daily job is retired; the top-100 ranking is frozen and re-ranked by hand.
 - [x] Deploy with secrets, `APP_ENV=prod`: Google Cloud Run instead of Streamlit Cloud (`deploy/cloudrun.sh`)
 - [ ] Google OAuth consent screen set to "In production"
 - [ ] Done when: it runs without your laptop, and a friend can sign in
@@ -227,3 +227,6 @@
 
 - [x] Review fixes (2026-11-26): Movers says "No trading right now" on holidays, weekends and overnight instead of showing the last evening's moves as "Right now"; move alerts on Cloud Scheduler -> Cloud Run job every 15 minutes (GitHub ran them about hourly); 300 iCloud duplicate logos removed and ignored; AGENTS.md and this plan brought up to date.
 - Claude Code (2026-11-26): owner pushes and runs `deploy/cloudrun.sh` (creates the alerts job and scheduler). Next: owner decides on the price-free daily/weekly jobs (profiles on new filings, figure refreshes, re-rank).
+
+- [x] Price-free jobs (owner decision 2026-11-27: option A + B2): `jobs/nightly.py` on weekdays checks EDGAR for every active stock, refetches figures when a report from the last 45 days isn't in them yet, writes Sonnet profile updates for covered stocks and sends one upgrade batch; batches already sent are never re-sent. The weekly job runs `jobs.universe --listings-only`, facts and first profiles. `daily.yml` and `earnings.yml` removed. The SEC's companyfacts has no figures yet for C's and NEE's latest 10-Qs (SEC-side gap; retried for 45 days).
+- Claude Code (2026-11-27): owner pushes; run the nightly workflow once by hand and check the log. Next: re-rank the top 100 by hand when it drifts (a few times a year).

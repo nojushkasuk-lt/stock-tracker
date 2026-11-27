@@ -1,20 +1,22 @@
-name: earnings filings
+# Weekdays after the close: new SEC reports -> fresh figures -> profile updates (Sonnet) and Sonnet upgrades.
+# Needs no price data. Replaces the old earnings-filings job and the filings part of the price-gated daily job.
+name: nightly
 
 on:
   schedule:
-    - cron: "43 23 * * 1-5"
+    - cron: "43 23 * * 1-5"   # 23:43 UTC: 18:43 New York in winter, 19:43 in summer
   workflow_dispatch:
 
 concurrency: { group: jobs, cancel-in-progress: false }
 
 jobs:
-  filings:
-    if: github.event_name == 'workflow_dispatch' || vars.JOBS_ENABLED != 'true'
+  run:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     env:
       APP_ENV: prod
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       EDGAR_USER_AGENT_NAME: ${{ secrets.EDGAR_USER_AGENT_NAME }}
       EDGAR_USER_AGENT_EMAIL: ${{ secrets.EDGAR_USER_AGENT_EMAIL }}
     steps:
@@ -23,8 +25,5 @@ jobs:
         with: { python-version: "3.12", cache: pip }
       - run: pip install -r requirements.txt
       - run: |
-          if [ -z "$DATABASE_URL" ]; then
-            echo "The production database secret is required."
-            exit 1
-          fi
-          python -m jobs.earnings
+          test -n "$DATABASE_URL" || { echo "DATABASE_URL is required."; exit 1; }
+          python -m jobs.nightly

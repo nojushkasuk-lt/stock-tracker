@@ -274,7 +274,10 @@ def submit_first_profiles(session: Session, fetcher: FilingFetcher, *, sonnet_to
     if tickers:
         q = select(Universe).where(Universe.ticker.in_([t.upper() for t in tickers]))
     reqs, items = [], {}
+    waiting = in_open_batches(session)
     for u in session.scalars(q):
+        if u.ticker in waiting:
+            continue  # already sent in a batch that hasn't been collected yet
         if not force and not needs_first_profile(session, u.ticker):
             continue
         latest = _latest(session, u.ticker, PERIODIC_FORMS)
@@ -356,13 +359,22 @@ def collect_profiles(session: Session, batch_id: str, *, client=None, now: datet
     return outcomes
 
 
+def in_open_batches(session: Session) -> set[str]:
+    """Tickers in profile batches that are sent but not collected yet."""
+    from tracker.models import AiBatch
+
+    return {item["scope_key"] for b in session.scalars(select(AiBatch).where(AiBatch.kind == "profile",
+                                                                         AiBatch.collected_at.is_(None)))
+            for item in (b.items or {}).values()}
+
+
 def upgrade_targets(session: Session) -> list[str]:
     """Covered stocks (someone follows them, or demo) whose current profile came from the routine model:
     they get a profile-model version in the next batch."""
     from tracker import config
 
-    out = []
-    for t in sorted(covered_tickers(session)):
+    out, waiting = [], in_open_batches(session)
+    for t in sorted(covered_tickers(session) - waiting):
         row = outputs.latest(session, "profile", t)
         if row is not None and row.model != config.MODEL_PROFILE:
             out.append(t)

@@ -14,13 +14,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from tracker.data.edgar import EdgarClient
-from tracker.models import Filing, Universe
+from tracker.models import Filing, Fundamental, Universe
 
 FORMS = {"10-Q", "10-K", "8-K", "20-F", "6-K"}
 PERIODIC = {"10-Q", "10-K", "20-F", "6-K"}  # reports with financial statements
 ANNUAL = {"10-K", "20-F"}
 INTERIM = {"10-Q", "6-K"}
 BASELINE_DAYS = 400  # keep about a year of history on the first check
+FIGURES_WINDOW_DAYS = 45  # how long to keep looking for the SEC figures of a new report
 ARCHIVE_URL = "https://www.sec.gov/Archives/edgar/data/{cik}/{acc}/{doc}"
 
 
@@ -93,3 +94,21 @@ def check_filings(session: Session, edgar: EdgarClient, tickers: list[str] | Non
 
 def needs_new_figures(new: dict[str, list[Filing]]) -> list[str]:
     return sorted(t for t, fs in new.items() if any(f.form in PERIODIC for f in fs))
+
+
+def missing_figures(session: Session, now: datetime | None = None, days: int = FIGURES_WINDOW_DAYS) -> list[str]:
+    """Active stocks with a recent quarterly or annual report whose figures we don't have yet.
+
+    Stored figures carry the accession of the filing they came from, so a report counts as missing until its
+    accession shows up. The SEC's XBRL data can lag the filing by hours (or, for some foreign filers, much
+    longer), so a report is retried every run for `days` days and then left alone.
+    """
+    since = (now or _now()) - timedelta(days=days)
+    recent = session.execute(
+        select(Filing.ticker, Filing.accession).join(Universe, Universe.ticker == Filing.ticker)
+        .where(Universe.active, Filing.form.in_(PERIODIC), Filing.filed_at >= since)).all()
+    if not recent:
+        return []
+    have = set(session.execute(select(Fundamental.ticker, Fundamental.accession).distinct()
+                               .where(Fundamental.ticker.in_({t for t, _ in recent}))).all())
+    return sorted({t for t, acc in recent if (t, acc) not in have})

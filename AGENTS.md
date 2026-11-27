@@ -27,7 +27,7 @@ The app does not republish articles. It shows headlines, outlets, links and its 
 - Anthropic API: `claude-haiku-5-5` for routine work, `claude-sonnet-5-5` for filing-based profile updates (Batch API where results can wait)
 - Data: SEC EDGAR (filings, XBRL numbers, SIC codes), a swappable price provider (see rule 13), Brave News Search API (live queries only), outlet RSS feeds as fallback
 - Hosting: Google Cloud Run (europe-west1, free tier) with Neon Postgres (Frankfurt); `deploy/cloudrun.sh` deploys it. Live at https://stock-tracker-468868157964.europe-west1.run.app
-- Scheduling: GitHub Actions for the daily, weekly, closing-news, earnings and weekly-brief jobs. Move alerts run every 15 minutes as the Cloud Run job `move-alerts`, triggered by Cloud Scheduler (GitHub delays its schedules to about hourly); the deploy script sets both up.
+- Scheduling: GitHub Actions for the nightly (filings, figures, profiles), weekly (listings, facts, first profiles), closing-news and weekly-brief jobs. Move alerts run every 15 minutes as the Cloud Run job `move-alerts`, triggered by Cloud Scheduler (GitHub delays its schedules to about hourly); the deploy script sets both up.
 
 ## Folder layout
 
@@ -73,12 +73,12 @@ tracker/
     notes.py            # market / industry / stock notes and link ranking (Haiku)
     weekly_brief.py     # Monday market and tech brief (Haiku)
 jobs/
-  daily.py              # daily returns, filings check, move detection, notes
+  daily.py              # needs a daily-returns provider, so it is not scheduled (rule 13): returns, moves, notes
+  nightly.py            # weekdays, no prices: new filings -> figures -> profile updates (Sonnet), Sonnet upgrades, batch collection
   intraday_alerts.py    # every 15 min in the session: follower alerts for sharp moves (Tiingo direction only)
   closing_news.py       # after each close: sourced market note and notes for the largest movers (Tiingo closes as an internal trigger)
-  earnings.py           # weekdays: SEC filings for covered stocks (earnings calendar, profile queue)
   weekly_brief.py       # Mondays: shared market and tech brief
-  universe.py           # weekly: re-rank by market cap (entries, exits, demo top 20)
+  universe.py           # weekly with --listings-only: CSV seed and new US listings; the market-cap re-rank (entries, exits, demo top 20) is run by hand
   facts.py              # weekly: Wikidata key facts and logos (python -m jobs.facts)
   fundamentals.py       # fetch EDGAR financial figures (python -m jobs.fundamentals [TICKER ...] [--all])
   profiles.py           # process queued profile updates
@@ -99,7 +99,7 @@ tests/
 
 ## Universe definition
 
-The universe is the 100 largest US companies by market cap **as reported by the price provider** (weekly job), plus 25 European and 25 Asian companies: the largest SEC-registered foreign filers (20-F / 6-K, mostly ADRs) from `config/international.csv`, each region with its own seats. Ranks are shared across regions. It is not float-adjusted and may differ from other ranking sites, especially for companies with several share classes. New US domestic filers are picked up from the SEC ticker file within a week. A separate curated catalog of 50 home-market listings includes Tencent, Samsung, Nestlé, LVMH and Roche. It offers short company overviews and TradingView quotes or symbol links. The catalog skips the scheduled price, SEC and AI jobs. Foreign filers' figures are in their reporting currency (US GAAP or IFRS); the SEC's XBRL data for some lags a year behind their latest 20-F, and figures older than two years are not shown. No price-based valuation for foreign listings (ADR ratios). Their profiles always use the profile model (Sonnet).
+The universe is the 100 largest US companies by market cap **as reported by the price provider**. The ranking is frozen while no licensed market-cap source exists (owner decision, 2026-11-27) and re-ranked by hand a few times a year; the weekly job only flags new US listings as candidates. plus 25 European and 25 Asian companies: the largest SEC-registered foreign filers (20-F / 6-K, mostly ADRs) from `config/international.csv`, each region with its own seats. Ranks are shared across regions. It is not float-adjusted and may differ from other ranking sites, especially for companies with several share classes. New US domestic filers are picked up from the SEC ticker file within a week. A separate curated catalog of 50 home-market listings includes Tencent, Samsung, Nestlé, LVMH and Roche. It offers short company overviews and TradingView quotes or symbol links. The catalog skips the scheduled price, SEC and AI jobs. Foreign filers' figures are in their reporting currency (US GAAP or IFRS); the SEC's XBRL data for some lags a year behind their latest 20-F, and figures older than two years are not shown. No price-based valuation for foreign listings (ADR ratios). Their profiles always use the profile model (Sonnet).
 
 ## Rules
 
@@ -154,5 +154,5 @@ python -m venv ~/.venvs/stock-tracker && source ~/.venvs/stock-tracker/bin/activ
 pip install -r requirements.txt
 uvicorn web.main:app --reload    # then open http://localhost:8000
 pytest
-python -m jobs.daily
+python -m jobs.nightly
 ```
